@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Peaple - Video Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-container">
+      <div class="header_logo">
+        <a href="https://peaple.in">
+          <img class="header_logo_img" src="Peaple_header-logo (copy 1).svg" alt="Peaple Logo">
+        </a>
+      </div>
+      <div class="profile">
+        <img class="profileIcon" src="https://i.pravatar.cc/40" alt="Profile" class="avatar">
+        <img class="menu" src="hamburger-menu-svgrepo-com.svg" alt="menu">
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="banner">
+      <div class="slides" id="slideContainer" >
+        <div class="slide">
+         <img class="slide1" src="Untitled.jpeg" alt="slide1">
+         <div class="slideText">
+         <h2>Connect with top professionals</h2>
+         <p>Connect with top professionals and grow your network via Peaple.<br>Know how our network works</p>
+         <button>Learn more</button>
+         </div>
+        </div>
+        <div class="slide">
+         <img class="slide2" src="Untitled1.jpeg" alt="slide2">
+         <div class="slideText">
+         <h2>Peaple is free</h2>
+         <p>Still need more? try our new premium plans</p>
+         <button>Subscribe</button>
+         </div>
+        </div>
+        <div class="slide">
+         <img class="slide3" src="Untitled2.jpeg" alt="slide3">
+         <div class="slideText">
+         <h2>DOT is hiring</h2>
+         <p>Get job offers at DOT. Your dreams are nearer</p>
+         <button>Apply</button>
+         </div>
+        </div>
+        <div class="slide">
+         <img class="slide4" src="images.jpeg" alt="slide4">
+         <div class="slideText">
+         <h2>Competitive exams</h2>
+         <p>Get prepared for competitive exams to get seated in your dream university</p>
+         <button>Join now</button>
+         </div>
+        </div>
+      </div>
+    </div>
+    <div class="call">
+      <h1>Connect Now</h1>
+      <div class="callBefore">
+        <p style="color: black;">Cost per connect = 5 peas. <br>Peas will be maintained by your professionalism. <br>Start a random call (or) say what you need.</p>
+      </div>
+    <div id="videoContainer">
+              <video id="remoteVideo" autoplay></video>
+              <video id="localVideo" autoplay></video>
+    </div>
+    <div id="chatContainer">
+        <div id="messagesContainer"></div>
+         <div id="inputContainer">
+            <input type="text" id="messageInput" placeholder="Type a message..." />
+            <button id="sendButton">Send</button>
+            <button id="startButton">Start Call</button>
+         </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <h4>All  rights reserved</h4>
+  </footer>
+
+  <script>
+    const slides = document.getElementById("slideContainer");
+    const totalSlides = slides.children.length;
+    let currentSlide = 0;
+    function updateSlidePosition() {
+        slides.style.transform = `translateX(-${currentSlide * 100}%)`;
+    }
+    setInterval(() => {
+        currentSlide = (currentSlide + 1) % totalSlides;
+      updateSlidePosition();  }, 3000);
+  </script>
+  <script src="client.js"></script>
+</body>
+</html>

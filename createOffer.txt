@@ -1,0 +1,7 @@
+function createOffer() {
+    peerConnection.createOffer()
+        .then(offer => peerConnection.setLocalDescription(offer))
+        .then(() => {
+            signalingServer.send(JSON.stringify({ type: 'offer', offer: peerConnection.localDescription }));
+        });
+}

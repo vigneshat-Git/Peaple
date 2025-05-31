@@ -1,0 +1,43 @@
+.generic-dialog-box {
+    background: white;
+    border: 1px solid #eee;
+    padding: 25px;
+}
+
+.generic-dialog-box .ns-button {
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    padding: 1px 15px;
+    font-size: 12px;
+    font-weight: 700;
+    height: 30px;
+    width: auto;
+    color: #eee;
+    background-color: #333;
+    outline: 0;
+}
+
+.generic-dialog-box .ns-button:hover {
+    background: #666;
+}
+
+.generic-dialog-box .ns-button:focus {
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 143, 255, 1);
+    -webkit-box-shadow: 0 0 5px rgba(0, 143, 255, 1);
+    -moz-box-shadow: 0 0 5px rgba(0, 143, 255, 1);
+    border: 1px solid rgba(63, 171, 255, 0.77);
+}
+
+.generic-dialog-box .content {
+    font-size: 15px;
+    margin-bottom: 15px;
+    min-height: 50px;
+    max-height: 400px;
+    min-width: 200px;
+    max-width: 400px;
+    word-wrap: break-word;
+}

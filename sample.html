@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Peaple Video Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #f0f0f0;
+        }
+
+        #videoContainer {
+            display: flex;
+            justify-content: space-around;
+            background-color: black;
+            padding: 10px;
+        }
+
+        video {
+            width: 45%;
+            height: auto;
+            background-color: #000;
+        }
+
+        #chatContainer {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 10px;
+        }
+
+        #messagesContainer {
+            flex: 1;
+            overflow-y: auto;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .message {
+            max-width: 60%;
+            margin: 5px;
+            padding: 10px;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+
+        .sent {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+        }
+
+        .received {
+            background-color: #ffffff;
+            align-self: flex-start;
+        }
+
+        #inputContainer {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #sendButton, #startButton {
+            padding: 10px 15px;
+            font-size: 16px;
+            margin-left: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #sendButton:hover, #startButton:hover {
+            background-color: #45a049;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="videoContainer">
+        <video id="localVideo" autoplay muted></video>
+        <video id="remoteVideo" autoplay></video>
+    </div>
+
+    <div id="chatContainer">
+        <div id="messagesContainer"></div>
+        <div id="inputContainer">
+            <input type="text" id="messageInput" placeholder="Type a message..." />
+            <button id="sendButton">Send</button>
+            <button id="startButton">Start Call</button>
+        </div>
+    </div>
+
+    <script src="client.js"></script>
+</body>
+</html>
