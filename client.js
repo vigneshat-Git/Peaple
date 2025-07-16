@@ -2,7 +2,7 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
-const signalingServer = new WebSocket('wss://9769-2409-40f4-205b-c1e2-8000-00.ngrok-free.app');
+const signalingServer = new WebSocket('wss://5d3c47adf6f9.ngrok-free.app');
 
 let peerConnection;
 let dataChannel;

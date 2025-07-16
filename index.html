@@ -7,91 +7,216 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Header -->
   <header class="header">
     <div class="header-container">
       <div class="header_logo">
-        <a href="https://peaple.in">
-          <img class="header_logo_img" src="Peaple_header-logo (copy 1).svg" alt="Peaple Logo">
-        </a>
+        <img class="header_logo_img" src="Peaple_header-logo.svg" alt="Peaple Logo">
       </div>
       <div class="profile">
-        <img class="profileIcon" src="https://i.pravatar.cc/40" alt="Profile" class="avatar">
+        <img class="profileIcon" src="https://i.pravatar.cc/40" alt="Profile">
         <img class="menu" src="hamburger-menu-svgrepo-com.svg" alt="menu">
       </div>
     </div>
   </header>
-  <main>
-    <div class="banner">
-      <div class="slides" id="slideContainer" >
-        <div class="slide">
-         <img class="slide1" src="Untitled.jpeg" alt="slide1">
-         <div class="slideText">
-         <h2>Connect with top professionals</h2>
-         <p>Connect with top professionals and grow your network via Peaple.<br>Know how our network works</p>
-         <button>Learn more</button>
-         </div>
+
+  <!-- Banner -->
+  <section class="banner">
+    <div class="slides" id="slideContainer">
+      <div class="slide">
+        <img src="Untitled.jpeg" alt="slide1">
+        <div class="slideText">
+          <h2>Connect with top professionals</h2>
+          <p>Grow your network via Peaple.<br>Know how our network works</p>
+          <a href="#" class="banner-btn">Learn more</a>
         </div>
-        <div class="slide">
-         <img class="slide2" src="Untitled1.jpeg" alt="slide2">
-         <div class="slideText">
-         <h2>Peaple is free</h2>
-         <p>Still need more? try our new premium plans</p>
-         <button>Subscribe</button>
-         </div>
+      </div>
+      <div class="slide">
+        <img src="Untitled1.jpeg" alt="slide2">
+        <div class="slideText">
+          <h2>Peaple is free</h2>
+          <p>Try our new premium plans</p>
+          <a href="#" class="banner-btn">Subscribe</a>
         </div>
-        <div class="slide">
-         <img class="slide3" src="Untitled2.jpeg" alt="slide3">
-         <div class="slideText">
-         <h2>DOT is hiring</h2>
-         <p>Get job offers at DOT. Your dreams are nearer</p>
-         <button>Apply</button>
-         </div>
-        </div>
-        <div class="slide">
-         <img class="slide4" src="images.jpeg" alt="slide4">
-         <div class="slideText">
-         <h2>Competitive exams</h2>
-         <p>Get prepared for competitive exams to get seated in your dream university</p>
-         <button>Join now</button>
-         </div>
+      </div>
+      <div class="slide">
+        <img src="Untitled2.jpeg" alt="slide3">
+        <div class="slideText">
+          <h2>DOT is hiring</h2>
+          <p>Get job offers at DOT. Your dreams are nearer</p>
+          <a href="#" class="banner-btn">Apply</a>
         </div>
       </div>
     </div>
-    <div class="call">
+  </section>
+
+  <!-- Profile & Weekly Report Section -->
+  <section class="profile-report-section">
+    <div class="profile-card">
+      <div class="profile-cover">
+        <img class="profile-pic" src="https://i.pravatar.cc/100" alt="Profile">
+      </div>
+      <div class="profile-card-content">
+        <h2>User Name</h2>
+        <div class="profile-title">Professional Title</div>
+        <div class="professionalism-meter">
+          <label>Professionalism Meter</label>
+          <div class="professionalism-bar-bg">
+            <div class="professionalism-bar"></div>
+          </div>
+        </div>
+        <div class="peas-balance-row">
+          <span>Peas Balance:</span>
+          <span class="peas-count">120</span>
+        </div>
+        <a href="#" class="transaction-link">View Transaction History</a>
+        <a href="#" class="buy-peas-btn">Buy Peas</a>
+      </div>
+    </div>
+    <div class="weekly-report-card">
+      <h2>This Week's Report</h2>
+      <div>Connections made: <strong>8</strong></div>
+      <div>Peas earned: <strong>35</strong></div>
+      <div>Calls duration: <strong>2h 15m</strong></div>
+      <div>Professionalism change: <strong>+5%</strong></div>
+    </div>
+  </section>
+
+  <!-- Call Section -->
+  <section class="call-section">
+    <div class="call-header">
       <h1>Connect Now</h1>
-      <div class="callBefore">
-        <p style="color: black;">Cost per connect = 5 peas. <br>Peas will be maintained by your professionalism. <br>Start a random call (or) say what you need.</p>
-      </div>
-    <div id="videoContainer">
-              <video id="remoteVideo" autoplay></video>
-              <video id="localVideo" autoplay></video>
+      <div class="live-users">Live Users: <span>24</span></div>
     </div>
-    <div id="chatContainer">
-        <div id="messagesContainer"></div>
-         <div id="inputContainer">
-            <input type="text" id="messageInput" placeholder="Type a message..." />
-            <button id="sendButton">Send</button>
-            <button id="startButton">Start Call</button>
-         </div>
+    <div class="call-main">
+      <div class="search-people">
+        <h3>Search People</h3>
+        <input type="text" placeholder="Search users..." class="search-bar">
+        <div class="search-results">
+          <!-- Example user -->
+          <div class="user-result">
+            <img src="https://i.pravatar.cc/40" alt="User">
+            <span>User Name</span>
+            <span class="user-prof">Professional</span>
+          </div>
+        </div>
+      </div>
+      <div class="video-call">
+        <h3>Video Call</h3>
+        <div class="video-area">
+          <video id="remoteVideo" autoplay></video>
+          <video id="localVideo" autoplay></video>
+        </div>
+        <div class="call-tools">
+          <button>Mute</button>
+          <button id="startButton">Start Call</button>
+          <button>End</button>
+          <button>Share Screen</button>
+          <button>Settings</button>
+        </div>
+      </div>
+      <div class="chat-box">
+        <h3>Chat</h3>
+        <div class="messages-container"></div>
+        <div class="input-container">
+          <input type="text" placeholder="Type a message...">
+          <button id="sendButton">Send</button>
+        </div>
       </div>
     </div>
-  </main>
+  </section>
 
+  <!-- Recent Connections -->
+  <section class="recent-connections">
+    <h2>Recent Connections</h2>
+    <div class="connection-list">
+      <div class="connection-item">
+        <img src="https://i.pravatar.cc/40" alt="User">
+        <div class="conn-info">
+          <span>User Name</span>
+          <span class="user-prof">Professional</span>
+        </div>
+        <div class="conn-meta">
+          <span>2 days ago</span>
+          <button class="reconnect-btn">Reconnect</button>
+        </div>
+      </div>
+      <div class="connection-item">
+        <img src="https://i.pravatar.cc/40" alt="User">
+        <div class="conn-info">
+          <span>User Name</span>
+          <span class="user-prof">Professional</span>
+        </div>
+        <div class="conn-meta">
+          <span>5 hr ago</span>
+          <button class="reconnect-btn">Reconnect</button>
+        </div>
+      </div>
+    </div>
+    <a href="#" class="view-all-connections">View all connections</a>
+  </section>
+
+  <!-- Feedback Section -->
+  <section class="feedback-section">
+    <h2>Feedback</h2>
+    <div class="feedback-list">
+      <div class="feedback-item">
+        <span>User Name</span>
+        <span>⭐⭐⭐⭐⭐</span>
+        <span>Great call experience!</span>
+      </div>
+      <div class="feedback-item">
+        <span>User Name</span>
+        <span>⭐⭐⭐⭐</span>
+        <span>Good, but can improve.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
   <footer>
-    <h4>All  rights reserved</h4>
-  </footer>
-
-  <script>
-    const slides = document.getElementById("slideContainer");
-    const totalSlides = slides.children.length;
-    let currentSlide = 0;
-    function updateSlidePosition() {
+    <script>
+      // Banner slider functionality
+      const slides = document.getElementById("slideContainer");
+      let currentSlide = 0;
+      function updateSlidePosition() {
         slides.style.transform = `translateX(-${currentSlide * 100}%)`;
-    }
-    setInterval(() => {
-        currentSlide = (currentSlide + 1) % totalSlides;
-      updateSlidePosition();  }, 3000);
-  </script>
-  <script src="client.js"></script>
+      }
+      setInterval(() => {
+        currentSlide = (currentSlide + 1) % slides.children.length;
+        updateSlidePosition();
+      }, 3000);
+    </script>
+    <div class="footer-main">
+      <div class="footer-features">
+        <h4>Product Features</h4>
+        <a href="#">Pricing</a>
+        <a href="#">FAQ</a>
+      </div>
+      <div class="footer-company">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Careers</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="footer-legal">
+        <h4>Legal</h4>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Cookie Policy</a>
+      </div>
+      <div class="footer-social">
+        <h4>Follow Us</h4>
+        <a href="#"><img src="linkedin-icon.svg" alt="LinkedIn"></a>
+        <a href="#"><img src="twitter-icon.svg" alt="Twitter"></a>
+        <a href="#"><img src="instagram-icon.svg" alt="Instagram"></a>
+        <a href="#"><img src="facebook-icon.svg" alt="Facebook"></a>
+      </div>
+    </div>
+    <div class="footer-copyright">
+      &copy; 2025 Peaple. All rights reserved.
+    </div>
+  </footer>
 </body>
+<script src="client.js"></script>
 </html>
