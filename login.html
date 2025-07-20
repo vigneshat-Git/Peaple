@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login to Peaple</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+    <div class="mb-6 text-center">
+      <h1 class="text-3xl font-bold text-indigo-700">Join here as Peaple</h1>
+      <p class="text-gray-600">Peaple - for - People.</p>
+    </div>
+
+    <!-- Toggle Buttons -->
+    <div class="flex justify-center mb-6 space-x-4">
+      <button id="loginBtn" class="py-2 px-4 text-white bg-indigo-600 rounded-full">Login</button>
+      <button id="registerBtn" class="py-2 px-4 text-indigo-600 border border-indigo-600 rounded-full">Register</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="loginForm" class="space-y-4">
+      <input type="email" placeholder="Email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
+      <input type="password" placeholder="Password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
+      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Login</button>
+
+      <div class="flex items-center justify-between mt-4">
+        <hr class="w-1/4 border-gray-300" />
+        <span class="text-gray-500 text-sm">or continue with</span>
+        <hr class="w-1/4 border-gray-300" />
+      </div>
+
+      <div class="flex space-x-4 mt-4 justify-center">
+        <button class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2">
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" />
+          <span class="text-sm">Google</span>
+        </button>
+        <button class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2">
+          <img src="https://www.svgrepo.com/show/448234/linkedin.svg" class="w-5 h-5" />
+          <span class="text-sm">LinkedIn</span>
+        </button>
+      </div>
+    </form>
+
+    <!-- Register Form -->
+    <form id="registerForm" class="space-y-4 hidden">
+      <div class="flex space-x-2">
+        <input type="text" placeholder="First Name" class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
+        <input type="text" placeholder="Last Name" class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
+      </div>
+      <input type="email" placeholder="Email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
+      <input type="password" placeholder="Create Password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
+      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Register</button>
+
+      <div class="flex items-center justify-between mt-4">
+        <hr class="w-1/4 border-gray-300" />
+        <span class="text-gray-500 text-sm">or sign up with</span>
+        <hr class="w-1/4 border-gray-300" />
+      </div>
+
+      <div class="flex space-x-4 mt-4 justify-center">
+        <button class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2">
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" />
+          <span class="text-sm">Google</span>
+        </button>
+        <button class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2">
+          <img src="https://www.svgrepo.com/show/448234/linkedin.svg" class="w-5 h-5" />
+          <span class="text-sm">LinkedIn</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const loginBtn = document.getElementById("loginBtn");
+    const registerBtn = document.getElementById("registerBtn");
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+
+    loginBtn.addEventListener("click", () => {
+      loginForm.classList.remove("hidden");
+      registerForm.classList.add("hidden");
+      loginBtn.classList.add("bg-indigo-600", "text-white");
+      loginBtn.classList.remove("text-indigo-600", "border");
+      registerBtn.classList.remove("bg-indigo-600", "text-white");
+      registerBtn.classList.add("text-indigo-600", "border");
+    });
+
+    registerBtn.addEventListener("click", () => {
+      registerForm.classList.remove("hidden");
+      loginForm.classList.add("hidden");
+      registerBtn.classList.add("bg-indigo-600", "text-white");
+      registerBtn.classList.remove("text-indigo-600", "border");
+      loginBtn.classList.remove("bg-indigo-600", "text-white");
+      loginBtn.classList.add("text-indigo-600", "border");
+    });
+
+    // Google login button handler for login form
+    const googleLoginBtn = loginForm.querySelector("button img[src*='google-color']").parentElement;
+    googleLoginBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      // Replace with your Google OAuth client ID and redirect URI
+      const clientId = 'YOUR_CLIENT_ID';
+      const redirectUri = 'YOUR_REDIRECT_URI';
+      const scope = 'email profile';
+      const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
+      window.location.href = oauthUrl;
+    });
+  </script>
+</body>
+</html>

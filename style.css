@@ -1,8 +1,38 @@
+.profile-dropdown {
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  border-radius: 10px;
+  min-width: 200px;
+  padding: 8px 0;
+  z-index: 100;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  color: #222;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: background 0.18s, color 0.18s;
+  border: none;
+  background: none;
+}
+.dropdown-item i {
+  color: #2db2ff;
+  font-size: 1.1em;
+}
+.dropdown-item:hover {
+  background: #f8faff;
+  color: #2db2ff;
+}
 body {
   font-family: 'Roboto', Verdana, Geneva, Tahoma, sans-serif;
   background: #f8faff;
   color: #222;
   margin: 0;
+  font-family: Bahnschrift, 'DIN Alternate', 'Franklin Gothic Medium', 'Nimbus Sans Narrow', sans-serif-condensed, sans-serif;
+font-weight: 300;
 }
 
 .header {
@@ -28,6 +58,12 @@ body {
   border-radius: 50%;
   width: 40px;
   height: 40px;
+  cursor: pointer;
+}
+
+.profileIcon.profile-focused {
+  box-shadow: 0 0 0 4px rgba(0, 132, 255, 0.18), 0 2px 8px rgba(0,0,0,0.12);
+  transition: box-shadow 0.2s;
 }
 .menu {
   width: 32px;
@@ -161,7 +197,7 @@ body {
   font-weight: 700;
 }
 .transaction-link {
-  color: #4CAF50;
+  color: #249643;
   text-decoration: underline;
   font-size: 0.98rem;
   font-weight: 500;
@@ -175,13 +211,15 @@ body {
   border-radius: 6px;
   text-decoration: none;
   font-weight: 600;
+  box-sizing: border-box;
+  border: none;
   box-shadow: 0 2px 6px rgba(0,0,0,0.10);
   transition: background 0.2s, transform 0.2s;
   display: inline-block;
   margin-top: 8px;
 }
 .buy-peas-btn:hover {
-  background: #09ff00;
+  background: #249643;
   color: #222;
   transform: scale(1.05);
 }
@@ -290,7 +328,7 @@ body {
   transition: background 0.2s, transform 0.2s;
 }
 .call-tools button:hover {
-  background: #09ff00;
+  background: #249643;
   color: #222;
   transform: scale(1.05);
 }
@@ -329,7 +367,7 @@ body {
   transition: background 0.2s, transform 0.2s;
 }
 .input-container button:hover {
-  background: #09ff00;
+  background: #249643;
   color: #222;
   transform: scale(1.05);
 }
@@ -384,7 +422,7 @@ body {
   transition: background 0.2s, transform 0.2s;
 }
 .reconnect-btn:hover {
-  background: #09ff00;
+  background: #249643;
   color: #222;
   transform: scale(1.05);
 }

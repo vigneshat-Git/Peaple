@@ -5,6 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Peaple - Video Chat</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .messages-container {
+      width: 100%;
+      height: 220px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      background: #f7f7fa;
+      padding: 8px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .message {
+      max-width: 70%;
+      padding: 8px 14px;
+      border-radius: 18px;
+      font-size: 1em;
+      word-break: break-word;
+      margin-bottom: 2px;
+      display: inline-block;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .message.sent {
+      background: linear-gradient(135deg, #d1f7c4 0%, #b2f1a6 100%);
+      color: #222;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      border-bottom-left-radius: 18px;
+    }
+    .message.received {
+      background: #fff;
+      color: #222;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      border-bottom-right-radius: 18px;
+      border: 1px solid #e0e0e0;
+    }
+    .input-container {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    #messageInput {
+      flex: 1;
+      border-radius: 18px;
+      border: 1px solid #ccc;
+      padding: 8px 14px;
+      font-size: 1em;
+      outline: none;
+      background: #fff;
+    }
+    #sendButton {
+      border-radius: 18px;
+      background: #4caf50;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #sendButton:hover {
+      background: #388e3c;
+    }
+  </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 <body>
   <!-- Header -->
@@ -14,8 +82,18 @@
         <img class="header_logo_img" src="Peaple_header-logo.svg" alt="Peaple Logo">
       </div>
       <div class="profile">
-        <img class="profileIcon" src="https://i.pravatar.cc/40" alt="Profile">
-        <img class="menu" src="hamburger-menu-svgrepo-com.svg" alt="menu">
+        <div class="profile-dropdown-wrapper" style="position:relative;">
+          <img class="profileIcon" src="https://i.pravatar.cc/40" alt="Profile" id="profileIcon">
+          <div class="profile-dropdown" id="profileDropdown" style="display:none; position:absolute; right:0; top:52px; background:#fff; box-shadow:0 4px 16px rgba(0,0,0,0.12); border-radius:10px; min-width:180px; z-index:100;">
+            <a href="login.html" class="dropdown-item"><i class="fa-solid fa-user fa-fw"></i> Profile</a>
+            <a href="#" class="dropdown-item"><i class="fa-solid fa-crown fa-fw"></i> Subscription</a>
+            <a href="#" class="dropdown-item"><i class="fa-solid fa-coins fa-fw"></i> Peas</a>
+            <a href="#" class="dropdown-item"><i class="fa-solid fa-headset fa-fw"></i> Support</a>
+            <a href="#" class="dropdown-item"><i class="fa-solid fa-file-lines fa-fw"></i> Terms & FAQ</a>
+            <a href="#" class="dropdown-item"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Log out</a>
+          </div>
+        </div>
+        <i class="fa-duotone fa-solid fa-bars fa-lg"></i>
       </div>
     </div>
   </header>
@@ -86,7 +164,7 @@
   <section class="call-section">
     <div class="call-header">
       <h1>Connect Now</h1>
-      <div class="live-users">Live Users: <span>24</span></div>
+      <div class="live-users"><i class="fa-solid fa-user"></i><span> 24</span> online</div>
     </div>
     <div class="call-main">
       <div class="search-people">
@@ -104,22 +182,35 @@
       <div class="video-call">
         <h3>Video Call</h3>
         <div class="video-area">
-          <video id="remoteVideo" autoplay></video>
+          <div style="position:relative;">
+            <video id="remoteVideo" autoplay style="z-index:1;width:100%;height:100%;background:#000;"></video>
+            <div id="remoteOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;color:gray;font-size:1.2em;z-index:2;pointer-events:none;">Waiting for People</div>
+          </div>
           <video id="localVideo" autoplay></video>
         </div>
         <div class="call-tools">
-          <button>Mute</button>
-          <button id="startButton">Start Call</button>
-          <button>End</button>
-          <button>Share Screen</button>
-          <button>Settings</button>
+          <div style="display:flex;justify-content:center;align-items:center;gap:18px;width:100%;">
+            <button id="muteButton" title="Mute" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;">
+              <i id="muteIcon" class="fa-solid fa-microphone" style="font-size:1.1em;color:#333;"></i>
+            </button>
+            <button id="startButton" style="display:flex;align-items:center;">Start Call</button>
+            <button id="endButton" title="End Call" style="background:none;border:none;cursor:pointer;display:none;padding:0;display:flex;align-items:center;">
+              <i class="fa-solid fa-phone-slash" style="font-size:1.1em;color:#e53935;"></i>
+            </button>
+            <button id="screenShareButton" title="Share Screen" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;">
+              <i class="fa-solid fa-display" style="font-size:1.1em;color:#333;"></i>
+            </button>
+            <button id="settingsButton" title="Settings" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;">
+              <i class="fa-solid fa-gear" style="font-size:1.1em;color:#333;"></i>
+            </button>
+          </div>
         </div>
       </div>
       <div class="chat-box">
         <h3>Chat</h3>
-        <div class="messages-container"></div>
-        <div class="input-container">
-          <input type="text" placeholder="Type a message...">
+        <div id="messagesContainer" class="messages-container" style="width:100%;height:220px;overflow-y:auto;border:1px solid #ccc;background:#fff;padding:8px;box-sizing:border-box;"></div>
+        <div class="input-container" style="display:flex;gap:8px;">
+          <input type="text" id="messageInput" placeholder="Type a message..." style="flex:1;">
           <button id="sendButton">Send</button>
         </div>
       </div>
@@ -186,6 +277,26 @@
         currentSlide = (currentSlide + 1) % slides.children.length;
         updateSlidePosition();
       }, 3000);
+
+      // Profile dropdown functionality
+      const profileIcon = document.getElementById('profileIcon');
+      const profileDropdown = document.getElementById('profileDropdown');
+      profileIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const isOpen = profileDropdown.style.display === 'block';
+        profileDropdown.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) {
+          profileIcon.classList.add('profile-focused');
+        } else {
+          profileIcon.classList.remove('profile-focused');
+        }
+      });
+      document.addEventListener('click', function(e) {
+        if (profileDropdown.style.display === 'block') {
+          profileDropdown.style.display = 'none';
+          profileIcon.classList.remove('profile-focused');
+        }
+      });
     </script>
     <div class="footer-main">
       <div class="footer-features">
@@ -207,10 +318,10 @@
       </div>
       <div class="footer-social">
         <h4>Follow Us</h4>
-        <a href="#"><img src="linkedin-icon.svg" alt="LinkedIn"></a>
-        <a href="#"><img src="twitter-icon.svg" alt="Twitter"></a>
-        <a href="#"><img src="instagram-icon.svg" alt="Instagram"></a>
-        <a href="#"><img src="facebook-icon.svg" alt="Facebook"></a>
+        <a href="#"><i class="fa-brands fa-x-twitter fa-lg"></i></a>
+        <a href="#"><i class="fa-brands fa-linkedin-in fa-lg"></i></a>
+        <a href="#"><i class="fa-brands fa-instagram fa-lg"></i></a>
+        <a href="#"><i class="fa-brands fa-facebook-f fa-lg"></i></a>
       </div>
     </div>
     <div class="footer-copyright">
