@@ -5,6 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Peaple - Video Chat</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="Peaple_header-logo.svg">
+
+  <!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-analytics.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-storage.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-messaging.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-functions.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-database.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-performance.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-remote-config.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-check.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-installations.js"></script> -->
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+<script>
+// Initialize Firebase Auth object for browser
+if (!firebase.apps.length) {
+  firebase.initializeApp({
+    apiKey: "AIzaSyCnUEkbwEYruJ0YvbQkjFC9yfMDJsLqOlo",
+    authDomain: "peaple-c3f4b.firebaseapp.com",
+    projectId: "peaple-c3f4b",
+    storageBucket: "peaple-c3f4b.firebasestorage.app",
+    messagingSenderId: "814546020627",
+    appId: "1:814546020627:web:c43c90fe6af9a0359e52e6",
+    measurementId: "G-KHQMHRZ08F"
+  });
+}
+window.auth = firebase.auth(); // Make auth globally available
+</script>
+ 
+  
   <style>
     .messages-container {
       width: 100%;
@@ -90,8 +123,9 @@
             <a href="#" class="dropdown-item"><i class="fa-solid fa-coins fa-fw"></i> Peas</a>
             <a href="#" class="dropdown-item"><i class="fa-solid fa-headset fa-fw"></i> Support</a>
             <a href="#" class="dropdown-item"><i class="fa-solid fa-file-lines fa-fw"></i> Terms & FAQ</a>
-            <a href="#" class="dropdown-item"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Log out</a>
-          </div>
+            <button onclick="auth.signOut().then(() => window.location.href = 'login.html')" class="dropdown-item" style="background:none; border:none; padding:0; font: inherit; color: inherit; cursor: pointer;">
+  <i class="fa-solid fa-right-from-bracket fa-fw"></i> Log out
+</button>          </div>
         </div>
         <i class="fa-duotone fa-solid fa-bars fa-lg"></i>
       </div>
@@ -318,7 +352,7 @@
       </div>
       <div class="footer-social">
         <h4>Follow Us</h4>
-        <a href="https://x.com/SoulTechYT2?t=dtXMcyBBl-tE33wNeMJSRg&s=08 "><i class="fa-brands fa-x-twitter fa-lg"></i></a>
+        <a href=" https://x.com/SoulTechYT2?t=dtXMcyBBl-tE33wNeMJSRg&s=08 "><i class="fa-brands fa-x-twitter fa-lg"></i></a>
         <a href="https://www.linkedin.com/in/vignesh-p-2a05b0254?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"><i class="fa-brands fa-linkedin-in fa-lg"></i></a>
         <a href="https://www.instagram.com/vixin.debian?igsh=cDZuNDhoNGIyc21t"><i class="fa-brands fa-instagram fa-lg"></i></a>
         <a href="https://www.facebook.com/share/1JH7zF32ho/?mibextid=qi2Omg"><i class="fa-brands fa-facebook-f fa-lg"></i></a>
@@ -329,5 +363,16 @@
     </div>
   </footer>
 </body>
+
+<script>
+auth.onAuthStateChanged((user) => {
+  if (!user) {
+    alert("Please log in to access this feature.");
+    window.location.href = "login.html"; // redirect to login
+  }
+});
+</script>
+
+
 <script src="client.js"></script>
 </html>

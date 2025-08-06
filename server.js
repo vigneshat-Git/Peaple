@@ -4,7 +4,7 @@ const wss = new WebSocket.Server({ port: 8000 });
 const waitingQueue = [];
 
 wss.on('listening', () => {
-    console.log('✅ WebSocket server is running on ws://localhost:8000');
+    console.log('WebSocket server is running on ws://localhost:8000');
 });
 
 wss.on('connection', ws => {
@@ -24,7 +24,7 @@ wss.on('connection', ws => {
 
     // Handle disconnection
     ws.on('close', () => {
-        console.log('❌ Client disconnected');
+        console.log('Client disconnected');
 
         // Remove from queue if still waiting
         const index = waitingQueue.indexOf(ws);

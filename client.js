@@ -1,3 +1,19 @@
+
+// Firebase Authentication for browser:
+// Make sure you have included firebase-app-compat.js and firebase-auth-compat.js in your HTML before this script.
+if (!firebase.apps.length) {
+  firebase.initializeApp({
+    apiKey: "AIzaSyCnUEkbwEYruJ0YvbQkjFC9yfMDJsLqOlo",
+    authDomain: "peaple-c3f4b.firebaseapp.com",
+    projectId: "peaple-c3f4b",
+    storageBucket: "peaple-c3f4b.firebasestorage.app",
+    messagingSenderId: "814546020627",
+    appId: "1:814546020627:web:c43c90fe6af9a0359e52e6",
+    measurementId: "G-KHQMHRZ08F"
+  });
+}
+const auth = firebase.auth();
+
 // UI button references
 const muteButton = document.getElementById('muteButton');
 const muteIcon = document.getElementById('muteIcon');
@@ -55,7 +71,7 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
-const signalingServer = new WebSocket('wss://9d9bd7a9c7c8.ngrok-free.app');
+const signalingServer = new WebSocket('wss://9e7a1f7e9398.ngrok-free.app');
 
 let peerConnection;
 let dataChannel;
