@@ -103,6 +103,10 @@ window.auth = firebase.auth(); // Make auth globally available
     #sendButton:hover {
       background: #388e3c;
     }
+    /* Prevent local video from being mirrored */
+    #localVideo {
+      transform: scaleX(-1) !important;
+    }
   </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -364,11 +368,28 @@ window.auth = firebase.auth(); // Make auth globally available
   </footer>
 </body>
 
+
 <script>
+// Add a red error message near the call section if not logged in
 auth.onAuthStateChanged((user) => {
   if (!user) {
-    alert("Please log in to access this feature.");
-    window.location.href = "login.html"; // redirect to login
+    // Find or create the error message container near the call section
+    let callSection = document.querySelector('.call-section');
+    if (callSection && !document.getElementById('authErrorMsg')) {
+      const errorDiv = document.createElement('div');
+      errorDiv.id = 'authErrorMsg';
+      errorDiv.textContent = 'Please log in to access this feature.';
+      errorDiv.style.color = '#e53935';
+      errorDiv.style.background = 'rgba(255,0,0,0.07)';
+      errorDiv.style.padding = '8px 16px';
+      errorDiv.style.margin = '12px 0';
+      errorDiv.style.borderRadius = '8px';
+      errorDiv.style.fontWeight = '500';
+      errorDiv.style.textAlign = 'center';
+      errorDiv.style.fontSize = '1.05em';
+      callSection.parentNode.insertBefore(errorDiv, callSection);
+    }
+    // No redirect, just show the error message
   }
 });
 </script>

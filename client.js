@@ -71,7 +71,7 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
-const signalingServer = new WebSocket('wss://9e7a1f7e9398.ngrok-free.app');
+const signalingServer = new WebSocket('wss://97b3bca32bf9.ngrok-free.app');
 
 let peerConnection;
 let dataChannel;
@@ -170,6 +170,30 @@ function setupPeerConnection(stream) {
 }
 
 document.getElementById('startButton').addEventListener('click', () => {
+    // Check if user is authenticated
+    if (!auth.currentUser) {
+        // Show red error message near call section
+        let callSection = document.querySelector('.call-section');
+        if (callSection && !document.getElementById('callAuthErrorMsg')) {
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'callAuthErrorMsg';
+            errorDiv.textContent = 'Log in to make call';
+            errorDiv.style.color = '#e53935';
+            errorDiv.style.background = 'rgba(255,0,0,0.07)';
+            errorDiv.style.padding = '8px 16px';
+            errorDiv.style.margin = '12px 0';
+            errorDiv.style.borderRadius = '8px';
+            errorDiv.style.fontWeight = '500';
+            errorDiv.style.textAlign = 'center';
+            errorDiv.style.fontSize = '1.05em';
+            callSection.parentNode.insertBefore(errorDiv, callSection);
+            setTimeout(() => {
+                if (errorDiv.parentNode) errorDiv.parentNode.removeChild(errorDiv);
+            }, 2500);
+        }
+        return;
+    }
+    // ...existing code for starting call...
     const remoteOverlay = document.getElementById('remoteOverlay');
     if (remoteOverlay) {
         remoteOverlay.style.display = 'flex';
@@ -200,7 +224,25 @@ document.getElementById('startButton').addEventListener('click', () => {
             })
             .catch(error => {
                 console.error('Error accessing media devices:', error);
-                alert('Camera and microphone access is required to start a call.');
+                // Show camera/mic error as red text near call section
+                let callSection = document.querySelector('.call-section');
+                if (callSection && !document.getElementById('mediaErrorMsg')) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.id = 'mediaErrorMsg';
+                    errorDiv.textContent = 'Camera and microphone access is required to start a call.';
+                    errorDiv.style.color = '#e53935';
+                    errorDiv.style.background = 'rgba(255,0,0,0.07)';
+                    errorDiv.style.padding = '8px 16px';
+                    errorDiv.style.margin = '12px 0';
+                    errorDiv.style.borderRadius = '8px';
+                    errorDiv.style.fontWeight = '500';
+                    errorDiv.style.textAlign = 'center';
+                    errorDiv.style.fontSize = '1.05em';
+                    callSection.parentNode.insertBefore(errorDiv, callSection);
+                    setTimeout(() => {
+                        if (errorDiv.parentNode) errorDiv.parentNode.removeChild(errorDiv);
+                    }, 2500);
+                }
             });
     } else {
         setupPeerConnection(localStream);

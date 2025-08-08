@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login to Peaple</title>
@@ -26,6 +27,63 @@ window.auth = firebase.auth();
 <body class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex items-center justify-center">
   <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
     <div class="mb-6 text-center">
+    
+<script>
+// Email Link (passwordless) sign-in logic
+const sendEmailLinkBtn = document.getElementById('sendEmailLinkBtn');
+const emailLinkInput = document.getElementById('emailLinkInput');
+if (sendEmailLinkBtn) {
+  sendEmailLinkBtn.addEventListener('click', function() {
+    const email = emailLinkInput.value.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      alert('Please enter your email.');
+      return;
+    }
+    if (!emailPattern.test(email)) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+    const actionCodeSettings = {
+      url: window.location.origin + '/login.html',
+      handleCodeInApp: true,
+      iOS: {
+        bundleId: 'com.example.ios'
+      },
+      android: {
+        packageName: 'com.example.android',
+        installApp: true,
+        minimumVersion: '12'
+      },
+      // linkDomain: 'peaple-c3f4b.firebaseapp.com' // Uncomment and set if you use a custom domain
+    };
+    auth.sendSignInLinkToEmail(email, actionCodeSettings)
+      .then(() => {
+        window.localStorage.setItem('emailForSignIn', email);
+        alert('Sign-in link sent! Check your email.');
+      })
+      .catch((error) => {
+        alert(error.message);
+      });
+  });
+}
+
+// Complete sign-in with email link if present in URL
+if (auth.isSignInWithEmailLink(window.location.href)) {
+  let email = window.localStorage.getItem('emailForSignIn');
+  if (!email) {
+    email = window.prompt('Please provide your email for confirmation');
+  }
+  auth.signInWithEmailLink(email, window.location.href)
+    .then((result) => {
+      window.localStorage.removeItem('emailForSignIn');
+      window.location.href = 'index.html';
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+}
+</script>
       <h1 class="text-3xl font-bold text-indigo-700">Join here as Peaple</h1>
       <p class="text-gray-600">Peaple - for - People.</p>
     </div>
@@ -36,10 +94,32 @@ window.auth = firebase.auth();
       <button id="registerBtn" class="py-2 px-4 text-indigo-600 border border-indigo-600 rounded-full">Register</button>
     </div>
 
+    <!-- Passwordless Email Link Sign-in -->
+    <div class="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+      <label for="emailLinkInput" class="block text-blue-700 text-sm font-semibold mb-1">Sign in with Email Link:</label>
+      <div class="flex gap-2">
+        <input type="email" id="emailLinkInput" name="emailLinkInput" placeholder="Enter your email for link sign-in" class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        <button type="button" id="sendEmailLinkBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Send Link</button>
+      </div>
+      <div class="text-xs text-blue-700 mt-1">A sign-in link will be sent to your email. Click it to sign in.</div>
+    </div>
+
+
+    <!-- Divider between passwordless and email/password login -->
+    <div class="flex items-center my-6">
+      <hr class="flex-grow border-gray-300" />
+      <span class="mx-3 text-gray-500 text-sm font-semibold">or</span>
+      <hr class="flex-grow border-gray-300" />
+    </div>
+
     <!-- Login Form -->
     <form id="loginForm" class="space-y-4">
+
+
+
       <input type="email" id="loginEmail" name="loginEmail" placeholder="Email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
       <input type="password" id="loginPassword" name="loginPassword" placeholder="Password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
+      <div id="loginErrorMsg" style="color:#e53935;font-size:0.97em;margin-top:2px;min-height:18px;"></div>
       <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Login</button>
 
       <div class="flex items-center justify-between mt-4">
@@ -125,17 +205,30 @@ window.auth = firebase.auth();
       window.location.href = oauthUrl;
     });
 
+
+
+
+
 // Firebase Login
 loginForm.addEventListener("submit", function(e) {
   e.preventDefault();
   const email = loginForm.querySelector('input[type="email"]').value;
   const password = loginForm.querySelector('input[type="password"]').value;
+  const loginErrorMsg = document.getElementById('loginErrorMsg');
+  loginErrorMsg.textContent = '';
   auth.signInWithEmailAndPassword(email, password)
     .then(() => {
       window.location.href = "index.html";
     })
     .catch((error) => {
-      alert(error.message);
+      if (error.code === 'auth/user-not-found') {
+        loginErrorMsg.textContent = '';
+        setTimeout(() => {
+          document.getElementById('registerBtn').click();
+        }, 300);
+      } else {
+        loginErrorMsg.textContent = 'Email or Password is Invalid';
+      }
     });
 });
 
