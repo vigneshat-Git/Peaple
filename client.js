@@ -1,4 +1,3 @@
-
 // Firebase Authentication for browser:
 // Make sure you have included firebase-app-compat.js and firebase-auth-compat.js in your HTML before this script.
 if (!firebase.apps.length) {
@@ -52,6 +51,7 @@ endButton.addEventListener('click', () => {
         peerConnection = null;
         remoteVideo.srcObject = null;
         updateCallButtons(false);
+        setLocalVideoActive(false); // Hide video, show placeholder
         // Optionally clear chat and reset UI
         const messagesContainer = document.getElementById('messagesContainer');
         if (messagesContainer) messagesContainer.innerHTML = '';
@@ -71,7 +71,7 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
-const signalingServer = new WebSocket('wss://97b3bca32bf9.ngrok-free.app');
+const signalingServer = new WebSocket('wss://d791950853b6.ngrok-free.app');
 
 let peerConnection;
 let dataChannel;
@@ -169,31 +169,10 @@ function setupPeerConnection(stream) {
     };
 }
 
-document.getElementById('startButton').addEventListener('click', () => {
-    // Check if user is authenticated
-    if (!auth.currentUser) {
-        // Show red error message near call section
-        let callSection = document.querySelector('.call-section');
-        if (callSection && !document.getElementById('callAuthErrorMsg')) {
-            const errorDiv = document.createElement('div');
-            errorDiv.id = 'callAuthErrorMsg';
-            errorDiv.textContent = 'Log in to make call';
-            errorDiv.style.color = '#e53935';
-            errorDiv.style.background = 'rgba(255,0,0,0.07)';
-            errorDiv.style.padding = '8px 16px';
-            errorDiv.style.margin = '12px 0';
-            errorDiv.style.borderRadius = '8px';
-            errorDiv.style.fontWeight = '500';
-            errorDiv.style.textAlign = 'center';
-            errorDiv.style.fontSize = '1.05em';
-            callSection.parentNode.insertBefore(errorDiv, callSection);
-            setTimeout(() => {
-                if (errorDiv.parentNode) errorDiv.parentNode.removeChild(errorDiv);
-            }, 2500);
-        }
-        return;
-    }
-    // ...existing code for starting call...
+
+// Only allow call/camera if user is logged in (auth check is handled in index.html script)
+// This function should be called ONLY if user is authenticated
+function startCallIfAuthenticated() {
     const remoteOverlay = document.getElementById('remoteOverlay');
     if (remoteOverlay) {
         remoteOverlay.style.display = 'flex';
@@ -219,36 +198,20 @@ document.getElementById('startButton').addEventListener('click', () => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
                 localStream = stream;
+                setLocalVideoActive(true); // Show video, hide placeholder
                 setupPeerConnection(stream);
                 createOffer();
             })
             .catch(error => {
                 console.error('Error accessing media devices:', error);
-                // Show camera/mic error as red text near call section
-                let callSection = document.querySelector('.call-section');
-                if (callSection && !document.getElementById('mediaErrorMsg')) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.id = 'mediaErrorMsg';
-                    errorDiv.textContent = 'Camera and microphone access is required to start a call.';
-                    errorDiv.style.color = '#e53935';
-                    errorDiv.style.background = 'rgba(255,0,0,0.07)';
-                    errorDiv.style.padding = '8px 16px';
-                    errorDiv.style.margin = '12px 0';
-                    errorDiv.style.borderRadius = '8px';
-                    errorDiv.style.fontWeight = '500';
-                    errorDiv.style.textAlign = 'center';
-                    errorDiv.style.fontSize = '1.05em';
-                    callSection.parentNode.insertBefore(errorDiv, callSection);
-                    setTimeout(() => {
-                        if (errorDiv.parentNode) errorDiv.parentNode.removeChild(errorDiv);
-                    }, 2500);
-                }
+                alert('Camera and microphone access is required to start a call.');
             });
     } else {
+        setLocalVideoActive(true); // Show video, hide placeholder
         setupPeerConnection(localStream);
         createOffer();
     }
-});
+}
 
 // Handle incoming offer
 function handleOffer(offer) {
@@ -306,3 +269,59 @@ messageInput.addEventListener('keydown', function(e) {
         sendButton.click();
     }
 });
+
+// When local video stream starts, hide the placeholder and show video
+function setLocalVideoActive(isActive) {
+  const localVideo = document.getElementById('localVideo');
+  const placeholder = document.getElementById('localVideoPlaceholder');
+  if (isActive) {
+    localVideo.classList.add('active');
+    if (placeholder) placeholder.style.display = 'none';
+  } else {
+    localVideo.classList.remove('active');
+    if (placeholder) placeholder.style.display = '';
+  }
+}
+
+// Hide/show local video placeholder based on video events
+(function setupLocalVideoPlaceholderEvents() {
+  const localVideo = document.getElementById('localVideo');
+  const placeholder = document.getElementById('localVideoPlaceholder');
+  if (!localVideo || !placeholder) return;
+  function showPlaceholder() {
+    localVideo.classList.remove('active');
+    placeholder.style.display = '';
+  }
+  function hidePlaceholder() {
+    localVideo.classList.add('active');
+    placeholder.style.display = 'none';
+  }
+  localVideo.addEventListener('loadeddata', hidePlaceholder);
+  localVideo.addEventListener('emptied', showPlaceholder);
+  // Initial state
+  if (localVideo.readyState >= 2) {
+    hidePlaceholder();
+  } else {
+    showPlaceholder();
+  }
+})();
+
+(function setupLocalVideoPlaceholderPolling() {
+  const localVideo = document.getElementById('localVideo');
+  const placeholder = document.getElementById('localVideoPlaceholder');
+  if (!localVideo || !placeholder) return;
+  let lastState = null;
+  setInterval(() => {
+    const hasStream = !!localVideo.srcObject;
+    if (hasStream !== lastState) {
+      lastState = hasStream;
+      if (hasStream) {
+        localVideo.classList.add('active');
+        placeholder.style.display = 'none';
+      } else {
+        localVideo.classList.remove('active');
+        placeholder.style.display = '';
+      }
+    }
+  }, 200);
+})();

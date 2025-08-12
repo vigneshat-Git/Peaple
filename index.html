@@ -103,9 +103,55 @@ window.auth = firebase.auth(); // Make auth globally available
     #sendButton:hover {
       background: #388e3c;
     }
-    /* Prevent local video from being mirrored */
-    #localVideo {
-      transform: scaleX(-1) !important;
+    .local-video-pip {
+      position: absolute;
+      bottom: 18px;
+      right: 18px;
+      width: 72px !important;
+      height: 48px !important;
+      z-index: 3;
+      background: #e0e0e0;
+      border-radius: 10px;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      transition: width 0.25s cubic-bezier(.4,2,.6,1), height 0.25s cubic-bezier(.4,2,.6,1), box-shadow 0.18s;
+      cursor: pointer;
+      display: block;
+      transform: scaleX(-1);
+    }
+    .local-video-pip:hover {
+      width: 120px !important;
+      height: 80px !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+    }
+    .local-video-placeholder {
+      position: absolute;
+      bottom: 18px;
+      right: 18px;
+      width: 72px;
+      height: 48px;
+      z-index: 4;
+      background: #e0e0e0;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: width 0.25s, height 0.25s;
+    }
+    .local-video-pip:hover + .local-video-placeholder,
+    .local-video-placeholder:hover {
+      width: 120px;
+      height: 80px;
+    }
+    .local-video-placeholder svg {
+      width: 28px;
+      height: 28px;
+      color: #888;
+      opacity: 0.7;
+    }
+    .local-video-pip.active + .local-video-placeholder {
+      display: none !important;
     }
   </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -220,11 +266,16 @@ window.auth = firebase.auth(); // Make auth globally available
       <div class="video-call">
         <h3>Video Call</h3>
         <div class="video-area">
-          <div style="position:relative;">
-            <video id="remoteVideo" autoplay style="z-index:1;width:100%;height:100%;background:#000;"></video>
+          <div style="position:relative;width:100%;aspect-ratio:16/9;max-width:520px;margin:auto;">
+            <video id="remoteVideo" autoplay style="z-index:1;width:100%;height:100%;background:#000;border-radius:16px;object-fit:cover;display:block;"></video>
             <div id="remoteOverlay" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;color:gray;font-size:1.2em;z-index:2;pointer-events:none;">Waiting for People</div>
+            <video id="localVideo" autoplay muted class="local-video-pip"></video>
+            <div id="localVideoPlaceholder" class="local-video-placeholder">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V8a2 2 0 00-2-2H4z" />
+              </svg>
+            </div>
           </div>
-          <video id="localVideo" autoplay></video>
         </div>
         <div class="call-tools">
           <div style="display:flex;justify-content:center;align-items:center;gap:18px;width:100%;">
@@ -368,30 +419,102 @@ window.auth = firebase.auth(); // Make auth globally available
   </footer>
 </body>
 
-
 <script>
-// Add a red error message near the call section if not logged in
-auth.onAuthStateChanged((user) => {
-  if (!user) {
-    // Find or create the error message container near the call section
-    let callSection = document.querySelector('.call-section');
-    if (callSection && !document.getElementById('authErrorMsg')) {
-      const errorDiv = document.createElement('div');
-      errorDiv.id = 'authErrorMsg';
-      errorDiv.textContent = 'Please log in to access this feature.';
-      errorDiv.style.color = '#e53935';
-      errorDiv.style.background = 'rgba(255,0,0,0.07)';
-      errorDiv.style.padding = '8px 16px';
-      errorDiv.style.margin = '12px 0';
-      errorDiv.style.borderRadius = '8px';
-      errorDiv.style.fontWeight = '500';
-      errorDiv.style.textAlign = 'center';
-      errorDiv.style.fontSize = '1.05em';
-      callSection.parentNode.insertBefore(errorDiv, callSection);
-    }
-    // No redirect, just show the error message
+
+// Modal logic for login/register
+const modalHtml = `
+  <div id="loginRegisterModal" class="modal-overlay" style="display:none;">
+    <div class="modal-window">
+      <h2 class="modal-title">Log in to make call</h2>
+      <div class="modal-section">
+        <div class="modal-desc">If you already have an account, then</div>
+        <button class="modal-btn" id="modalLoginBtn">Log In</button>
+      </div>
+      <div class="modal-or"><span>or</span></div>
+      <div class="modal-section">
+        <div class="modal-desc">New here? Join as Peaple!</div>
+        <button class="modal-btn" id="modalRegisterBtn">Register</button>
+      </div>
+      <button class="modal-close" id="modalCloseBtn">&times;</button>
+    </div>
+  </div>
+`;
+document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+// Modal CSS
+const modalStyle = document.createElement('style');
+modalStyle.innerHTML = `
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 9999;
   }
-});
+  .modal-window {
+    background: #fff; border-radius: 18px; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    padding: 36px 32px 24px 32px; min-width: 320px; max-width: 90vw; position: relative; text-align: center;
+    animation: modalPop 0.2s cubic-bezier(.4,2,.6,1) 1;
+  }
+  @keyframes modalPop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 18px; color: #2db2ff; }
+  .modal-section { margin-bottom: 18px; }
+  .modal-desc { font-size: 1.08rem; color: #444; margin-bottom: 10px; }
+  .modal-btn {
+    width: 100%; padding: 10px 0; border-radius: 8px; border: none; font-size: 1.08rem; font-weight: 600;
+    background: linear-gradient(90deg, #2db2ff 60%, #09ff00 100%); color: #fff; margin-bottom: 4px; cursor: pointer;
+    transition: background 0.18s, color 0.18s, transform 0.18s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .modal-btn:hover { background: #249643; color: #fff; transform: scale(1.04); }
+  .modal-or { margin: 10px 0 18px 0; position: relative; text-align: center; }
+  .modal-or span { background: #fff; padding: 0 12px; color: #aaa; font-size: 1rem; position: relative; z-index: 1; }
+  .modal-or:before { content: ""; display: block; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #eee; z-index: 0; }
+  .modal-close {
+    position: absolute; top: 10px; right: 16px; background: none; border: none; font-size: 1.6rem; color: #aaa; cursor: pointer;
+    transition: color 0.18s;
+  }
+  .modal-close:hover { color: #e53935; }
+`;
+document.head.appendChild(modalStyle);
+
+// Modal JS logic
+const modal = document.getElementById('loginRegisterModal');
+const openModal = () => { modal.style.display = 'flex'; };
+const closeModal = () => { modal.style.display = 'none'; };
+document.getElementById('modalCloseBtn').onclick = closeModal;
+document.getElementById('modalLoginBtn').onclick = () => { window.location.href = 'login.html#login'; };
+document.getElementById('modalRegisterBtn').onclick = () => { window.location.href = 'login.html#register'; };
+window.addEventListener('keydown', (e) => { if (modal.style.display === 'flex' && e.key === 'Escape') closeModal(); });
+
+// Start Call button logic
+const startBtn = document.getElementById('startButton');
+if (startBtn) {
+  startBtn.addEventListener('click', function(e) {
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        openModal();
+      } else {
+        // Place your start call logic here for logged-in users
+      }
+    });
+  });
+}
+
+
+// Prevent call/camera if not logged in, show modal instead
+if (startBtn) {
+  startBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    auth.onAuthStateChanged((user) => {
+      if (!user) {
+        openModal();
+      } else {
+        // Only here should you start the call and request camera/mic
+        if (typeof startCallIfAuthenticated === 'function') {
+          startCallIfAuthenticated();
+        }
+      }
+    });
+  });
+}
 </script>
 
 

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login to Peaple</title>
@@ -25,7 +24,7 @@ window.auth = firebase.auth();
 </script>
 </head>
 <body class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex items-center justify-center">
-  <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+  <div id="authCard" class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 transition-all duration-500 ease-in-out" style="opacity:1; transform:scale(1);">
     <div class="mb-6 text-center">
     
 <script>
@@ -89,9 +88,10 @@ if (auth.isSignInWithEmailLink(window.location.href)) {
     </div>
 
     <!-- Toggle Buttons -->
-    <div class="flex justify-center mb-6 space-x-4">
-      <button id="loginBtn" class="py-2 px-4 text-white bg-indigo-600 rounded-full">Login</button>
-      <button id="registerBtn" class="py-2 px-4 text-indigo-600 border border-indigo-600 rounded-full">Register</button>
+    <div class="flex justify-center mb-6 space-x-4 relative">
+      <button id="loginBtn" class="py-2 px-4 text-white bg-indigo-600 rounded-full relative z-10 transition-all duration-300">Login</button>
+      <button id="registerBtn" class="py-2 px-4 text-indigo-600 border border-indigo-600 rounded-full relative z-10 transition-all duration-300">Register</button>
+      <span id="toggleUnderline" class="absolute bottom-0 left-0 h-1 bg-indigo-400 rounded-full transition-all duration-300" style="width:0px; height:0px;z-index:1;"></span>
     </div>
 
     <!-- Passwordless Email Link Sign-in -->
@@ -104,23 +104,16 @@ if (auth.isSignInWithEmailLink(window.location.href)) {
       <div class="text-xs text-blue-700 mt-1">A sign-in link will be sent to your email. Click it to sign in.</div>
     </div>
 
-
-    <!-- Divider between passwordless and email/password login -->
-    <div class="flex items-center my-6">
-      <hr class="flex-grow border-gray-300" />
-      <span class="mx-3 text-gray-500 text-sm font-semibold">or</span>
-      <hr class="flex-grow border-gray-300" />
-    </div>
-
     <!-- Login Form -->
-    <form id="loginForm" class="space-y-4">
+  <form id="loginForm" class="space-y-4 transition-all duration-500 ease-in-out">
 
 
 
-      <input type="email" id="loginEmail" name="loginEmail" placeholder="Email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
-      <input type="password" id="loginPassword" name="loginPassword" placeholder="Password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
-      <div id="loginErrorMsg" style="color:#e53935;font-size:0.97em;margin-top:2px;min-height:18px;"></div>
-      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Login</button>
+
+  <input type="email" id="loginEmail" name="loginEmail" placeholder="Email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
+  <input type="password" id="loginPassword" name="loginPassword" placeholder="Password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
+  <div id="loginError" class="text-red-600 text-sm mt-1 mb-1" style="display:none;"></div>
+  <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Login</button>
 
       <div class="flex items-center justify-between mt-4">
         <hr class="w-1/4 border-gray-300" />
@@ -141,7 +134,7 @@ if (auth.isSignInWithEmailLink(window.location.href)) {
     </form>
 
     <!-- Register Form -->
-    <form id="registerForm" class="space-y-4 hidden">
+  <form id="registerForm" class="space-y-4 hidden transition-all duration-500 ease-in-out">
       <div class="flex space-x-2">
         <input type="text" id="registerFirstName" name="registerFirstName" placeholder="First Name" class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
         <input type="text" id="registerLastName" name="registerLastName" placeholder="Last Name" class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
@@ -175,23 +168,84 @@ if (auth.isSignInWithEmailLink(window.location.href)) {
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
 
-    loginBtn.addEventListener("click", () => {
-      loginForm.classList.remove("hidden");
-      registerForm.classList.add("hidden");
+
+    // Card and button transition helpers
+    function cardTransition(toRegister) {
+      const card = document.getElementById('authCard');
+      card.style.transition = 'opacity 0.5s, transform 0.5s';
+      card.style.opacity = 0;
+      card.style.transform = 'scale(0.96)';
+      setTimeout(() => {
+        card.style.opacity = 1;
+        card.style.transform = 'scale(1)';
+      }, 200);
+      // Toggle underline effect for buttons
+      const underline = document.getElementById('toggleUnderline');
+      if (toRegister) {
+        underline.style.transform = 'translateX(110px)';
+        underline.style.width = '110px';
+      } else {
+        underline.style.transform = 'translateX(0)';
+        underline.style.width = '90px';
+      }
+    }
+    function fadeIn(el) {
+      el.style.opacity = 0;
+      el.style.display = '';
+      el.style.transform = 'translateY(20px)';
+      setTimeout(() => {
+        el.style.transition = 'opacity 0.4s, transform 0.4s';
+        el.style.opacity = 1;
+        el.style.transform = 'translateY(0)';
+      }, 10);
+    }
+    function fadeOut(el, cb) {
+      el.style.transition = 'opacity 0.4s, transform 0.4s';
+      el.style.opacity = 0;
+      el.style.transform = 'translateY(-20px)';
+      setTimeout(() => {
+        el.style.display = 'none';
+        if (cb) cb();
+      }, 400);
+    }
+    function showLogin() {
+      if (!loginForm.classList.contains('hidden')) return;
+      cardTransition(false);
+      fadeOut(registerForm, () => {
+        registerForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+        fadeIn(loginForm);
+      });
       loginBtn.classList.add("bg-indigo-600", "text-white");
       loginBtn.classList.remove("text-indigo-600", "border");
       registerBtn.classList.remove("bg-indigo-600", "text-white");
       registerBtn.classList.add("text-indigo-600", "border");
-    });
-
-    registerBtn.addEventListener("click", () => {
-      registerForm.classList.remove("hidden");
-      loginForm.classList.add("hidden");
+    }
+    function showRegister() {
+      cardTransition(true);
+      fadeOut(loginForm, () => {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        fadeIn(registerForm);
+      });
       registerBtn.classList.add("bg-indigo-600", "text-white");
       registerBtn.classList.remove("text-indigo-600", "border");
       loginBtn.classList.remove("bg-indigo-600", "text-white");
       loginBtn.classList.add("text-indigo-600", "border");
-    });
+    }
+    loginBtn.addEventListener("click", showLogin);
+    registerBtn.addEventListener("click", showRegister);
+
+    // Auto-switch based on hash
+    function handleHash() {
+      if (window.location.hash === '#register') {
+        showRegister();
+      } else {
+        showLogin();
+      }
+    }
+    window.addEventListener('hashchange', handleHash);
+    handleHash();
 
     // Google login button handler for login form
     const googleLoginBtn = loginForm.querySelector("button img[src*='google-color']").parentElement;
@@ -210,24 +264,39 @@ if (auth.isSignInWithEmailLink(window.location.href)) {
 
 
 // Firebase Login
+
 loginForm.addEventListener("submit", function(e) {
   e.preventDefault();
   const email = loginForm.querySelector('input[type="email"]').value;
   const password = loginForm.querySelector('input[type="password"]').value;
-  const loginErrorMsg = document.getElementById('loginErrorMsg');
-  loginErrorMsg.textContent = '';
+  const errorDiv = document.getElementById('loginError');
+  errorDiv.style.display = 'none';
+  errorDiv.textContent = '';
+  const loginBtnEl = loginForm.querySelector('button[type="submit"]');
+  if (loginBtnEl) loginBtnEl.disabled = true;
   auth.signInWithEmailAndPassword(email, password)
     .then(() => {
       window.location.href = "index.html";
     })
     .catch((error) => {
       if (error.code === 'auth/user-not-found') {
-        loginErrorMsg.textContent = '';
-        setTimeout(() => {
-          document.getElementById('registerBtn').click();
-        }, 300);
+        // Redirect to register section for new user
+        window.location.hash = '#register';
+        showRegister();
+        const regEmail = document.getElementById('registerEmail');
+        if (regEmail) regEmail.value = email;
+        if (loginBtnEl) loginBtnEl.disabled = false;
+      } else if (
+        error.code === 'auth/wrong-password' ||
+        error.code === 'auth/invalid-login-credentials'
+      ) {
+        errorDiv.textContent = 'Invalid Id or Password, If you are new, please register.'; 
+        errorDiv.style.display = 'block';
+        if (loginBtnEl) loginBtnEl.disabled = false;
       } else {
-        loginErrorMsg.textContent = 'Email or Password is Invalid';
+        errorDiv.textContent = error.message;
+        errorDiv.style.display = 'block';
+        if (loginBtnEl) loginBtnEl.disabled = false;
       }
     });
 });
