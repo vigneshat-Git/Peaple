@@ -19,12 +19,20 @@
   background: none;
 }
 .dropdown-item i {
-  color: #2db2ff;
+  color: #4caf50;
   font-size: 1.1em;
 }
 .dropdown-item:hover {
   background: #f8faff;
-  color: #2db2ff;
+  color: #388e3c;
+}
+.menu {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 body {
   font-family: 'Roboto', Verdana, Geneva, Tahoma, sans-serif;
@@ -65,11 +73,7 @@ font-weight: 300;
   box-shadow: 0 0 0 4px rgba(0, 132, 255, 0.18), 0 2px 8px rgba(0,0,0,0.12);
   transition: box-shadow 0.2s;
 }
-.menu {
-  width: 32px;
-  height: 32px;
-  cursor: pointer;
-}
+
 
 .banner {
   position: relative;
@@ -107,8 +111,8 @@ font-weight: 300;
 .banner-btn {
   display: inline-block;
   margin-top: 16px;
-  background: #2db2ff;
-  color: #fff;
+  background: #4caf50;
+  color: #222;
   padding: 10px 24px;
   border-radius: 6px;
   text-decoration: none;
@@ -117,9 +121,9 @@ font-weight: 300;
   transition: background 0.2s, transform 0.2s;
 }
 .banner-btn:hover {
-  background: #09ff00;
+  background: #388e3c;
   color: #222;
-  transform: scale(1.05);
+  /* transform: scale(1.05); */
 }
 
 .profile-report-section {
@@ -221,7 +225,7 @@ font-weight: 300;
 .buy-peas-btn:hover {
   background: #249643;
   color: #222;
-  transform: scale(1.05);
+  /* transform: scale(1.05); */
 }
 .weekly-report-card {
   flex: 1;
@@ -234,7 +238,7 @@ font-weight: 300;
 .weekly-report-card h2 {
   margin-top: 0;
   font-size: 1.4rem;
-  color: #2db2ff;
+  color: #388e3c;
   font-weight: 700;
 }
 .weekly-report-card div {
@@ -260,7 +264,7 @@ font-weight: 300;
 .call-header h1 {
   margin: 0;
   font-size: 2rem;
-  color: #2db2ff;
+  color: #388e3c;
 }
 .live-users {
   font-size: 1.1rem;
@@ -318,7 +322,7 @@ font-weight: 300;
   gap: 12px;
 }
 .call-tools button {
-  background: #2db2ff;
+  background: #4caf50;
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -328,9 +332,9 @@ font-weight: 300;
   transition: background 0.2s, transform 0.2s;
 }
 .call-tools button:hover {
-  background: #249643;
-  color: #222;
-  transform: scale(1.05);
+  background: #388e3c;
+  color: #fff;
+  /* transform: scale(1.05); */
 }
 .chat-box {
   display: flex;
@@ -369,7 +373,7 @@ font-weight: 300;
 .input-container button:hover {
   background: #249643;
   color: #222;
-  transform: scale(1.05);
+  /* transform: scale(1.05); */
 }
 
 .recent-connections {
@@ -424,7 +428,7 @@ font-weight: 300;
 .reconnect-btn:hover {
   background: #249643;
   color: #222;
-  transform: scale(1.05);
+  /* transform: scale(1.05); */
 }
 .view-all-connections {
   display: inline-block;

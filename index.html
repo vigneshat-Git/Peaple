@@ -173,11 +173,12 @@ window.auth = firebase.auth(); // Make auth globally available
             <a href="#" class="dropdown-item"><i class="fa-solid fa-coins fa-fw"></i> Peas</a>
             <a href="#" class="dropdown-item"><i class="fa-solid fa-headset fa-fw"></i> Support</a>
             <a href="#" class="dropdown-item"><i class="fa-solid fa-file-lines fa-fw"></i> Terms & FAQ</a>
-            <button onclick="auth.signOut().then(() => window.location.href = 'login.html')" class="dropdown-item" style="background:none; border:none; padding:0; font: inherit; color: inherit; cursor: pointer;">
-  <i class="fa-solid fa-right-from-bracket fa-fw"></i> Log out
+            <a href="#" id="dropdownLogout" class="dropdown-item"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Log out</a>
+            
 </button>          </div>
         </div>
-        <i class="fa-duotone fa-solid fa-bars fa-lg"></i>
+        <!-- <i class="fa-duotone fa-solid fa-bars fa-lg menu"></i> -->
+        <img src="hamburger-menu-svgrepo-com.svg" alt="menu" class="menu">
       </div>
     </div>
   </header>
@@ -386,6 +387,37 @@ window.auth = firebase.auth(); // Make auth globally available
           profileIcon.classList.remove('profile-focused');
         }
       });
+      // Logout confirmation modal logic
+      const logoutModalHtml = `
+        <div id="logoutConfirmModal" class="modal-overlay" style="display:none;">
+          <div class="modal-window" style="min-width:320px;max-width:90vw;text-align:center;">
+            <h2 class="modal-title" style="font-size:1.3rem;color:#e53935;">You are trying to log out!</h2>
+            <div style="margin:18px 0 28px 0;font-size:1.08rem;color:#444;">Are you sure?</div>
+            <div style="display:flex;justify-content:space-between;gap:18px;">
+              <button id="logoutCancelBtn" style="flex:1;background:#eee;color:#333;border:none;border-radius:8px;padding:10px 0;font-size:1.08rem;font-weight:600;cursor:pointer;transition:background 0.18s;">Cancel</button>
+              <button id="logoutConfirmBtn" style="flex:1;background:#e53935;color:#fff;border:none;border-radius:8px;padding:10px 0;font-size:1.08rem;font-weight:600;cursor:pointer;transition:background 0.18s;margin-left:12px;">Log out</button>
+            </div>
+            <button class="modal-close" id="logoutModalCloseBtn" style="position:absolute;top:10px;right:16px;background:none;border:none;font-size:1.6rem;color:#aaa;cursor:pointer;transition:color 0.18s;">&times;</button>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', logoutModalHtml);
+
+      const logoutModal = document.getElementById('logoutConfirmModal');
+      const openLogoutModal = () => { logoutModal.style.display = 'flex'; };
+      const closeLogoutModal = () => { logoutModal.style.display = 'none'; };
+      document.getElementById('logoutModalCloseBtn').onclick = closeLogoutModal;
+      document.getElementById('logoutCancelBtn').onclick = closeLogoutModal;
+      document.getElementById('logoutConfirmBtn').onclick = function() {
+        auth.signOut().then(() => window.location.href = 'login.html');
+      };
+      const dropdownLogout = document.getElementById('dropdownLogout');
+      if (dropdownLogout) {
+        dropdownLogout.addEventListener('click', function(e) {
+          e.preventDefault();
+          openLogoutModal();
+        });
+      }
     </script>
     <div class="footer-main">
       <div class="footer-features">
