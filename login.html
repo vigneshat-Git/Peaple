@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login to Peaple</title>
+  <!-- ad -->
+   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7220479975152766"
+     crossorigin="anonymous"></script>
+  <!-- ad -->
   <script src="https://cdn.tailwindcss.com"></script>
 <!-- Firebase scripts -->
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
@@ -22,6 +26,11 @@ if (!firebase.apps.length) {
 }
 window.auth = firebase.auth();
 </script>
+
+<div class="header_logo" style="position: absolute; top: 20px; left: 20px;">
+        <a href="index.html"><img class="header_logo_img" src="Peaple_header-logo.svg" alt="Peaple Logo" style="width: 100px; height: 100px;"></a>
+      </div>
+      
 </head>
 <body class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex items-center justify-center">
   <div id="authCard" class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 transition-all duration-500 ease-in-out" style="opacity:1; transform:scale(1);">
@@ -304,9 +313,17 @@ loginForm.addEventListener("submit", function(e) {
 // Firebase Registration
 registerForm.addEventListener("submit", function(e) {
   e.preventDefault();
+  const firstName = registerForm.querySelector('#registerFirstName').value.trim();
+  const lastName = registerForm.querySelector('#registerLastName').value.trim();
   const email = registerForm.querySelector('input[type="email"]').value;
   const password = registerForm.querySelector('input[type="password"]').value;
   auth.createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      // Set displayName to first + last name
+      return userCredential.user.updateProfile({
+        displayName: firstName + ' ' + lastName
+      });
+    })
     .then(() => {
       window.location.href = "index.html";
     })

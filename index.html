@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Peaple - Video Chat</title>
+  <!-- ad -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7220479975152766"
+     crossorigin="anonymous"></script>
+  <!-- ad -->
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="Peaple_header-logo.svg">
 
@@ -153,6 +157,23 @@ window.auth = firebase.auth(); // Make auth globally available
     .local-video-pip.active + .local-video-placeholder {
       display: none !important;
     }
+    #loginHeaderBtn {
+      background: linear-gradient(90deg, #e3f2fd 0%, #fff 100%);
+      border: 1px solid #90caf9;
+      color: #1976d2;
+      font-size: 1.08rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px 22px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+      transition: background 0.18s, box-shadow 0.18s, color 0.18s;
+    }
+    #loginHeaderBtn:hover {
+      background: linear-gradient(90deg, #bbdefb 0%, #e3f2fd 100%);
+      color: #0d47a1;
+      box-shadow: 0 4px 16px rgba(33,150,243,0.16);
+    }
   </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -162,10 +183,10 @@ window.auth = firebase.auth(); // Make auth globally available
   <header class="header">
     <div class="header-container">
       <div class="header_logo">
-        <img class="header_logo_img" src="Peaple_header-logo.svg" alt="Peaple Logo">
+        <a href="index.html"><img class="header_logo_img" src="Peaple_header-logo.svg" alt="Peaple Logo"></a>
       </div>
       <div class="profile">
-        <div class="profile-dropdown-wrapper" style="position:relative;">
+        <div id="profileDropdownWrapper" style="position:relative; display:none;">
           <img class="profileIcon" src="https://i.pravatar.cc/40" alt="Profile" id="profileIcon">
           <div class="profile-dropdown" id="profileDropdown" style="display:none; position:absolute; right:0; top:52px; background:#fff; box-shadow:0 4px 16px rgba(0,0,0,0.12); border-radius:10px; min-width:180px; z-index:100;">
             <a href="login.html" class="dropdown-item"><i class="fa-solid fa-user fa-fw"></i> Profile</a>
@@ -174,9 +195,9 @@ window.auth = firebase.auth(); // Make auth globally available
             <a href="#" class="dropdown-item"><i class="fa-solid fa-headset fa-fw"></i> Support</a>
             <a href="#" class="dropdown-item"><i class="fa-solid fa-file-lines fa-fw"></i> Terms & FAQ</a>
             <a href="#" id="dropdownLogout" class="dropdown-item"><i class="fa-solid fa-right-from-bracket fa-fw"></i> Log out</a>
-            
-</button>          </div>
+          </div>
         </div>
+        <button id="loginHeaderBtn" style="display:none; background:none; border:none; color:#444; font-size:1.08rem; font-weight:600; cursor:pointer; padding:8px 18px; border-radius:8px; transition:background 0.18s;">Log in</button>
         <!-- <i class="fa-duotone fa-solid fa-bars fa-lg menu"></i> -->
         <img src="hamburger-menu-svgrepo-com.svg" alt="menu" class="menu">
       </div>
@@ -547,6 +568,95 @@ if (startBtn) {
     });
   });
 }
+
+// Profile header logic: show Log in if not logged in, show profile if logged in
+window.addEventListener('DOMContentLoaded', function() {
+  const profileDropdownWrapper = document.getElementById('profileDropdownWrapper');
+  const loginHeaderBtn = document.getElementById('loginHeaderBtn');
+  auth.onAuthStateChanged(function(user) {
+    if (user) {
+      // Show profile icon/dropdown
+      profileDropdownWrapper.style.display = '';
+      loginHeaderBtn.style.display = 'none';
+    } else {
+      // Show Log in button
+      profileDropdownWrapper.style.display = 'none';
+      loginHeaderBtn.style.display = '';
+    }
+  });
+  if (loginHeaderBtn) {
+    loginHeaderBtn.onclick = function() {
+      window.location.href = 'login.html#login';
+    };
+  }
+  // Display user name in profile card
+  const profileNameEl = document.querySelector('.profile-card-content h2');
+  const profileCardContent = document.querySelector('.profile-card-content');
+  if (profileCardContent) {
+    // Remove previous edit button if any
+    const oldEditBtn = profileCardContent.querySelector('.profile-edit-btn');
+    if (oldEditBtn) oldEditBtn.remove();
+    // Add edit icon button (Font Awesome or SVG)
+    const editBtn = document.createElement('button');
+    editBtn.className = 'profile-edit-btn';
+    editBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.25 2.25 0 113.182 3.182l-10.5 10.5a2.25 2.25 0 01-.878.547l-4.5 1.5a.75.75 0 01-.948-.948l1.5-4.5a2.25 2.25 0 01.547-.878l10.5-10.5z"/></svg>';
+    editBtn.title = 'Edit name';
+    editBtn.style.background = 'none';
+    editBtn.style.border = 'none';
+    editBtn.style.color = '#1976d2';
+    editBtn.style.cursor = 'pointer';
+    editBtn.style.padding = '0 0 0 8px';
+    editBtn.style.verticalAlign = 'middle';
+    // Place icon inline with username
+    profileNameEl.style.display = 'inline-flex';
+    profileNameEl.style.alignItems = 'center';
+    profileNameEl.after(editBtn);
+    editBtn.onclick = function() {
+      // Show input for new name
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = profileNameEl.textContent;
+      input.style.fontSize = '1.08rem';
+      input.style.padding = '4px 10px';
+      input.style.borderRadius = '6px';
+      input.style.border = '1px solid #90caf9';
+      input.style.marginLeft = '0';
+      input.style.width = 'calc(100% - 28px)';
+      input.style.display = 'inline-block';
+      input.style.verticalAlign = 'middle';
+      profileNameEl.replaceWith(input);
+      editBtn.style.display = 'none';
+      input.focus();
+      input.onblur = function() {
+        // Save new name to Firebase
+        const newName = input.value.trim();
+        if (auth.currentUser && newName) {
+          auth.currentUser.updateProfile({ displayName: newName }).then(() => {
+            input.replaceWith(profileNameEl);
+            profileNameEl.textContent = newName;
+            editBtn.style.display = '';
+          });
+        } else {
+          input.replaceWith(profileNameEl);
+          editBtn.style.display = '';
+        }
+      };
+      input.onkeydown = function(e) {
+        if (e.key === 'Enter') {
+          input.blur();
+        }
+      };
+    };
+  }
+  auth.onAuthStateChanged(function(user) {
+    if (user && profileNameEl) {
+      // Use displayName if set, else fallback to email
+      profileNameEl.textContent = user.displayName || user.email || 'User';
+    } else if (profileNameEl) {
+      profileNameEl.textContent = 'User';
+    }
+  });
+});
 </script>
 
 

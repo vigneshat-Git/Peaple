@@ -78,9 +78,9 @@ font-weight: 300;
 .banner {
   position: relative;
   width: 100%;
-  max-width: 1200px;
-  margin: 32px auto 0 auto;
-  border-radius: 16px;
+  /* max-width: 1200px; */
+  margin: 0 auto 0 auto;
+  /* border-radius: 16px; */
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
@@ -130,7 +130,7 @@ font-weight: 300;
   display: flex;
   gap: 32px;
   max-width: 1200px;
-  margin: 40px auto;
+  margin:  40px auto auto auto;
 }
 .profile-card {
   flex: 0 0 350px;
