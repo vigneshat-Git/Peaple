@@ -1,336 +1,369 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login to Peaple</title>
-  <!-- ad -->
-   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7220479975152766"
-     crossorigin="anonymous"></script>
-  <!-- ad -->
-  <script src="https://cdn.tailwindcss.com"></script>
-<!-- Firebase scripts -->
-<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
-<script>
-if (!firebase.apps.length) {
-  firebase.initializeApp({
-    apiKey: "AIzaSyCnUEkbwEYruJ0YvbQkjFC9yfMDJsLqOlo",
-    authDomain: "peaple-c3f4b.firebaseapp.com",
-    projectId: "peaple-c3f4b",
-    storageBucket: "peaple-c3f4b.firebasestorage.app",
-    messagingSenderId: "814546020627",
-    appId: "1:814546020627:web:c43c90fe6af9a0359e52e6",
-    measurementId: "G-KHQMHRZ08F"
-  });
-}
-window.auth = firebase.auth();
-</script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login to Peaple</title>
 
-<div class="header_logo" style="position: absolute; top: 20px; left: 20px;">
-        <a href="index.html"><img class="header_logo_img" src="Peaple_header-logo.svg" alt="Peaple Logo" style="width: 100px; height: 100px;"></a>
-      </div>
-      
-</head>
-<body class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex items-center justify-center">
-  <div id="authCard" class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 transition-all duration-500 ease-in-out" style="opacity:1; transform:scale(1);">
-    <div class="mb-6 text-center">
-    
-<script>
-// Email Link (passwordless) sign-in logic
-const sendEmailLinkBtn = document.getElementById('sendEmailLinkBtn');
-const emailLinkInput = document.getElementById('emailLinkInput');
-if (sendEmailLinkBtn) {
-  sendEmailLinkBtn.addEventListener('click', function() {
-    const email = emailLinkInput.value.trim();
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) {
-      alert('Please enter your email.');
-      return;
-    }
-    if (!emailPattern.test(email)) {
-      alert('Please enter a valid email address.');
-      return;
-    }
-    const actionCodeSettings = {
-      url: window.location.origin + '/login.html',
-      handleCodeInApp: true,
-      iOS: {
-        bundleId: 'com.example.ios'
-      },
-      android: {
-        packageName: 'com.example.android',
-        installApp: true,
-        minimumVersion: '12'
-      },
-      // linkDomain: 'peaple-c3f4b.firebaseapp.com' // Uncomment and set if you use a custom domain
-    };
-    auth.sendSignInLinkToEmail(email, actionCodeSettings)
-      .then(() => {
-        window.localStorage.setItem('emailForSignIn', email);
-        alert('Sign-in link sent! Check your email.');
-      })
-      .catch((error) => {
-        alert(error.message);
-      });
-  });
-}
+    <!-- ads -->
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7220479975152766"
+      crossorigin="anonymous"
+    ></script>
 
-// Complete sign-in with email link if present in URL
-if (auth.isSignInWithEmailLink(window.location.href)) {
-  let email = window.localStorage.getItem('emailForSignIn');
-  if (!email) {
-    email = window.prompt('Please provide your email for confirmation');
-  }
-  auth.signInWithEmailLink(email, window.location.href)
-    .then((result) => {
-      window.localStorage.removeItem('emailForSignIn');
-      window.location.href = 'index.html';
-    })
-    .catch((error) => {
-      alert(error.message);
-    });
-}
-</script>
-      <h1 class="text-3xl font-bold text-indigo-700">Join here as Peaple</h1>
-      <p class="text-gray-600">Peaple - for - People.</p>
+    <!-- tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Firebase (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+
+    <script>
+      // Init Firebase - keep your own config
+      if (!firebase.apps.length) {
+        firebase.initializeApp({
+          apiKey: "AIzaSyCnUEkbwEYruJ0YvbQkjFC9yfMDJsLqOlo",
+          authDomain: "peaple-c3f4b.firebaseapp.com",
+          projectId: "peaple-c3f4b",
+          storageBucket: "peaple-c3f4b.firebasestorage.app",
+          messagingSenderId: "814546020627",
+          appId: "1:814546020627:web:c43c90fe6af9a0359e52e6",
+          measurementId: "G-KHQMHRZ08F",
+        });
+      }
+      // compat auth object available as auth
+      window.auth = firebase.auth();
+    </script>
+  </head>
+
+  <body
+    class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex items-center justify-center"
+  >
+    <!-- header -->
+    <div class="header_logo" style="position: absolute; top: 20px; left: 20px">
+      <a href="index.html"
+        ><img
+          class="header_logo_img"
+          src="Peaple_header-logo.svg"
+          alt="Peaple Logo"
+          style="width: 100px; height: 100px"
+      /></a>
     </div>
 
-    <!-- Toggle Buttons -->
-    <div class="flex justify-center mb-6 space-x-4 relative">
-      <button id="loginBtn" class="py-2 px-4 text-white bg-indigo-600 rounded-full relative z-10 transition-all duration-300">Login</button>
-      <button id="registerBtn" class="py-2 px-4 text-indigo-600 border border-indigo-600 rounded-full relative z-10 transition-all duration-300">Register</button>
-      <span id="toggleUnderline" class="absolute bottom-0 left-0 h-1 bg-indigo-400 rounded-full transition-all duration-300" style="width:0px; height:0px;z-index:1;"></span>
+    <div
+      id="authCard"
+      class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 transition-all duration-500 ease-in-out"
+      style="opacity: 1; transform: scale(1)"
+    >
+      <div class="mb-6 text-center">
+        <h1 class="text-3xl font-bold text-indigo-700">Join here as Peaple</h1>
+        <p class="text-gray-600">Peaple - for - People.</p>
+      </div>
+
+      <!-- Toggle Buttons -->
+      <div class="flex justify-center mb-6 space-x-4 relative">
+        <button
+          id="loginBtn"
+          class="py-2 px-4 text-white bg-indigo-600 rounded-full relative z-10 transition-all duration-300"
+        >
+          Login
+        </button>
+        <button
+          id="registerBtn"
+          class="py-2 px-4 text-indigo-600 border border-indigo-600 rounded-full relative z-10 transition-all duration-300"
+        >
+          Register
+        </button>
+        <span
+          id="toggleUnderline"
+          class="absolute bottom-0 left-0 h-1 bg-indigo-400 rounded-full transition-all duration-300"
+          style="width: 0px; height: 0px; z-index: 1"
+        ></span>
+      </div>
+
+      <!-- Passwordless Email Link Sign-in -->
+      <div class="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+        <label
+          for="emailLinkInput"
+          class="block text-blue-700 text-sm font-semibold mb-1"
+          >Sign in with Email Link:</label
+        >
+        <div class="flex gap-2">
+          <input
+            type="email"
+            id="emailLinkInput"
+            name="emailLinkInput"
+            placeholder="Enter your email for link sign-in"
+            class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <button
+            type="button"
+            id="sendEmailLinkBtn"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Send Link
+          </button>
+        </div>
+        <div class="text-xs text-blue-700 mt-1">
+          A sign-in link will be sent to your email. Click it to sign in.
+        </div>
+        <div
+          id="emailLinkStatus"
+          class="text-green-600 text-sm mt-2 mb-2"
+          style="display:none;"
+        ></div>
+      </div>
+
+      <!-- Login Form -->
+      <form
+        id="loginForm"
+        class="space-y-4 transition-all duration-500 ease-in-out"
+      >
+        <input
+          type="email"
+          id="loginEmail"
+          name="loginEmail"
+          placeholder="Email"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          required
+        />
+        <input
+          type="password"
+          id="loginPassword"
+          name="loginPassword"
+          placeholder="Password"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          required
+        />
+        <div
+          id="loginError"
+          class="text-red-600 text-sm mt-1 mb-1"
+          style="display: none"
+        ></div>
+        <button
+          type="submit"
+          class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700"
+        >
+          Login
+        </button>
+
+        <div class="flex items-center justify-between mt-4">
+          <hr class="w-1/4 border-gray-300" />
+          <span class="text-gray-500 text-sm">or continue with</span>
+          <hr class="w-1/4 border-gray-300" />
+        </div>
+
+        <div class="flex space-x-4 mt-4 justify-center">
+          <button
+            id="googleLoginBtn"
+            class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              class="w-5 h-5"
+            />
+            <span class="text-sm">Google</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Register Form -->
+      <form
+        id="registerForm"
+        class="space-y-4 hidden transition-all duration-500 ease-in-out"
+      >
+        <div class="flex space-x-2">
+          <input
+            type="text"
+            id="registerFirstName"
+            name="registerFirstName"
+            placeholder="First Name"
+            class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            required
+          />
+          <input
+            type="text"
+            id="registerLastName"
+            name="registerLastName"
+            placeholder="Last Name"
+            class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            required
+          />
+        </div>
+        <input
+          type="email"
+          id="registerEmail"
+          name="registerEmail"
+          placeholder="Email"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          required
+        />
+        <input
+          type="password"
+          id="registerPassword"
+          name="registerPassword"
+          placeholder="Create Password"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          required
+        />
+        <input
+          type="password"
+          id="registerConfirmPassword"
+          name="registerConfirmPassword"
+          placeholder="Confirm Password"
+          class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          required
+        />
+        <button
+          type="submit"
+          class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700"
+        >
+          Register
+        </button>
+
+        <div class="flex items-center justify-between mt-4">
+          <hr class="w-1/4 border-gray-300" />
+          <span class="text-gray-500 text-sm">or sign up with</span>
+          <hr class="w-1/4 border-gray-300" />
+        </div>
+
+        <div class="flex space-x-4 mt-4 justify-center">
+          <button
+            type="button"
+            id="googleRegisterBtn"
+            class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              class="w-5 h-5"
+            />
+            <span class="text-sm">Google</span>
+          </button>
+        </div>
+      </form>
     </div>
 
-    <!-- Passwordless Email Link Sign-in -->
-    <div class="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
-      <label for="emailLinkInput" class="block text-blue-700 text-sm font-semibold mb-1">Sign in with Email Link:</label>
-      <div class="flex gap-2">
-        <input type="email" id="emailLinkInput" name="emailLinkInput" placeholder="Enter your email for link sign-in" class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" />
-        <button type="button" id="sendEmailLinkBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Send Link</button>
-      </div>
-      <div class="text-xs text-blue-700 mt-1">A sign-in link will be sent to your email. Click it to sign in.</div>
-    </div>
+    <!-- Main script -->
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const HOME_URL = "index.html"; // change to "/home" if you have a home page
+        const loginBtn = document.getElementById("loginBtn");
+        const registerBtn = document.getElementById("registerBtn");
+        const loginForm = document.getElementById("loginForm");
+        const registerForm = document.getElementById("registerForm");
+        const sendEmailLinkBtn = document.getElementById("sendEmailLinkBtn");
+        const emailLinkInput = document.getElementById("emailLinkInput");
+        const emailLinkStatus = document.getElementById("emailLinkStatus");
+        const loginErrorDiv = document.getElementById("loginError");
+        const googleLoginBtn = document.getElementById("googleLoginBtn");
+        const googleRegisterBtn = document.getElementById("googleRegisterBtn");
 
-    <!-- Login Form -->
-  <form id="loginForm" class="space-y-4 transition-all duration-500 ease-in-out">
+        // Status helper
+        function showStatus(message, type = "success") {
+          if (!emailLinkStatus) return;
+          emailLinkStatus.textContent = message;
+          emailLinkStatus.style.display = "block";
+          emailLinkStatus.className =
+            type === "success"
+              ? "text-green-600 text-sm mt-2 mb-2"
+              : "text-red-600 text-sm mt-2 mb-2";
+        }
 
+        // Switch UI
+        function showLogin() {
+          loginForm.classList.remove("hidden");
+          registerForm.classList.add("hidden");
+          loginBtn.classList.add("bg-indigo-600", "text-white");
+          registerBtn.classList.remove("bg-indigo-600", "text-white");
+        }
+        function showRegister() {
+          registerForm.classList.remove("hidden");
+          loginForm.classList.add("hidden");
+          registerBtn.classList.add("bg-indigo-600", "text-white");
+          loginBtn.classList.remove("bg-indigo-600", "text-white");
+        }
+        loginBtn.addEventListener("click", showLogin);
+        registerBtn.addEventListener("click", showRegister);
 
+        // Email link auth
+        if (sendEmailLinkBtn) {
+          sendEmailLinkBtn.addEventListener("click", () => {
+            const email = emailLinkInput.value.trim();
+            const actionCodeSettings = {
+              url: window.location.origin + window.location.pathname,
+              handleCodeInApp: true,
+            };
+            auth
+              .sendSignInLinkToEmail(email, actionCodeSettings)
+              .then(() => {
+                window.localStorage.setItem("emailForSignIn", email);
+                showStatus("Sign-in link sent! Check your email.");
+              })
+              .catch((error) => showStatus(error.message, "error"));
+          });
+        }
+        if (auth.isSignInWithEmailLink(window.location.href)) {
+          let email = window.localStorage.getItem("emailForSignIn");
+          if (!email) email = window.prompt("Confirm your email");
+          auth
+            .signInWithEmailLink(email, window.location.href)
+            .then(() => {
+              window.localStorage.removeItem("emailForSignIn");
+              window.location.href = HOME_URL;
+            })
+            .catch((error) => showStatus(error.message, "error"));
+        }
 
+        // Email/password login
+        loginForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const email = loginForm.querySelector("#loginEmail").value;
+          const password = loginForm.querySelector("#loginPassword").value;
+          auth
+            .signInWithEmailAndPassword(email, password)
+            .then(() => (window.location.href = HOME_URL))
+            .catch((error) => {
+              loginErrorDiv.textContent = error.message;
+              loginErrorDiv.style.display = "block";
+            });
+        });
 
-  <input type="email" id="loginEmail" name="loginEmail" placeholder="Email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
-  <input type="password" id="loginPassword" name="loginPassword" placeholder="Password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
-  <div id="loginError" class="text-red-600 text-sm mt-1 mb-1" style="display:none;"></div>
-  <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Login</button>
+        // Registration
+        registerForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const firstName = registerForm.querySelector("#registerFirstName").value;
+          const lastName = registerForm.querySelector("#registerLastName").value;
+          const email = registerForm.querySelector("#registerEmail").value;
+          const password = registerForm.querySelector("#registerPassword").value;
+          const confirmPassword = registerForm.querySelector(
+            "#registerConfirmPassword"
+          ).value;
+          if (password !== confirmPassword) {
+            alert("Passwords do not match.");
+            return;
+          }
+          auth
+            .createUserWithEmailAndPassword(email, password)
+            .then((cred) => cred.user.updateProfile({ displayName: firstName + " " + lastName }))
+            .then(() => (window.location.href = HOME_URL))
+            .catch((err) => alert(err.message));
+        });
 
-      <div class="flex items-center justify-between mt-4">
-        <hr class="w-1/4 border-gray-300" />
-        <span class="text-gray-500 text-sm">or continue with</span>
-        <hr class="w-1/4 border-gray-300" />
-      </div>
-
-      <div class="flex space-x-4 mt-4 justify-center">
-        <button class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2">
-          <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" />
-          <span class="text-sm">Google</span>
-        </button>
-        <button class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2">
-          <img src="https://www.svgrepo.com/show/448234/linkedin.svg" class="w-5 h-5" />
-          <span class="text-sm">LinkedIn</span>
-        </button>
-      </div>
-    </form>
-
-    <!-- Register Form -->
-  <form id="registerForm" class="space-y-4 hidden transition-all duration-500 ease-in-out">
-      <div class="flex space-x-2">
-        <input type="text" id="registerFirstName" name="registerFirstName" placeholder="First Name" class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
-        <input type="text" id="registerLastName" name="registerLastName" placeholder="Last Name" class="w-1/2 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
-      </div>
-      <input type="email" id="registerEmail" name="registerEmail" placeholder="Email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
-      <input type="password" id="registerPassword" name="registerPassword" placeholder="Create Password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" required />
-      <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Register</button>
-
-      <div class="flex items-center justify-between mt-4">
-        <hr class="w-1/4 border-gray-300" />
-        <span class="text-gray-500 text-sm">or sign up with</span>
-        <hr class="w-1/4 border-gray-300" />
-      </div>
-
-      <div class="flex space-x-4 mt-4 justify-center">
-        <button class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2">
-          <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" />
-          <span class="text-sm">Google</span>
-        </button>
-        <button class="bg-white border px-4 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center space-x-2">
-          <img src="https://www.svgrepo.com/show/448234/linkedin.svg" class="w-5 h-5" />
-          <span class="text-sm">LinkedIn</span>
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <script>
-    const loginBtn = document.getElementById("loginBtn");
-    const registerBtn = document.getElementById("registerBtn");
-    const loginForm = document.getElementById("loginForm");
-    const registerForm = document.getElementById("registerForm");
-
-
-    // Card and button transition helpers
-    function cardTransition(toRegister) {
-      const card = document.getElementById('authCard');
-      card.style.transition = 'opacity 0.5s, transform 0.5s';
-      card.style.opacity = 0;
-      card.style.transform = 'scale(0.96)';
-      setTimeout(() => {
-        card.style.opacity = 1;
-        card.style.transform = 'scale(1)';
-      }, 200);
-      // Toggle underline effect for buttons
-      const underline = document.getElementById('toggleUnderline');
-      if (toRegister) {
-        underline.style.transform = 'translateX(110px)';
-        underline.style.width = '110px';
-      } else {
-        underline.style.transform = 'translateX(0)';
-        underline.style.width = '90px';
-      }
-    }
-    function fadeIn(el) {
-      el.style.opacity = 0;
-      el.style.display = '';
-      el.style.transform = 'translateY(20px)';
-      setTimeout(() => {
-        el.style.transition = 'opacity 0.4s, transform 0.4s';
-        el.style.opacity = 1;
-        el.style.transform = 'translateY(0)';
-      }, 10);
-    }
-    function fadeOut(el, cb) {
-      el.style.transition = 'opacity 0.4s, transform 0.4s';
-      el.style.opacity = 0;
-      el.style.transform = 'translateY(-20px)';
-      setTimeout(() => {
-        el.style.display = 'none';
-        if (cb) cb();
-      }, 400);
-    }
-    function showLogin() {
-      if (!loginForm.classList.contains('hidden')) return;
-      cardTransition(false);
-      fadeOut(registerForm, () => {
-        registerForm.classList.add('hidden');
-        loginForm.classList.remove('hidden');
-        fadeIn(loginForm);
+        // Google auth
+        function handleGoogleLogin() {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          auth
+            .signInWithPopup(provider)
+            .then((result) => {
+              console.log("Google login:", result.user);
+              window.location.href = HOME_URL;
+            })
+            .catch((err) => alert(err.message));
+        }
+        googleLoginBtn.addEventListener("click", handleGoogleLogin);
+        googleRegisterBtn.addEventListener("click", handleGoogleLogin);
       });
-      loginBtn.classList.add("bg-indigo-600", "text-white");
-      loginBtn.classList.remove("text-indigo-600", "border");
-      registerBtn.classList.remove("bg-indigo-600", "text-white");
-      registerBtn.classList.add("text-indigo-600", "border");
-    }
-    function showRegister() {
-      cardTransition(true);
-      fadeOut(loginForm, () => {
-        loginForm.classList.add('hidden');
-        registerForm.classList.remove('hidden');
-        fadeIn(registerForm);
-      });
-      registerBtn.classList.add("bg-indigo-600", "text-white");
-      registerBtn.classList.remove("text-indigo-600", "border");
-      loginBtn.classList.remove("bg-indigo-600", "text-white");
-      loginBtn.classList.add("text-indigo-600", "border");
-    }
-    loginBtn.addEventListener("click", showLogin);
-    registerBtn.addEventListener("click", showRegister);
-
-    // Auto-switch based on hash
-    function handleHash() {
-      if (window.location.hash === '#register') {
-        showRegister();
-      } else {
-        showLogin();
-      }
-    }
-    window.addEventListener('hashchange', handleHash);
-    handleHash();
-
-    // Google login button handler for login form
-    const googleLoginBtn = loginForm.querySelector("button img[src*='google-color']").parentElement;
-    googleLoginBtn.addEventListener("click", function(e) {
-      e.preventDefault();
-      // Replace with your Google OAuth client ID and redirect URI
-      const clientId = 'YOUR_CLIENT_ID';
-      const redirectUri = 'YOUR_REDIRECT_URI';
-      const scope = 'email profile';
-      const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scope)}`;
-      window.location.href = oauthUrl;
-    });
-
-
-
-
-
-// Firebase Login
-
-loginForm.addEventListener("submit", function(e) {
-  e.preventDefault();
-  const email = loginForm.querySelector('input[type="email"]').value;
-  const password = loginForm.querySelector('input[type="password"]').value;
-  const errorDiv = document.getElementById('loginError');
-  errorDiv.style.display = 'none';
-  errorDiv.textContent = '';
-  const loginBtnEl = loginForm.querySelector('button[type="submit"]');
-  if (loginBtnEl) loginBtnEl.disabled = true;
-  auth.signInWithEmailAndPassword(email, password)
-    .then(() => {
-      window.location.href = "index.html";
-    })
-    .catch((error) => {
-      if (error.code === 'auth/user-not-found') {
-        // Redirect to register section for new user
-        window.location.hash = '#register';
-        showRegister();
-        const regEmail = document.getElementById('registerEmail');
-        if (regEmail) regEmail.value = email;
-        if (loginBtnEl) loginBtnEl.disabled = false;
-      } else if (
-        error.code === 'auth/wrong-password' ||
-        error.code === 'auth/invalid-login-credentials'
-      ) {
-        errorDiv.textContent = 'Invalid Id or Password, If you are new, please register.'; 
-        errorDiv.style.display = 'block';
-        if (loginBtnEl) loginBtnEl.disabled = false;
-      } else {
-        errorDiv.textContent = error.message;
-        errorDiv.style.display = 'block';
-        if (loginBtnEl) loginBtnEl.disabled = false;
-      }
-    });
-});
-
-// Firebase Registration
-registerForm.addEventListener("submit", function(e) {
-  e.preventDefault();
-  const firstName = registerForm.querySelector('#registerFirstName').value.trim();
-  const lastName = registerForm.querySelector('#registerLastName').value.trim();
-  const email = registerForm.querySelector('input[type="email"]').value;
-  const password = registerForm.querySelector('input[type="password"]').value;
-  auth.createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      // Set displayName to first + last name
-      return userCredential.user.updateProfile({
-        displayName: firstName + ' ' + lastName
-      });
-    })
-    .then(() => {
-      window.location.href = "index.html";
-    })
-    .catch((error) => {
-      alert(error.message);
-    });
-});
-  </script>
-</body>
+    </script>
+  </body>
 </html>

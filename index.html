@@ -661,4 +661,54 @@ window.addEventListener('DOMContentLoaded', function() {
 
 
 <script src="client.js"></script>
+
+<!-- Display MongoDB Data -->
+<script>
+// Helper to create a list from data
+function createList(title, items, fields) {
+  const section = document.createElement('section');
+  section.style.margin = '32px 0';
+  const h2 = document.createElement('h2');
+  h2.textContent = title;
+  section.appendChild(h2);
+  const ul = document.createElement('ul');
+  ul.style.background = '#f7f7fa';
+  ul.style.padding = '12px 18px';
+  ul.style.borderRadius = '10px';
+  ul.style.listStyle = 'none';
+  ul.style.maxWidth = '600px';
+  ul.style.margin = '10px 0';
+  items.forEach(item => {
+    const li = document.createElement('li');
+    li.style.marginBottom = '8px';
+    li.textContent = fields.map(f => `${f}: ${item[f]}`).join(' | ');
+    ul.appendChild(li);
+  });
+  section.appendChild(ul);
+  return section;
+}
+
+async function fetchAndDisplay() {
+  // Users
+  try {
+    const usersRes = await fetch('http://localhost:3000/api/users');
+    const users = await usersRes.json();
+    document.body.appendChild(createList('Registered Users', users, ['username', 'email']));
+  } catch (e) { console.error('Failed to fetch users', e); }
+  // Calls
+  try {
+    const callsRes = await fetch('http://localhost:3000/api/calls');
+    const calls = await callsRes.json();
+    document.body.appendChild(createList('Call Data', calls, ['userId', 'callTime', 'duration', 'details']));
+  } catch (e) { console.error('Failed to fetch calls', e); }
+  // Profiles
+  try {
+    const profilesRes = await fetch('http://localhost:3000/api/profiles');
+    const profiles = await profilesRes.json();
+    document.body.appendChild(createList('Profiles', profiles, ['userId', 'bio', 'avatarUrl', 'otherInfo']));
+  } catch (e) { console.error('Failed to fetch profiles', e); }
+}
+
+window.addEventListener('DOMContentLoaded', fetchAndDisplay);
+</script>
 </html>
