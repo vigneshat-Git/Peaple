@@ -11,7 +11,11 @@
   "description": "",
   "dependencies": {
     "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "firebase": "^12.0.0",
+    "mongoose": "^8.18.0",
     "ws": "^8.18.1"
   }
 }
