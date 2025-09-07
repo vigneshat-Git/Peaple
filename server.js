@@ -11,10 +11,16 @@ wss.on('listening', () => {
     console.log('WebSocket server is running on ws://localhost:8000');
 });
 wss.on('connection', ws => {
-    console.log('👤 New client connected');
+    console.log('New client connected');
     waitingQueue.push(ws);
     matchUsers();
     ws.on('message', message => {
+        // Log all messages for debugging
+        try {
+            const msgObj = typeof message === 'string' ? JSON.parse(message) : message;
+            console.log('WS message:', msgObj);
+        } catch { console.log('WS message:', message); }
+        // Always forward any message to the paired peer
         if (ws.pairedWith && ws.pairedWith.readyState === WebSocket.OPEN) {
             ws.pairedWith.send(message);
         }
@@ -52,9 +58,16 @@ app.use(bodyParser.json());
 // Register user
 app.post('/api/register', async (req, res) => {
     try {
-        const { username, email, password } = req.body;
-        const user = new User({ username, email, password });
-        await user.save();
+        const { username, email, password, avatarUrl } = req.body;
+        // Upsert: if user exists, update avatarUrl if provided, else create
+        let user = await User.findOne({ email });
+        if (user) {
+            if (avatarUrl) user.avatarUrl = avatarUrl;
+            await user.save();
+        } else {
+            user = new User({ username, email, password, avatarUrl });
+            await user.save();
+        }
         res.status(201).json(user);
     } catch (err) {
         res.status(500).json({ error: err.message });

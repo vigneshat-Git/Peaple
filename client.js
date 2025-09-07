@@ -124,13 +124,43 @@ function setupPeerConnection(stream) {
         }
         try {
             const parsedData = JSON.parse(data);
-            if (parsedData.type === 'matched') {
-                isMatched = true;
-                updateCallButtons(true);
+                        if (parsedData.type === 'matched') {
+                                isMatched = true;
+                                updateCallButtons(true);
+                                // Send my name to the peer (immediately and after a short delay for reliability)
+                                function sendMyName() {
+                                    if (auth.currentUser) {
+                                        signalingServer.send(JSON.stringify({
+                                                type: 'myName',
+                                                name: auth.currentUser.displayName || auth.currentUser.email
+                                        }));
+                                    }
+                                }
+                                sendMyName();
+                                setTimeout(sendMyName, 500); // send again after 500ms
+                        }
+            if (parsedData.type === 'myName') {
+                if (typeof showConnectedUserName === 'function') {
+                    showConnectedUserName(parsedData.name);
+                }
             }
             if (parsedData.type === 'offer') {
+                // After receiving offer, send my name again for reliability
+                if (auth.currentUser) {
+                  signalingServer.send(JSON.stringify({
+                      type: 'myName',
+                      name: auth.currentUser.displayName || auth.currentUser.email
+                  }));
+                }
                 handleOffer(parsedData.offer);
             } else if (parsedData.type === 'answer') {
+                // After receiving answer, send my name again for reliability
+                if (auth.currentUser) {
+                  signalingServer.send(JSON.stringify({
+                      type: 'myName',
+                      name: auth.currentUser.displayName || auth.currentUser.email
+                  }));
+                }
                 handleAnswer(parsedData.answer);
             } else if (parsedData.type === 'candidate') {
                 handleCandidate(parsedData.candidate);
@@ -141,6 +171,9 @@ function setupPeerConnection(stream) {
                 const remoteOverlay = document.getElementById('remoteOverlay');
                 if (remoteOverlay) {
                     remoteOverlay.style.display = 'flex';
+                }
+                if (typeof showConnectedUserName === 'function') {
+                    showConnectedUserName('');
                 }
             }
         } catch (error) {
