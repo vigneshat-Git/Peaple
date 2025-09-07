@@ -315,6 +315,7 @@
             .catch((error) => showStatus(error.message, "error"));
         }
 
+
         // Email/password login
         loginForm.addEventListener("submit", (e) => {
           e.preventDefault();
@@ -322,7 +323,20 @@
           const password = loginForm.querySelector("#loginPassword").value;
           auth
             .signInWithEmailAndPassword(email, password)
-            .then(() => (window.location.href = HOME_URL))
+            .then((cred) => {
+              // Send login data to backend for MongoDB storage
+              fetch('http://localhost:3000/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  username: cred.user.displayName || cred.user.email,
+                  email: cred.user.email,
+                  password: 'firebase', // Not storing real password
+                })
+              }).finally(() => {
+                window.location.href = HOME_URL;
+              });
+            })
             .catch((error) => {
               loginErrorDiv.textContent = error.message;
               loginErrorDiv.style.display = "block";
@@ -336,9 +350,7 @@
           const lastName = registerForm.querySelector("#registerLastName").value;
           const email = registerForm.querySelector("#registerEmail").value;
           const password = registerForm.querySelector("#registerPassword").value;
-          const confirmPassword = registerForm.querySelector(
-            "#registerConfirmPassword"
-          ).value;
+          const confirmPassword = registerForm.querySelector("#registerConfirmPassword").value;
           if (password !== confirmPassword) {
             alert("Passwords do not match.");
             return;
@@ -346,7 +358,20 @@
           auth
             .createUserWithEmailAndPassword(email, password)
             .then((cred) => cred.user.updateProfile({ displayName: firstName + " " + lastName }))
-            .then(() => (window.location.href = HOME_URL))
+            .then(() => {
+              // Send registration data to backend for MongoDB storage
+              fetch('http://localhost:3000/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  username: firstName + ' ' + lastName,
+                  email: email,
+                  password: 'firebase' // Not storing real password
+                })
+              }).finally(() => {
+                window.location.href = HOME_URL;
+              });
+            })
             .catch((err) => alert(err.message));
         });
 
@@ -356,8 +381,19 @@
           auth
             .signInWithPopup(provider)
             .then((result) => {
-              console.log("Google login:", result.user);
-              window.location.href = HOME_URL;
+              // Send Google user data to backend for MongoDB storage
+              fetch('http://localhost:3000/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  username: result.user.displayName || result.user.email,
+                  email: result.user.email,
+                  password: 'firebase-google',
+                  avatarUrl: result.user.photoURL || ''
+                })
+              }).finally(() => {
+                window.location.href = HOME_URL;
+              });
             })
             .catch((err) => alert(err.message));
         }

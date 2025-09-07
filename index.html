@@ -275,18 +275,14 @@ window.auth = firebase.auth(); // Make auth globally available
     <div class="call-main">
       <div class="search-people">
         <h3>Search People</h3>
-        <input type="text" placeholder="Search users..." class="search-bar">
-        <div class="search-results">
-          <!-- Example user -->
-          <div class="user-result">
-            <img src="https://i.pravatar.cc/40" alt="User">
-            <span>User Name</span>
-            <span class="user-prof">Professional</span>
-          </div>
+        <input type="text" placeholder="Search users..." class="search-bar" id="searchPeopleInput">
+  <div class="search-results" id="searchResults" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; background: #fff;">
+          <!-- Users will be loaded here dynamically -->
         </div>
       </div>
       <div class="video-call">
-        <h3>Video Call</h3>
+  <h3>Video Call</h3>
+  <div id="connectedUserInfo" style="margin-bottom:8px;font-weight:600;color:#1976d2;"></div>
         <div class="video-area">
           <div style="position:relative;width:100%;aspect-ratio:16/9;max-width:520px;margin:auto;">
             <video id="remoteVideo" autoplay style="z-index:1;width:100%;height:100%;background:#000;border-radius:16px;object-fit:cover;display:block;"></video>
@@ -589,126 +585,160 @@ window.addEventListener('DOMContentLoaded', function() {
       window.location.href = 'login.html#login';
     };
   }
-  // Display user name in profile card
+  // Display user name and profile picture in profile card
   const profileNameEl = document.querySelector('.profile-card-content h2');
   const profileCardContent = document.querySelector('.profile-card-content');
-  if (profileCardContent) {
-    // Remove previous edit button if any
-    const oldEditBtn = profileCardContent.querySelector('.profile-edit-btn');
-    if (oldEditBtn) oldEditBtn.remove();
-    // Add edit icon button (Font Awesome or SVG)
-    const editBtn = document.createElement('button');
-    editBtn.className = 'profile-edit-btn';
-    editBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.25 2.25 0 113.182 3.182l-10.5 10.5a2.25 2.25 0 01-.878.547l-4.5 1.5a.75.75 0 01-.948-.948l1.5-4.5a2.25 2.25 0 01.547-.878l10.5-10.5z"/></svg>';
-    editBtn.title = 'Edit name';
-    editBtn.style.background = 'none';
-    editBtn.style.border = 'none';
-    editBtn.style.color = '#1976d2';
-    editBtn.style.cursor = 'pointer';
-    editBtn.style.padding = '0 0 0 8px';
-    editBtn.style.verticalAlign = 'middle';
-    // Place icon inline with username
-    profileNameEl.style.display = 'inline-flex';
-    profileNameEl.style.alignItems = 'center';
-    profileNameEl.after(editBtn);
-    editBtn.onclick = function() {
-      // Show input for new name
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.value = profileNameEl.textContent;
-      input.style.fontSize = '1.08rem';
-      input.style.padding = '4px 10px';
-      input.style.borderRadius = '6px';
-      input.style.border = '1px solid #90caf9';
-      input.style.marginLeft = '0';
-      input.style.width = 'calc(100% - 28px)';
-      input.style.display = 'inline-block';
-      input.style.verticalAlign = 'middle';
-      profileNameEl.replaceWith(input);
-      editBtn.style.display = 'none';
-      input.focus();
-      input.onblur = function() {
-        // Save new name to Firebase
-        const newName = input.value.trim();
-        if (auth.currentUser && newName) {
-          auth.currentUser.updateProfile({ displayName: newName }).then(() => {
+  const profilePicEl = document.querySelector('.profile-pic');
+  async function setProfileCard(user) {
+    if (!user) {
+      if (profileNameEl) profileNameEl.textContent = 'User';
+      if (profilePicEl) profilePicEl.src = 'https://i.pravatar.cc/100';
+      return;
+    }
+    // Fetch user from backend to get avatarUrl if available
+    let avatar = '';
+    try {
+      const res = await fetch('http://localhost:3000/api/users');
+      const users = await res.json();
+      const found = users.find(u => u.email === user.email);
+      avatar = found && found.avatarUrl ? found.avatarUrl : '';
+    } catch {}
+    if (!avatar && user.photoURL) avatar = user.photoURL;
+    if (!avatar) avatar = `https://i.pravatar.cc/100?u=${encodeURIComponent(user.email)}`;
+    if (profilePicEl) profilePicEl.src = avatar;
+    if (profileNameEl) profileNameEl.textContent = user.displayName || user.email || 'User';
+    // ...existing edit button logic...
+    if (profileCardContent) {
+      const oldEditBtn = profileCardContent.querySelector('.profile-edit-btn');
+      if (oldEditBtn) oldEditBtn.remove();
+      const editBtn = document.createElement('button');
+      editBtn.className = 'profile-edit-btn';
+      editBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.25 2.25 0 113.182 3.182l-10.5 10.5a2.25 2.25 0 01-.878.547l-4.5 1.5a.75.75 0 01-.948-.948l1.5-4.5a2.25 2.25 0 01.547-.878l10.5-10.5z"/></svg>';
+      editBtn.title = 'Edit name';
+      editBtn.style.background = 'none';
+      editBtn.style.border = 'none';
+      editBtn.style.color = '#1976d2';
+      editBtn.style.cursor = 'pointer';
+      editBtn.style.padding = '0 0 0 8px';
+      editBtn.style.verticalAlign = 'middle';
+      profileNameEl.style.display = 'inline-flex';
+      profileNameEl.style.alignItems = 'center';
+      profileNameEl.after(editBtn);
+      editBtn.onclick = function() {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = profileNameEl.textContent;
+        input.style.fontSize = '1.08rem';
+        input.style.padding = '4px 10px';
+        input.style.borderRadius = '6px';
+        input.style.border = '1px solid #90caf9';
+        input.style.marginLeft = '0';
+        input.style.width = 'calc(100% - 28px)';
+        input.style.display = 'inline-block';
+        input.style.verticalAlign = 'middle';
+        profileNameEl.replaceWith(input);
+        editBtn.style.display = 'none';
+        input.focus();
+        input.onblur = function() {
+          const newName = input.value.trim();
+          if (auth.currentUser && newName) {
+            auth.currentUser.updateProfile({ displayName: newName }).then(() => {
+              input.replaceWith(profileNameEl);
+              profileNameEl.textContent = newName;
+              editBtn.style.display = '';
+            });
+          } else {
             input.replaceWith(profileNameEl);
-            profileNameEl.textContent = newName;
             editBtn.style.display = '';
-          });
-        } else {
-          input.replaceWith(profileNameEl);
-          editBtn.style.display = '';
-        }
+          }
+        };
+        input.onkeydown = function(e) {
+          if (e.key === 'Enter') {
+            input.blur();
+          }
+        };
       };
-      input.onkeydown = function(e) {
-        if (e.key === 'Enter') {
-          input.blur();
-        }
-      };
-    };
+    }
   }
   auth.onAuthStateChanged(function(user) {
-    if (user && profileNameEl) {
-      // Use displayName if set, else fallback to email
-      profileNameEl.textContent = user.displayName || user.email || 'User';
-    } else if (profileNameEl) {
-      profileNameEl.textContent = 'User';
-    }
+    setProfileCard(user);
   });
 });
 </script>
 
 
+
+<script>
+// Show connected user's name in the video call section
+function showConnectedUserName(name) {
+  const infoDiv = document.getElementById('connectedUserInfo');
+  if (infoDiv) {
+    if (name) {
+      infoDiv.textContent = `Connected to ${name}`;
+      infoDiv.style.display = '';
+    } else {
+      infoDiv.textContent = '';
+      infoDiv.style.display = 'none';
+    }
+  }
+}
+window.showConnectedUserName = showConnectedUserName;
+
+// Example: listen for a custom event or call this function when a connection is made
+// Replace this with your actual connection logic
+// Example usage:
+// showConnectedUserName('Vignesh');
+
+// If you use WebSocket or other signaling, call showConnectedUserName with the connected user's name when matched
+</script>
 <script src="client.js"></script>
 
-<!-- Display MongoDB Data -->
 <script>
-// Helper to create a list from data
-function createList(title, items, fields) {
-  const section = document.createElement('section');
-  section.style.margin = '32px 0';
-  const h2 = document.createElement('h2');
-  h2.textContent = title;
-  section.appendChild(h2);
-  const ul = document.createElement('ul');
-  ul.style.background = '#f7f7fa';
-  ul.style.padding = '12px 18px';
-  ul.style.borderRadius = '10px';
-  ul.style.listStyle = 'none';
-  ul.style.maxWidth = '600px';
-  ul.style.margin = '10px 0';
-  items.forEach(item => {
-    const li = document.createElement('li');
-    li.style.marginBottom = '8px';
-    li.textContent = fields.map(f => `${f}: ${item[f]}`).join(' | ');
-    ul.appendChild(li);
+// Fetch users from backend and display in Search People section
+
+let allUsers = [];
+async function loadUsersToSearch() {
+  try {
+    const res = await fetch('http://localhost:3000/api/users');
+    allUsers = await res.json();
+    renderUserList(allUsers);
+  } catch (e) {
+    console.error('Failed to load users', e);
+  }
+}
+
+function renderUserList(users) {
+  const searchResults = document.getElementById('searchResults');
+  searchResults.innerHTML = '';
+  users.forEach(user => {
+    const div = document.createElement('div');
+    div.className = 'user-result';
+    const avatar = user.avatarUrl && user.avatarUrl.startsWith('http') ? user.avatarUrl : `https://i.pravatar.cc/40?u=${encodeURIComponent(user.email)}`;
+    div.innerHTML = `
+      <img src="${avatar}" alt="User" style="border-radius:50%;width:40px;height:40px;object-fit:cover;">
+      <span>${user.username || user.email}</span>
+      <span class="user-prof">User</span>
+    `;
+    searchResults.appendChild(div);
   });
-  section.appendChild(ul);
-  return section;
 }
 
-async function fetchAndDisplay() {
-  // Users
-  try {
-    const usersRes = await fetch('http://localhost:3000/api/users');
-    const users = await usersRes.json();
-    document.body.appendChild(createList('Registered Users', users, ['username', 'email']));
-  } catch (e) { console.error('Failed to fetch users', e); }
-  // Calls
-  try {
-    const callsRes = await fetch('http://localhost:3000/api/calls');
-    const calls = await callsRes.json();
-    document.body.appendChild(createList('Call Data', calls, ['userId', 'callTime', 'duration', 'details']));
-  } catch (e) { console.error('Failed to fetch calls', e); }
-  // Profiles
-  try {
-    const profilesRes = await fetch('http://localhost:3000/api/profiles');
-    const profiles = await profilesRes.json();
-    document.body.appendChild(createList('Profiles', profiles, ['userId', 'bio', 'avatarUrl', 'otherInfo']));
-  } catch (e) { console.error('Failed to fetch profiles', e); }
-}
-
-window.addEventListener('DOMContentLoaded', fetchAndDisplay);
+window.addEventListener('DOMContentLoaded', () => {
+  loadUsersToSearch();
+  const searchInput = document.getElementById('searchPeopleInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const val = this.value.trim().toLowerCase();
+      if (!val) {
+        renderUserList(allUsers);
+      } else {
+        renderUserList(allUsers.filter(u =>
+          (u.username && u.username.toLowerCase().includes(val)) ||
+          (u.email && u.email.toLowerCase().includes(val))
+        ));
+      }
+    });
+  }
+});
 </script>
 </html>

@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
   username: String,
   email: String,
   password: String,
+  avatarUrl: String,
 });
 
 const callDataSchema = new mongoose.Schema({
