@@ -171,12 +171,13 @@ function setupPeerConnection(stream) {
             if (parsedData.type === 'matched') {
                 isMatched = true;
                 updateCallButtons(true);
-                // Send my name to the peer (immediately and after a short delay for reliability)
+                // Send my identity (username + email) to the peer (immediately and after a short delay for reliability)
                 function sendMyName() {
                     if (auth.currentUser) {
                         signalingServer.send(JSON.stringify({
                             type: 'myName',
-                            name: auth.currentUser.displayName || auth.currentUser.email
+                            name: auth.currentUser.displayName || auth.currentUser.email,
+                            email: auth.currentUser.email
                         }));
                     }
                 }
@@ -187,15 +188,20 @@ function setupPeerConnection(stream) {
                 if (typeof showConnectedUserName === 'function') {
                     showConnectedUserName(parsedData.name);
                 }
-                // Set the connected user's email for peas debit
-                window.connectedUserEmail = parsedData.name;
+                // Prefer explicit email field for peas debit
+                if (parsedData.email) {
+                    window.connectedUserEmail = parsedData.email;
+                } else {
+                    window.connectedUserEmail = parsedData.name;
+                }
             }
             if (parsedData.type === 'offer') {
                 // After receiving offer, send my name again for reliability
                 if (auth.currentUser) {
                   signalingServer.send(JSON.stringify({
                       type: 'myName',
-                      name: auth.currentUser.displayName || auth.currentUser.email
+                      name: auth.currentUser.displayName || auth.currentUser.email,
+                      email: auth.currentUser.email
                   }));
                 }
                 handleOffer(parsedData.offer);
@@ -204,7 +210,8 @@ function setupPeerConnection(stream) {
                 if (auth.currentUser) {
                   signalingServer.send(JSON.stringify({
                       type: 'myName',
-                      name: auth.currentUser.displayName || auth.currentUser.email
+                      name: auth.currentUser.displayName || auth.currentUser.email,
+                      email: auth.currentUser.email
                   }));
                 }
                 handleAnswer(parsedData.answer);
