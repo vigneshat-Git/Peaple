@@ -65,7 +65,7 @@ app.post('/api/register', async (req, res) => {
             if (avatarUrl) user.avatarUrl = avatarUrl;
             await user.save();
         } else {
-            user = new User({ username, email, password, avatarUrl });
+            user = new User({ username, email, password, avatarUrl, peas: 50 });
             await user.save();
         }
         res.status(201).json(user);
@@ -74,13 +74,51 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+// Get peas balance for a user by email
+app.get('/api/peas/:email', async (req, res) => {
+    try {
+        const user = await User.findOne({ email: req.params.email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json({ peas: user.peas });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Add or subtract peas for a user by email
+app.post('/api/peas/update', async (req, res) => {
+    try {
+        const { email, amount } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        user.peas = (user.peas || 0) + Number(amount);
+        await user.save();
+        res.json({ peas: user.peas });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Store call data
 app.post('/api/call', async (req, res) => {
     try {
-        const { userId, callTime, duration, details } = req.body;
-        const callData = new CallData({ userId, callTime, duration, details });
-        await callData.save();
-        res.status(201).json(callData);
+        const { userId, peerId, callTime, duration, details } = req.body;
+        // Deduct 5 peas from both users
+        const user1 = await User.findById(userId);
+        const user2 = await User.findById(peerId);
+        if (!user1 || !user2) {
+            return res.status(400).json({ error: 'Both users must exist' });
+        }
+        user1.peas = Math.max(0, (user1.peas || 0) - 5);
+        user2.peas = Math.max(0, (user2.peas || 0) - 5);
+        await user1.save();
+        await user2.save();
+        // Save call data for both users
+        const callData1 = new CallData({ userId, callTime, duration, details });
+        const callData2 = new CallData({ userId: peerId, callTime, duration, details });
+        await callData1.save();
+        await callData2.save();
+        res.status(201).json({ callData1, callData2, user1Peas: user1.peas, user2Peas: user2.peas });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -119,6 +157,18 @@ app.get('/api/calls', async (req, res) => {
 });
 
 // Get all profiles
+// One-time endpoint to grant 50 peas to all users
+app.post('/api/grant50peas', async (req, res) => {
+    try {
+        const result = await User.updateMany(
+            {},
+            { $set: { peas: 50 } }
+        );
+        res.json({ message: `Updated ${result.nModified || result.modifiedCount} users to 50 peas.` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 app.get('/api/profiles', async (req, res) => {
     try {
         const profiles = await Profile.find();
@@ -133,15 +183,12 @@ app.post('/api/seed-test-data', async (req, res) => {
     try {
         // Users
         const users = await User.insertMany([
-            { username: 'Alice', email: 'alice@example.com', password: 'pass1' },
-            { username: 'Bob', email: 'bob@example.com', password: 'pass2' },
-            { username: 'Charlie', email: 'charlie@example.com', password: 'pass3' }
+            // Sample users removed
         ]);
 
         // Call Data
         const calls = await CallData.insertMany([
-            { userId: users[0]._id, callTime: new Date(), duration: 120, details: 'Call with Bob' },
-            { userId: users[1]._id, callTime: new Date(), duration: 90, details: 'Call with Alice' }
+            // Sample call data removed
         ]);
 
         // Profiles

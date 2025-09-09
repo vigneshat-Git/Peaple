@@ -325,7 +325,8 @@
             .signInWithEmailAndPassword(email, password)
             .then((cred) => {
               // Send login data to backend for MongoDB storage
-              fetch('http://localhost:3000/api/register', {
+              fetch('https://fcfba3abcd54.ngrok-free.app/api/register',//3000
+               {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -360,7 +361,8 @@
             .then((cred) => cred.user.updateProfile({ displayName: firstName + " " + lastName }))
             .then(() => {
               // Send registration data to backend for MongoDB storage
-              fetch('http://localhost:3000/api/register', {
+              fetch('https://fcfba3abcd54.ngrok-free.app/api/register',//3000
+               {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -382,7 +384,8 @@
             .signInWithPopup(provider)
             .then((result) => {
               // Send Google user data to backend for MongoDB storage
-              fetch('http://localhost:3000/api/register', {
+              fetch('https://fcfba3abcd54.ngrok-free.app/api/register',//3000
+               {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
