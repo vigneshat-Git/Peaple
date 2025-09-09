@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   email: String,
   password: String,
   avatarUrl: String,
+  peas: { type: Number, default: 0 },
 });
 
 const callDataSchema = new mongoose.Schema({

@@ -1,3 +1,35 @@
+// Helper: Get MongoDB userId by email from allUsers (populated in index.html)
+function getUserIdByEmail(email) {
+    if (window.allUsers && Array.isArray(window.allUsers)) {
+        const user = window.allUsers.find(u => u.email === email);
+        return user ? user._id : null;
+    }
+    return null;
+}
+
+// Call this after a call is established (e.g., after signaling handshake is complete)
+async function debitPeasForCall(localEmail, remoteEmail, duration = 0, details = '') {
+    const userId = getUserIdByEmail(localEmail);
+    const peerId = getUserIdByEmail(remoteEmail);
+    console.log('[Peas Debug] debitPeasForCall:', { localEmail, remoteEmail, userId, peerId });
+    if (!userId || !peerId) {
+        console.warn('[Peas Debug] Missing userId or peerId, aborting peas debit.');
+        return;
+    }
+    try {
+        await fetch('https://fcfba3abcd54.ngrok-free.app/api/call', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId,
+                peerId,
+                callTime: new Date(),
+                duration,
+                details
+            })
+        });
+    } catch (e) { console.error('Failed to debit peas for call', e); }
+}
 // Firebase Authentication for browser:
 // Make sure you have included firebase-app-compat.js and firebase-auth-compat.js in your HTML before this script.
 if (!firebase.apps.length) {
@@ -46,16 +78,28 @@ muteButton.addEventListener('click', () => {
 
 // End call button logic
 endButton.addEventListener('click', () => {
-    if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-        remoteVideo.srcObject = null;
-        updateCallButtons(false);
-        setLocalVideoActive(false); // Hide video, show placeholder
-        // Optionally clear chat and reset UI
-        const messagesContainer = document.getElementById('messagesContainer');
-        if (messagesContainer) messagesContainer.innerHTML = '';
-    }
+        if (peerConnection) {
+                // Find emails for both users
+                const localEmail = auth.currentUser ? auth.currentUser.email : null;
+                // Try to get remote email from the UI (connected user info)
+                let remoteEmail = null;
+                if (window.connectedUserEmail) {
+                    remoteEmail = window.connectedUserEmail;
+                } else {
+                    // Fallback: try to parse from UI or signaling (customize as needed)
+                }
+                if (localEmail && remoteEmail) {
+                    debitPeasForCall(localEmail, remoteEmail);
+                }
+                peerConnection.close();
+                peerConnection = null;
+                remoteVideo.srcObject = null;
+                updateCallButtons(false);
+                setLocalVideoActive(false); // Hide video, show placeholder
+                // Optionally clear chat and reset UI
+                const messagesContainer = document.getElementById('messagesContainer');
+                if (messagesContainer) messagesContainer.innerHTML = '';
+        }
 });
 
 // Screen share button logic (placeholder)
@@ -71,7 +115,7 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
-const signalingServer = new WebSocket('wss://4ceeab5034c7.ngrok-free.app');
+const signalingServer = new WebSocket('wss://5e52b6b8410a.ngrok-free.app');
 
 let peerConnection;
 let dataChannel;
@@ -124,25 +168,27 @@ function setupPeerConnection(stream) {
         }
         try {
             const parsedData = JSON.parse(data);
-                        if (parsedData.type === 'matched') {
-                                isMatched = true;
-                                updateCallButtons(true);
-                                // Send my name to the peer (immediately and after a short delay for reliability)
-                                function sendMyName() {
-                                    if (auth.currentUser) {
-                                        signalingServer.send(JSON.stringify({
-                                                type: 'myName',
-                                                name: auth.currentUser.displayName || auth.currentUser.email
-                                        }));
-                                    }
-                                }
-                                sendMyName();
-                                setTimeout(sendMyName, 500); // send again after 500ms
-                        }
+            if (parsedData.type === 'matched') {
+                isMatched = true;
+                updateCallButtons(true);
+                // Send my name to the peer (immediately and after a short delay for reliability)
+                function sendMyName() {
+                    if (auth.currentUser) {
+                        signalingServer.send(JSON.stringify({
+                            type: 'myName',
+                            name: auth.currentUser.displayName || auth.currentUser.email
+                        }));
+                    }
+                }
+                sendMyName();
+                setTimeout(sendMyName, 500); // send again after 500ms
+            }
             if (parsedData.type === 'myName') {
                 if (typeof showConnectedUserName === 'function') {
                     showConnectedUserName(parsedData.name);
                 }
+                // Set the connected user's email for peas debit
+                window.connectedUserEmail = parsedData.name;
             }
             if (parsedData.type === 'offer') {
                 // After receiving offer, send my name again for reliability

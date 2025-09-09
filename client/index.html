@@ -241,7 +241,7 @@ window.auth = firebase.auth(); // Make auth globally available
         <img class="profile-pic" src="https://i.pravatar.cc/100" alt="Profile">
       </div>
       <div class="profile-card-content">
-        <h2>User Name</h2>
+  <h2 id="profileUserName">&nbsp;</h2>
         <div class="profile-title">Professional Title</div>
         <div class="professionalism-meter">
           <label>Professionalism Meter</label>
@@ -251,7 +251,7 @@ window.auth = firebase.auth(); // Make auth globally available
         </div>
         <div class="peas-balance-row">
           <span>Peas Balance:</span>
-          <span class="peas-count">120</span>
+          <span class="peas-count" id="profilePeasCount">&nbsp;</span>
         </div>
         <a href="#" class="transaction-link">View Transaction History</a>
         <a href="#" class="buy-peas-btn">Buy Peas</a>
@@ -586,27 +586,50 @@ window.addEventListener('DOMContentLoaded', function() {
     };
   }
   // Display user name and profile picture in profile card
-  const profileNameEl = document.querySelector('.profile-card-content h2');
+  const profileNameEl = document.getElementById('profileUserName');
   const profileCardContent = document.querySelector('.profile-card-content');
   const profilePicEl = document.querySelector('.profile-pic');
   async function setProfileCard(user) {
+    const peasCountEl = document.getElementById('profilePeasCount');
+    const buyPeasBtn = document.querySelector('.buy-peas-btn');
     if (!user) {
-      if (profileNameEl) profileNameEl.textContent = 'User';
+  if (profileNameEl) profileNameEl.textContent = ' ';
       if (profilePicEl) profilePicEl.src = 'https://i.pravatar.cc/100';
+  if (peasCountEl) peasCountEl.textContent = ' ';
+      if (buyPeasBtn) buyPeasBtn.onclick = null;
       return;
     }
-    // Fetch user from backend to get avatarUrl if available
+    // Fetch user from backend to get avatarUrl and peas if available
     let avatar = '';
+    let peas = 0;
     try {
-      const res = await fetch('http://localhost:3000/api/users');
+      const res = await fetch('https://fcfba3abcd54.ngrok-free.app/api/users'); //3000
       const users = await res.json();
       const found = users.find(u => u.email === user.email);
       avatar = found && found.avatarUrl ? found.avatarUrl : '';
+      peas = found && typeof found.peas === 'number' ? found.peas : 0;
     } catch {}
     if (!avatar && user.photoURL) avatar = user.photoURL;
     if (!avatar) avatar = `https://i.pravatar.cc/100?u=${encodeURIComponent(user.email)}`;
     if (profilePicEl) profilePicEl.src = avatar;
     if (profileNameEl) profileNameEl.textContent = user.displayName || user.email || 'User';
+    if (peasCountEl) peasCountEl.textContent = peas;
+    // Buy Peas button logic (demo: add 10 peas)
+    if (buyPeasBtn) {
+      buyPeasBtn.onclick = async function(e) {
+        e.preventDefault();
+        try {
+          const res = await fetch('https://fcfba3abcd54.ngrok-free.app/api/peas/update',//3000
+           {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: user.email, amount: 10 })
+          });
+          const data = await res.json();
+          if (peasCountEl && typeof data.peas === 'number') peasCountEl.textContent = data.peas;
+        } catch {}
+      };
+    }
     // ...existing edit button logic...
     if (profileCardContent) {
       const oldEditBtn = profileCardContent.querySelector('.profile-edit-btn');
@@ -660,7 +683,23 @@ window.addEventListener('DOMContentLoaded', function() {
       };
     }
   }
-  auth.onAuthStateChanged(function(user) {
+  auth.onAuthStateChanged(async function(user) {
+    if (user) {
+      // Always register/sync user in backend DB
+      try {
+        await fetch('https://fcfba3abcd54.ngrok-free.app/api/register',//3000
+         {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: user.displayName || '',
+            email: user.email,
+            password: '', // Not needed for Google, but required by schema
+            avatarUrl: user.photoURL || ''
+          })
+        });
+      } catch (e) { /* ignore errors for now */ }
+    }
     setProfileCard(user);
   });
 });
@@ -699,8 +738,9 @@ window.showConnectedUserName = showConnectedUserName;
 let allUsers = [];
 async function loadUsersToSearch() {
   try {
-    const res = await fetch('http://localhost:3000/api/users');
+    const res = await fetch('https://fcfba3abcd54.ngrok-free.app/api/users'); //3000
     allUsers = await res.json();
+    window.allUsers = allUsers; // Expose globally for client.js
     renderUserList(allUsers);
   } catch (e) {
     console.error('Failed to load users', e);
