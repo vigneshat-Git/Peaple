@@ -17,7 +17,8 @@ async function debitPeasForCall(localEmail, remoteEmail, duration = 0, details =
         return;
     }
     try {
-        await fetch('https://fcfba3abcd54.ngrok-free.app/api/call', {
+        await fetch('https://723c07931da5.ngrok-free.app/api/call', //3000
+             {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -115,7 +116,13 @@ const localVideo = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
-const signalingServer = new WebSocket('wss://5e52b6b8410a.ngrok-free.app');
+let signalingServer = null; // lazy-initialized on Start
+const __host = window.location && window.location.hostname ? window.location.hostname : '';
+const __qs = new URLSearchParams(window.location.search || '');
+const __forceLocal = __qs.get('localWs') === '1';
+const SIGNALING_URL = (__forceLocal || !__host || __host === 'localhost' || __host === '127.0.0.1')
+    ? 'ws://localhost:8000'
+    : 'wss://7824c4e36b5b.ngrok-free.app';
 
 let peerConnection;
 let dataChannel;
@@ -123,41 +130,27 @@ let dataChannel;
 // Step 1: Get user media (camera and microphone) only when Start Call is clicked
 let localStream = null;
 let isMatched = false;
+let isOfferRole = false; // true if this client should be the one to debit peas
+let peasDebitedForThisCall = false; // ensure we only debit once per connection
+let userInitiated = false; // set true only when Start is clicked
+let offerPendingUntilMatched = false; // if PC ready before matched
+let readySent = false; // ensure we only send 'ready' once
 
-function setupPeerConnection(stream) {
-    localVideo.srcObject = stream;
-    // Get local audio track for mute/unmute
-    localAudioTrack = stream.getAudioTracks()[0];
-    peerConnection = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    });
-    stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-    peerConnection.ontrack = event => {
-        remoteVideo.srcObject = event.streams[0];
-        const remoteOverlay = document.getElementById('remoteOverlay');
-        if (remoteOverlay) {
-            remoteOverlay.style.display = 'none';
-        }
-        updateCallButtons(true);
-    };
-    peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-            signalingServer.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
-        }
-    };
-    dataChannel = peerConnection.createDataChannel('chat');
-    dataChannel.onopen = () => {
-        console.log('Data channel is open and ready to send messages');
-    };
-    dataChannel.onmessage = event => {
-        console.log('Message received:', event.data);
-        appendMessage(event.data, 'received');
-    };
-    dataChannel.onclose = () => {
-        console.log('Data channel closed');
-    };
-    dataChannel.onerror = error => {
-        console.error('Data channel error:', error);
+function sendReadyOnce() {
+    if (!userInitiated || readySent || !signalingServer) return;
+    if (signalingServer.readyState === WebSocket.OPEN) {
+        try { signalingServer.send(JSON.stringify({ type: 'ready' })); readySent = true; console.log('[SIGNAL] sent ready'); } catch (e) { console.warn('[SIGNAL] failed to send ready', e); }
+    }
+}
+
+function ensureSocket() {
+    if (signalingServer && (signalingServer.readyState === WebSocket.OPEN || signalingServer.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
+    signalingServer = new WebSocket(SIGNALING_URL);
+    signalingServer.onopen = () => {
+        console.log('[WS] open', SIGNALING_URL);
+        sendReadyOnce();
     };
     signalingServer.onmessage = async (message) => {
         let data;
@@ -168,52 +161,75 @@ function setupPeerConnection(stream) {
         }
         try {
             const parsedData = JSON.parse(data);
+            console.log('[WS] message', parsedData.type);
             if (parsedData.type === 'matched') {
+                if (!userInitiated) { console.log('[MATCH] ignored (no userInitiated)'); return; }
                 isMatched = true;
+                if (typeof parsedData.role === 'string') {
+                    isOfferRole = parsedData.role === 'offer';
+                }
+                console.log('[MATCH] matched. role:', isOfferRole ? 'offer' : 'answer');
                 updateCallButtons(true);
-                // Send my identity (username + email) to the peer (immediately and after a short delay for reliability)
+                // If we are offer and PC is ready, create offer now
+                if (isOfferRole && peerConnection) {
+                    console.log('[OFFER] creating offer immediately');
+                    createOffer();
+                } else if (isOfferRole) {
+                    console.log('[OFFER] will create after PC ready');
+                    offerPendingUntilMatched = true;
+                }
+                // Send my identity (immediately and after a delay)
                 function sendMyName() {
-                    if (auth.currentUser) {
+                    if (auth.currentUser && signalingServer && signalingServer.readyState === WebSocket.OPEN) {
                         signalingServer.send(JSON.stringify({
                             type: 'myName',
                             name: auth.currentUser.displayName || auth.currentUser.email,
                             email: auth.currentUser.email
                         }));
+                        console.log('[IDENTITY] sent myName');
                     }
                 }
                 sendMyName();
-                setTimeout(sendMyName, 500); // send again after 500ms
+                setTimeout(sendMyName, 500);
             }
             if (parsedData.type === 'myName') {
                 if (typeof showConnectedUserName === 'function') {
                     showConnectedUserName(parsedData.name);
                 }
-                // Prefer explicit email field for peas debit
                 if (parsedData.email) {
                     window.connectedUserEmail = parsedData.email;
                 } else {
                     window.connectedUserEmail = parsedData.name;
                 }
+                try {
+                    const localEmail = auth.currentUser ? auth.currentUser.email : null;
+                    if (isOfferRole && !peasDebitedForThisCall && localEmail && window.connectedUserEmail) {
+                        peasDebitedForThisCall = true;
+                        debitPeasForCall(localEmail, window.connectedUserEmail);
+                    }
+                } catch (e) {
+                    console.warn('[Peas Debug] Immediate debit failed/deferred:', e);
+                }
             }
             if (parsedData.type === 'offer') {
-                // After receiving offer, send my name again for reliability
-                if (auth.currentUser) {
-                  signalingServer.send(JSON.stringify({
-                      type: 'myName',
-                      name: auth.currentUser.displayName || auth.currentUser.email,
-                      email: auth.currentUser.email
-                  }));
+                if (auth.currentUser && signalingServer && signalingServer.readyState === WebSocket.OPEN) {
+                    signalingServer.send(JSON.stringify({
+                        type: 'myName',
+                        name: auth.currentUser.displayName || auth.currentUser.email,
+                        email: auth.currentUser.email
+                    }));
                 }
+                console.log('[ANSWER] received offer');
                 handleOffer(parsedData.offer);
             } else if (parsedData.type === 'answer') {
-                // After receiving answer, send my name again for reliability
-                if (auth.currentUser) {
-                  signalingServer.send(JSON.stringify({
-                      type: 'myName',
-                      name: auth.currentUser.displayName || auth.currentUser.email,
-                      email: auth.currentUser.email
-                  }));
+                if (auth.currentUser && signalingServer && signalingServer.readyState === WebSocket.OPEN) {
+                    signalingServer.send(JSON.stringify({
+                        type: 'myName',
+                        name: auth.currentUser.displayName || auth.currentUser.email,
+                        email: auth.currentUser.email
+                    }));
                 }
+                console.log('[OFFER] received answer');
                 handleAnswer(parsedData.answer);
             } else if (parsedData.type === 'candidate') {
                 handleCandidate(parsedData.candidate);
@@ -232,6 +248,43 @@ function setupPeerConnection(stream) {
         } catch (error) {
             console.error('Error parsing JSON:', error);
         }
+    };
+}
+
+function setupPeerConnection(stream) {
+    localVideo.srcObject = stream;
+    // Get local audio track for mute/unmute
+    localAudioTrack = stream.getAudioTracks()[0];
+    peerConnection = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+    stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+    peerConnection.ontrack = event => {
+        remoteVideo.srcObject = event.streams[0];
+        const remoteOverlay = document.getElementById('remoteOverlay');
+        if (remoteOverlay) {
+            remoteOverlay.style.display = 'none';
+        }
+        updateCallButtons(true);
+    };
+    peerConnection.onicecandidate = event => {
+        if (event.candidate && signalingServer && signalingServer.readyState === WebSocket.OPEN) {
+            signalingServer.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
+        }
+    };
+    dataChannel = peerConnection.createDataChannel('chat');
+    dataChannel.onopen = () => {
+        console.log('Data channel is open and ready to send messages');
+    };
+    dataChannel.onmessage = event => {
+        console.log('Message received:', event.data);
+        appendMessage(event.data, 'received');
+    };
+    dataChannel.onclose = () => {
+        console.log('Data channel closed');
+    };
+    dataChannel.onerror = error => {
+        console.error('Data channel error:', error);
     };
     peerConnection.ondatachannel = event => {
         const remoteDataChannel = event.channel;
@@ -259,6 +312,11 @@ function setupPeerConnection(stream) {
 // Only allow call/camera if user is logged in (auth check is handled in index.html script)
 // This function should be called ONLY if user is authenticated
 function startCallIfAuthenticated() {
+    userInitiated = true;
+    readySent = false;
+    ensureSocket();
+    sendReadyOnce();
+    console.log('[CALL] start requested');
     const remoteOverlay = document.getElementById('remoteOverlay');
     if (remoteOverlay) {
         remoteOverlay.style.display = 'flex';
@@ -286,7 +344,11 @@ function startCallIfAuthenticated() {
                 localStream = stream;
                 setLocalVideoActive(true); // Show video, hide placeholder
                 setupPeerConnection(stream);
-                createOffer();
+                if (offerPendingUntilMatched && isOfferRole) {
+                    console.log('[OFFER] creating offer after PC ready');
+                    createOffer();
+                    offerPendingUntilMatched = false;
+                }
             })
             .catch(error => {
                 console.error('Error accessing media devices:', error);
@@ -295,7 +357,11 @@ function startCallIfAuthenticated() {
     } else {
         setLocalVideoActive(true); // Show video, hide placeholder
         setupPeerConnection(localStream);
-        createOffer();
+        if (offerPendingUntilMatched && isOfferRole) {
+            console.log('[OFFER] creating offer after PC ready');
+            createOffer();
+            offerPendingUntilMatched = false;
+        }
     }
 }
 
@@ -328,6 +394,7 @@ function createOffer() {
                 type: 'offer',
                 offer: peerConnection.localDescription
             }));
+            console.log('[OFFER] sent offer');
         });
 }
 

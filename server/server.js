@@ -12,14 +12,30 @@ wss.on('listening', () => {
 });
 wss.on('connection', ws => {
     console.log('New client connected');
-    waitingQueue.push(ws);
-    matchUsers();
+    // Do NOT auto-enqueue on connect. Wait for explicit 'ready' from client
     ws.on('message', message => {
         // Log all messages for debugging
         try {
-            const msgObj = typeof message === 'string' ? JSON.parse(message) : message;
-            console.log('WS message:', msgObj);
-        } catch { console.log('WS message:', message); }
+            const asString = typeof message === 'string' ? message : (Buffer.isBuffer(message) ? message.toString('utf8') : String(message));
+            let msgObj;
+            try {
+                msgObj = JSON.parse(asString);
+            } catch (e) {
+                console.warn('WS non-JSON message:', asString);
+                msgObj = null;
+            }
+            console.log('WS message:', msgObj || asString);
+            // If client explicitly signals readiness, enqueue for matchmaking
+            if (msgObj && msgObj.type === 'ready') {
+                console.log('READY received. queuedBefore?', waitingQueue.includes(ws), 'paired?', !!ws.pairedWith);
+                if (!ws.pairedWith && !waitingQueue.includes(ws)) {
+                    waitingQueue.push(ws);
+                    console.log('Queue length:', waitingQueue.length);
+                    matchUsers();
+                }
+                return; // Do not forward 'ready' to peers
+            }
+        } catch (err) { console.log('WS message (raw):', message); }
         // Always forward any message to the paired peer
         if (ws.pairedWith && ws.pairedWith.readyState === WebSocket.OPEN) {
             ws.pairedWith.send(message);
@@ -36,6 +52,7 @@ wss.on('connection', ws => {
     });
 });
 function matchUsers() {
+    console.log('matchUsers() called. Queue length:', waitingQueue.length);
     while (waitingQueue.length >= 2) {
         const ws1 = waitingQueue.shift();
         const ws2 = waitingQueue.shift();

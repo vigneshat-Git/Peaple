@@ -603,7 +603,7 @@ window.addEventListener('DOMContentLoaded', function() {
     let avatar = '';
     let peas = 0;
     try {
-      const res = await fetch('https://fcfba3abcd54.ngrok-free.app/api/users'); //3000
+      const res = await fetch('https://723c07931da5.ngrok-free.app/api/users'); //3000
       const users = await res.json();
       const found = users.find(u => u.email === user.email);
       avatar = found && found.avatarUrl ? found.avatarUrl : '';
@@ -619,7 +619,7 @@ window.addEventListener('DOMContentLoaded', function() {
       buyPeasBtn.onclick = async function(e) {
         e.preventDefault();
         try {
-          const res = await fetch('https://fcfba3abcd54.ngrok-free.app/api/peas/update',//3000
+          const res = await fetch('https://723c07931da5.ngrok-free.app/api/peas/update',//3000
            {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -687,7 +687,7 @@ window.addEventListener('DOMContentLoaded', function() {
     if (user) {
       // Always register/sync user in backend DB
       try {
-        await fetch('https://fcfba3abcd54.ngrok-free.app/api/register',//3000
+        await fetch('https://723c07931da5.ngrok-free.app/api/register',//3000
          {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -730,7 +730,7 @@ window.showConnectedUserName = showConnectedUserName;
 
 // If you use WebSocket or other signaling, call showConnectedUserName with the connected user's name when matched
 </script>
-<script src="client.js"></script>
+<script src="client.js?v=3"></script>
 
 <script>
 // Fetch users from backend and display in Search People section
@@ -738,7 +738,7 @@ window.showConnectedUserName = showConnectedUserName;
 let allUsers = [];
 async function loadUsersToSearch() {
   try {
-    const res = await fetch('https://fcfba3abcd54.ngrok-free.app/api/users'); //3000
+    const res = await fetch('https://723c07931da5.ngrok-free.app/api/users'); //3000
     allUsers = await res.json();
     window.allUsers = allUsers; // Expose globally for client.js
     renderUserList(allUsers);
