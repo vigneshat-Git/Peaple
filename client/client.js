@@ -60,7 +60,7 @@ let localAudioTrack = null;
 function updateCallButtons(isConnected) {
     if (isConnected) {
         startButton.textContent = 'Next';
-        endButton.style.display = '';
+        endButton.style.display = 'inline-flex';
         startButton.disabled = false;
     } else {
         startButton.textContent = 'Start Call';
