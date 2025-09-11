@@ -80,18 +80,7 @@ muteButton.addEventListener('click', () => {
 // End call button logic
 endButton.addEventListener('click', () => {
         if (peerConnection) {
-                // Find emails for both users
-                const localEmail = auth.currentUser ? auth.currentUser.email : null;
-                // Try to get remote email from the UI (connected user info)
-                let remoteEmail = null;
-                if (window.connectedUserEmail) {
-                    remoteEmail = window.connectedUserEmail;
-                } else {
-                    // Fallback: try to parse from UI or signaling (customize as needed)
-                }
-                if (localEmail && remoteEmail) {
-                    debitPeasForCall(localEmail, remoteEmail);
-                }
+                // Note: Peas are already deducted when call is established, no need to deduct again
                 peerConnection.close();
                 peerConnection = null;
                 remoteVideo.srcObject = null;
@@ -203,9 +192,18 @@ function ensureSocket() {
                 }
                 try {
                     const localEmail = auth.currentUser ? auth.currentUser.email : null;
+                    // Only the offer role user should debit peas, and only once per call
+                    console.log('[Peas Debug] Role check:', { isOfferRole, peasDebitedForThisCall, localEmail, remoteEmail: window.connectedUserEmail });
                     if (isOfferRole && !peasDebitedForThisCall && localEmail && window.connectedUserEmail) {
                         peasDebitedForThisCall = true;
+                        console.log('[Peas Debug] Deducting peas for call establishment - ONLY ONCE');
                         debitPeasForCall(localEmail, window.connectedUserEmail);
+                    } else {
+                        console.log('[Peas Debug] Skipping pea deduction:', { 
+                            reason: !isOfferRole ? 'not offer role' : 
+                                   peasDebitedForThisCall ? 'already debited' : 
+                                   !localEmail ? 'no local email' : 'no remote email'
+                        });
                     }
                 } catch (e) {
                     console.warn('[Peas Debug] Immediate debit failed/deferred:', e);
@@ -314,6 +312,7 @@ function setupPeerConnection(stream) {
 function startCallIfAuthenticated() {
     userInitiated = true;
     readySent = false;
+    peasDebitedForThisCall = false; // Reset pea deduction flag for new call
     ensureSocket();
     sendReadyOnce();
     console.log('[CALL] start requested');
