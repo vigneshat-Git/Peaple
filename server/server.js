@@ -120,14 +120,23 @@ app.post('/api/peas/update', async (req, res) => {
 app.post('/api/call', async (req, res) => {
     try {
         const { userId, peerId, callTime, duration, details } = req.body;
-        // Deduct 5 peas from both users
+        console.log('[SERVER DEBUG] /api/call called:', { userId, peerId, callTime });
+        
+        // Deduct 5 peas from both users (user1 -5, user2 -5, total 10 peas per call)
+        // This should only be called once per call by the offer role user
         const user1 = await User.findById(userId);
         const user2 = await User.findById(peerId);
         if (!user1 || !user2) {
             return res.status(400).json({ error: 'Both users must exist' });
         }
+        
+        console.log('[SERVER DEBUG] Before deduction:', { user1Peas: user1.peas, user2Peas: user2.peas });
+        
+        // Deduct 5 peas from both users
         user1.peas = Math.max(0, (user1.peas || 0) - 5);
         user2.peas = Math.max(0, (user2.peas || 0) - 5);
+        
+        console.log('[SERVER DEBUG] After deduction:', { user1Peas: user1.peas, user2Peas: user2.peas });
         await user1.save();
         await user2.save();
         // Save call data for both users
