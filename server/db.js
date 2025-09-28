@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema({
   password: String,
   avatarUrl: String,
   peas: { type: Number, default: 0 },
+  bio: { type: String, default: 'User' },
+  profession: { type: String, default: 'User' },
 });
 
 const callDataSchema = new mongoose.Schema({
