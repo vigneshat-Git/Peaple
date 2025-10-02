@@ -369,7 +369,7 @@
             .signInWithEmailAndPassword(email, password)
             .then((cred) => {
               // Send login data to backend for MongoDB storage
-              fetch('https://d8aadbb38c76.ngrok-free.app/api/register',//3000
+              fetch('https://b0ceedc0c97c.ngrok-free.app/api/register',//3000
                {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -405,7 +405,7 @@
             .then((cred) => cred.user.updateProfile({ displayName: firstName + " " + lastName }))
             .then(() => {
               // Send registration data to backend for MongoDB storage
-              fetch('https://d8aadbb38c76.ngrok-free.app/api/register',//3000
+              fetch('https://b0ceedc0c97c.ngrok-free.app/api/register',//3000
                {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -428,7 +428,7 @@
             .signInWithPopup(provider)
             .then((result) => {
               // Send Google user data to backend for MongoDB storage
-              fetch('https://d8aadbb38c76.ngrok-free.app/api/register',//3000
+              fetch('https://b0ceedc0c97c.ngrok-free.app/api/register',//3000
                {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

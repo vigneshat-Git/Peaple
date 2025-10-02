@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Profile • Peaple</title>
+  <link rel="icon" href="Peaple_header-logo.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root { --card-bg:#fff; --text:#111; --muted:#666; --border:#e5e7eb; }
+    html[data-theme="dark"] { --card-bg:#0f172a; --text:#e2e8f0; --muted:#94a3b8; --border:rgba(255,255,255,.12); }
+    body{ margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial; color:var(--text); background:#f7f9fc; }
+    header{ display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--border); background:#fff; }
+    header img{ height:32px; }
+    header .spacer{ flex:1; }
+    .container{ max-width:980px; margin:24px auto; padding:0 16px; }
+    .card{ background:var(--card-bg); border:1px solid var(--border); border-radius:14px; padding:18px; }
+    .profile-top{ display:flex; gap:18px; align-items:center; }
+    .avatar{ width:100px; height:100px; border-radius:50%; object-fit:cover; background:#e5e7eb; }
+    .name{ font-size:1.5rem; font-weight:800; margin:0 0 6px; }
+    .email{ color:var(--muted); font-size:.98rem; }
+    .badges{ display:flex; gap:10px; margin-top:10px; align-items:center; }
+    .badge{ border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-weight:600; font-size:.95rem; background:#fff; }
+    .peas{ display:flex; align-items:center; gap:6px; }
+    .peas.low{ color:#e53935; border-color:#ffcdd2; background:#ffebee; }
+    .section-title{ font-size:1.1rem; font-weight:800; margin:16px 0 8px; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .list{ display:flex; flex-direction:column; gap:10px; }
+    .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; }
+    .row .mini-avatar{ width:40px; height:40px; border-radius:50%; object-fit:cover; background:#e5e7eb; }
+    .muted{ color:var(--muted); }
+    .actions{ display:flex; gap:10px; flex-wrap:wrap; }
+    button.primary{ background:#1976d2; color:#fff; border:none; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; }
+    button.secondary{ background:#fff; color:#1976d2; border:1px solid #90caf9; border-radius:8px; padding:8px 12px; font-weight:700; cursor:pointer; }
+    .warn{ color:#e53935; font-weight:700; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" title="Home"><img src="Peaple_header-logo.svg" alt="Peaple"></a>
+    <div class="spacer"></div>
+    <a href="index.html" class="secondary" style="text-decoration:none; font-weight:700; color:#1976d2;"><i class="fa-solid fa-arrow-left"></i> Back</a>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <div class="profile-top">
+        <img id="avatar" class="avatar" alt="Avatar" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 80 80' fill='none'%3E%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E%3C/svg%3E" />
+        <div>
+          <h1 id="name" class="name">&nbsp;</h1>
+          <div id="email" class="email">&nbsp;</div>
+          <div class="badges">
+            <div id="peasBadge" class="badge peas"><i class="fa-solid fa-coins"></i> <span id="peas">0</span> Peas</div>
+            <div id="professionBadge" class="badge">User</div>
+          </div>
+          <div id="peasWarn" class="warn" style="display:none; margin-top:6px;">Insufficient peas, buy some to connect call!</div>
+          <div class="actions" style="margin-top:12px;">
+            <button id="buyPeas" class="primary"><i class="fa-solid fa-circle-plus"></i> Buy Peas</button>
+            <button id="editName" class="secondary"><i class="fa-solid fa-pen"></i> Edit Name</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:18px;">
+        <div>
+          <div class="section-title">About</div>
+          <div id="bio" class="card" style="padding:12px;">&nbsp;</div>
+        </div>
+        <div>
+          <div class="section-title">Recent Calls</div>
+          <div id="calls" class="list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Auth (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+  <script>
+    if (!firebase.apps.length) {
+      firebase.initializeApp({
+        apiKey: "AIzaSyCnUEkbwEYruJ0YvbQkjFC9yfMDJsLqOlo",
+        authDomain: "peaple-c3f4b.firebaseapp.com",
+        projectId: "peaple-c3f4b",
+        storageBucket: "peaple-c3f4b.firebasestorage.app",
+        messagingSenderId: "814546020627",
+        appId: "1:814546020627:web:c43c90fe6af9a0359e52e6",
+        measurementId: "G-KHQMHRZ08F"
+      });
+    }
+    window.auth = firebase.auth();
+  </script>
+  <script>
+    // Use same API base as index.html (fallback to ngrok URL)
+    window.API_BASE = window.API_BASE || 'https://b0ceedc0c97c.ngrok-free.app';
+  </script>
+
+  <script>
+    function defaultAvatar(size){
+      const s = size||100;
+      return "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='"+s+"' height='"+s+"' viewBox='0 0 80 80' fill='none'%3E%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E%3C/svg%3E";
+    }
+    function h(el, html){ if(el) el.innerHTML = html; }
+    function s(el, show){ if(el) el.style.display = show?'' : 'none'; }
+    function text(el, t){ if(el) el.textContent = t; }
+
+    async function loadProfile(user){
+      const avatarEl = document.getElementById('avatar');
+      const nameEl = document.getElementById('name');
+      const emailEl = document.getElementById('email');
+      const peasEl = document.getElementById('peas');
+      const peasBadge = document.getElementById('peasBadge');
+      const bioEl = document.getElementById('bio');
+      const callsEl = document.getElementById('calls');
+      const professionBadge = document.getElementById('professionBadge');
+      const peasWarn = document.getElementById('peasWarn');
+
+      const email = user.email;
+      text(emailEl, email);
+      text(nameEl, user.displayName || email);
+      avatarEl.src = user.photoURL || defaultAvatar(100);
+
+      let profileBio = 'User';
+      let peas = 0;
+      try {
+        const resUsers = await fetch(window.API_BASE + '/api/users');
+        const users = await resUsers.json();
+        const me = users.find(u => u.email === email);
+        if (me) {
+          profileBio = me.bio || me.profession || 'User';
+          if (me.avatarUrl) avatarEl.src = me.avatarUrl;
+          peas = typeof me.peas === 'number' ? me.peas : 0;
+        }
+      } catch {}
+      text(bioEl, profileBio);
+      text(peasEl, peas);
+      peasBadge.classList.toggle('low', peas <= 5);
+      s(peasWarn, peas <= 5);
+
+      try {
+        const resCalls = await fetch(window.API_BASE + '/api/calls');
+        const allCalls = await resCalls.json();
+        const mine = allCalls.filter(c => c.user1 === email || c.user2 === email)
+                             .sort((a,b) => new Date(b.dateTime) - new Date(a.dateTime))
+                             .slice(0, 10);
+        callsEl.innerHTML = '';
+        for(const c of mine){
+          const other = c.user1 === email ? c.user2 : c.user1;
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `
+            <img class="mini-avatar" src="${defaultAvatar(40)}" alt="${other}" />
+            <div style="display:flex;flex-direction:column;">
+              <span style="font-weight:700">${other}</span>
+              <span class="muted">${new Date(c.dateTime).toLocaleString()} • ${typeof c.duration==='number'? c.duration+'s' : ''}</span>
+            </div>
+          `;
+          callsEl.appendChild(row);
+        }
+      } catch {}
+
+      // Actions
+      document.getElementById('buyPeas').onclick = async () => {
+        try {
+          const res = await fetch(window.API_BASE + '/api/peas/update', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ email, amount: 10 })
+          });
+          const j = await res.json();
+          const newPeas = Number(j.peas||0);
+          text(peasEl, newPeas);
+          peasBadge.classList.toggle('low', newPeas <= 5);
+        } catch {}
+      };
+      document.getElementById('editName').onclick = async () => {
+        const newName = prompt('Enter new display name:', nameEl.textContent || '');
+        if (!newName) return;
+        try {
+          await auth.currentUser.updateProfile({ displayName: newName });
+          text(nameEl, newName);
+        } catch {}
+      };
+    }
+
+    auth.onAuthStateChanged((user) => {
+      if (!user) { window.location.href = 'login.html#login'; return; }
+      loadProfile(user);
+    });
+  </script>
+</body>
+</html>

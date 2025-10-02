@@ -9,7 +9,6 @@ mongoose.connect('mongodb://localhost:27017/peapleDB', {
 const userSchema = new mongoose.Schema({
   username: String,
   email: String,
-  password: String,
   avatarUrl: String,
   peas: { type: Number, default: 0 },
   bio: { type: String, default: 'User' },
@@ -17,21 +16,17 @@ const userSchema = new mongoose.Schema({
 });
 
 const callDataSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId,
-  callTime: Date,
-  duration: Number,
-  details: String,
-});
+  user1: { type: String, required: true },
+  user2: { type: String, required: true },
+  dateTime: { type: Date, required: true },
+  duration: { type: Number, required: true },
+}, { collection: 'callData' });
 
-const profileSchema = new mongoose.Schema({
-  userId: mongoose.Schema.Types.ObjectId,
-  bio: String,
-  avatarUrl: String,
-  otherInfo: String,
-});
+// Ensure only one record per call (participants + start time)
+callDataSchema.index({ user1: 1, user2: 1, dateTime: 1 }, { unique: true });
 
 const User = mongoose.model('User', userSchema);
-const CallData = mongoose.model('CallData', callDataSchema);
-const Profile = mongoose.model('Profile', profileSchema);
+// Force collection name to 'callData' to match your desired naming
+const CallData = mongoose.model('CallData', callDataSchema, 'callData');
 
-module.exports = { User, CallData, Profile };
+module.exports = { User, CallData};

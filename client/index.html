@@ -160,7 +160,10 @@
             if (nameEl) nameEl.textContent = nm || 'People';
             const em = window.connectedUserEmail || '';
             if (avatarEl) {
-              avatarEl.src = em ? `https://i.pravatar.cc/36?u=${encodeURIComponent(em)}` : 'https://i.pravatar.cc/36';
+              if (window.__getAvatarByEmailOrUsername) {
+                const src = window.__getAvatarByEmailOrUsername(em || nm);
+                avatarEl.src = src;
+              }
             }
           } catch {}
           panel.dataset.open = '1';
@@ -241,6 +244,13 @@ if (!firebase.apps.length) {
   });
 }
 window.auth = firebase.auth(); // Make auth globally available
+</script>
+<script>
+  // API base for REST calls (adjust to your active backend)
+  // For local development use localhost; when deploying via ngrok, set this to the ngrok URL.
+  //window.API_BASE = 'http://localhost:3000';
+  // Example for ngrok (uncomment and update):
+  window.API_BASE = 'https://b0ceedc0c97c.ngrok-free.app'; //3000
 </script>
  
   
@@ -381,6 +391,11 @@ window.auth = firebase.auth(); // Make auth globally available
       color: #0d47a1;
       box-shadow: 0 4px 16px rgba(33,150,243,0.16);
     }
+    .peas-low { color: #e53935 !important; }
+    /* Make Connect Now header inline with no gap so warning hugs the title */
+    .call-header { display:flex; align-items:center; gap:0; }
+    .call-header .live-users { margin-left: 10px; }
+    #peasWarning { white-space: nowrap; }
   </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
@@ -397,9 +412,14 @@ window.auth = firebase.auth(); // Make auth globally available
           <i class="fa-solid fa-moon"></i>
         </button>
         <div id="profileDropdownWrapper" style="position:relative; display:none;">
-          <img class="profileIcon" src="https://i.pravatar.cc/40" alt="Profile" id="profileIcon">
+          <img class="profileIcon" src="data:image/svg+xml;utf8,\
+%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 80 80' fill='none'%3E\
+%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E\
+%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E\
+%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E\
+%3C/svg%3E" alt="Profile" id="profileIcon">
           <div class="profile-dropdown" id="profileDropdown" style="display:none; position:absolute; right:0; top:52px; background:#fff; box-shadow:0 4px 16px rgba(0,0,0,0.12); border-radius:10px; min-width:180px; z-index:100;">
-            <a href="login.html" class="dropdown-item"><i class="fa-solid fa-user fa-fw"></i> Profile</a>
+            <a href="profile.html" class="dropdown-item"><i class="fa-solid fa-user fa-fw"></i> Profile</a>
             <a href="#" class="dropdown-item"><i class="fa-solid fa-crown fa-fw"></i> Subscription</a>
             <a href="#" class="dropdown-item"><i class="fa-solid fa-coins fa-fw"></i> Peas</a>
             <a href="#" class="dropdown-item"><i class="fa-solid fa-headset fa-fw"></i> Support</a>
@@ -448,7 +468,12 @@ window.auth = firebase.auth(); // Make auth globally available
   <section class="profile-report-section">
     <div class="profile-card">
       <div class="profile-cover">
-        <img class="profile-pic" src="https://i.pravatar.cc/100" alt="Profile">
+        <img class="profile-pic" src="data:image/svg+xml;utf8,\
+%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 80 80' fill='none'%3E\
+%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E\
+%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E\
+%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E\
+%3C/svg%3E" alt="Profile">
       </div>
       <div class="profile-card-content">
   <h2 id="profileUserName">&nbsp;</h2>
@@ -479,8 +504,11 @@ window.auth = firebase.auth(); // Make auth globally available
   <!-- Call Section -->
   <section class="call-section">
     <div class="call-header">
-      <h1>Connect Now</h1>
-      <div class="live-users"><i class="fa-solid fa-user"></i><span> 24</span> online</div>
+      <div class="call-header-left">
+        <h1>Connect Now</h1>
+        <div id="peasWarning" style="display:none;color:#e53935;font-weight:600;font-size:0.95rem;">Insufficient peas, buy some to connect call!</div>
+      </div>
+      <div class="live-users"><i class="fa-solid fa-user"></i><span id="liveUsersCount"> 0</span> online</div>
     </div>
     <div class="call-main">
       <div class="search-people">
@@ -527,7 +555,12 @@ window.auth = firebase.auth(); // Make auth globally available
             <!-- Fullscreen Chat Panel (WhatsApp-like) -->
             <div id="fsChatPanel" aria-label="Chat" style="position:absolute; top:0; right:0; height:100%; width:clamp(280px, 34vw, 420px); background:#ffffff; backdrop-filter:saturate(180%) blur(8px); box-shadow:-6px 0 18px rgba(0,0,0,0.25); z-index:10; border-top-right-radius:16px; border-bottom-right-radius:16px; overflow:hidden; box-sizing:border-box; border-left:1px solid rgba(0,0,0,0.06); transform: translateX(100%); opacity: 0; pointer-events: none; transition: transform .28s cubic-bezier(.4,0,.2,1), opacity .2s;">
               <div id="fsChatHeader" style="position:absolute; top:0; left:0; right:0; height:56px; display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid #eee; background:#f7f9fc; box-sizing:border-box;">
-                <img id="fsChatAvatar" src="https://i.pravatar.cc/36" alt="Avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                <img id="fsChatAvatar" src="data:image/svg+xml;utf8,\
+%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 80 80' fill='none'%3E\
+%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E\
+%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E\
+%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E\
+%3C/svg%3E" alt="Avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
                 <div style="display:flex; flex-direction:column;">
                   <div id="fsChatName" style="font-weight:700; font-size:0.98rem;">&nbsp;</div>
                   <div id="fsChatSubtitle" style="font-size:0.8rem; color:#7a7a7a;">Online</div>
@@ -580,7 +613,7 @@ window.auth = firebase.auth(); // Make auth globally available
     <h2>Recent Connections</h2>
     <div class="connection-list">
       <div class="connection-item">
-        <img src="https://i.pravatar.cc/40" alt="User">
+        <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 80 80' fill='none'%3E%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E%3C/svg%3E" alt="User">
         <div class="conn-info">
           <span>User Name</span>
           <span class="user-prof">Professional</span>
@@ -591,7 +624,7 @@ window.auth = firebase.auth(); // Make auth globally available
         </div>
       </div>
       <div class="connection-item">
-        <img src="https://i.pravatar.cc/40" alt="User">
+        <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 80 80' fill='none'%3E%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E%3C/svg%3E" alt="User">
         <div class="conn-info">
           <span>User Name</span>
           <span class="user-prof">Professional</span>
@@ -604,6 +637,40 @@ window.auth = firebase.auth(); // Make auth globally available
     </div>
     <a href="#" class="view-all-connections">View all connections</a>
   </section>
+
+  <!-- All Connections Slide-in Panel -->
+  <div id="allConnectionsOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:stretch; justify-content:flex-end;">
+    <div id="allConnectionsPanel" role="dialog" aria-label="All Connections" style="height:100%; width:min(720px, 92vw); background:#ffffff; box-shadow:-8px 0 24px rgba(0,0,0,0.3); border-left:1px solid #e5e7eb; display:flex; flex-direction:column; transform: translateX(100%); transition: transform .28s cubic-bezier(.4,0,.2,1);">
+      <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid #eee; background:#f7f9fc;">
+        <h3 style="margin:0; font-size:1.05rem;">All Connections</h3>
+        <button id="allConnCloseBtn" title="Close" aria-label="Close" style="margin-left:auto; background:none; border:none; font-size:1.4rem; color:#666; cursor:pointer">&times;</button>
+      </div>
+      <div id="allConnectionsList" style="flex:1; overflow-y:auto; padding:12px 14px;">
+        <!-- Filled by client.js -->
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Dark mode for All Connections overlay/panel */
+    html[data-theme="dark"] #allConnectionsOverlay {
+      background: rgba(0,0,0,0.6) !important;
+      backdrop-filter: blur(2px);
+    }
+    html[data-theme="dark"] #allConnectionsPanel {
+      background: #0f172a !important; /* slate-900 */
+      color: #e2e8f0 !important;      /* slate-200 */
+      border-left-color: rgba(255,255,255,0.08) !important;
+    }
+    html[data-theme="dark"] #allConnectionsPanel > div:first-child {
+      background: #0b1220 !important;
+      border-bottom-color: rgba(255,255,255,0.08) !important;
+    }
+    /* List rows and subtle separators */
+    #allConnectionsList::-webkit-scrollbar { width: 10px; }
+    #allConnectionsList::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 10px; }
+    html[data-theme="dark"] #allConnectionsList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
+  </style>
 
   <!-- Feedback Section -->
   <section class="feedback-section">
@@ -789,8 +856,27 @@ const startBtn = document.getElementById('startButton');
 if (startBtn) {
   const onStartOrNext = function(e) {
     e.preventDefault();
-    const proceed = (user) => {
+    const showPeasWarning = () => {
+      const w = document.getElementById('peasWarning');
+      if (w) { w.style.display = ''; w.textContent = 'Insuffecient peas, buy some to connect call!'; }
+    };
+    const hidePeasWarning = () => {
+      const w = document.getElementById('peasWarning');
+      if (w) { w.style.display = 'none'; }
+    };
+    const ensurePeas = async (user) => {
+      if (!user) return 0;
+      if (typeof window.__myPeas === 'number') return window.__myPeas;
+      try {
+        const res = await fetch((window.API_BASE || 'https://b0ceedc0c97c.ngrok-free.app') + '/api/peas/' + encodeURIComponent(user.email)); //3000
+        if (res.ok) { const j = await res.json(); window.__myPeas = Number(j.peas || 0); return window.__myPeas; }
+      } catch {}
+      return 0;
+    };
+    const proceed = async (user) => {
       if (!user) { openModal(); return; }
+      const peas = await ensurePeas(user);
+      if (Number(peas) <= 5) { showPeasWarning(); return; } else { hidePeasWarning(); }
       if (window.isCurrentlyMatched && window.isCurrentlyMatched()) {
         if (typeof window.goToNextMatch === 'function') {
           window.goToNextMatch();
@@ -823,10 +909,21 @@ window.addEventListener('DOMContentLoaded', function() {
       // Show profile icon/dropdown
       profileDropdownWrapper.style.display = '';
       loginHeaderBtn.style.display = 'none';
+      // Update top nav profile icon image
+      try {
+        const icon = document.getElementById('profileIcon');
+        const default40 = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 80 80' fill='none'%3E%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E%3C/svg%3E";
+        if (icon) icon.src = (user.photoURL && user.photoURL.trim()) ? user.photoURL : default40;
+      } catch {}
     } else {
       // Show Log in button
       profileDropdownWrapper.style.display = 'none';
       loginHeaderBtn.style.display = '';
+      try {
+        const icon = document.getElementById('profileIcon');
+        const default40 = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 80 80' fill='none'%3E%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E%3C/svg%3E";
+        if (icon) icon.src = default40;
+      } catch {}
     }
   });
   if (loginHeaderBtn) {
@@ -854,7 +951,7 @@ window.addEventListener('DOMContentLoaded', function() {
     let avatar = '';
     let peas = 0;
     try {
-      const res = await fetch('https://d8aadbb38c76.ngrok-free.app/api/users'); //3000
+      const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/users'); //3000
       const users = await res.json();
       const found = users.find(u => u.email === user.email);
       avatar = found && found.avatarUrl ? found.avatarUrl : '';
@@ -866,84 +963,47 @@ window.addEventListener('DOMContentLoaded', function() {
       }
     } catch {}
     if (!avatar && user.photoURL) avatar = user.photoURL;
-    if (!avatar) avatar = `https://i.pravatar.cc/100?u=${encodeURIComponent(user.email)}`;
+    if (!avatar) avatar = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 80 80' fill='none'%3E%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E%3C/svg%3E";
     if (profilePicEl) profilePicEl.src = avatar;
     if (profileNameEl) profileNameEl.textContent = user.displayName || user.email || 'User';
-    if (peasCountEl) peasCountEl.textContent = peas;
+    if (peasCountEl) {
+      peasCountEl.textContent = peas;
+      peasCountEl.classList.toggle('peas-low', Number(peas) <= 5);
+    }
+    window.__myPeas = peas;
     // Buy Peas button logic (demo: add 10 peas)
     if (buyPeasBtn) {
       buyPeasBtn.onclick = async function(e) {
         e.preventDefault();
         try {
-          const res = await fetch('https://d8aadbb38c76.ngrok-free.app/api/peas/update',//3000
+          const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/peas/update',//3000
            {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: user.email, amount: 10 })
           });
           const data = await res.json();
-          if (peasCountEl && typeof data.peas === 'number') peasCountEl.textContent = data.peas;
+          if (typeof data.peas === 'number') {
+            if (peasCountEl) {
+              peasCountEl.textContent = data.peas;
+              peasCountEl.classList.toggle('peas-low', Number(data.peas) <= 5);
+            }
+            window.__myPeas = data.peas;
+          }
         } catch {}
       };
     }
-    // ...existing edit button logic...
+    // remove any legacy profile edit button if present
     if (profileCardContent) {
       const oldEditBtn = profileCardContent.querySelector('.profile-edit-btn');
       if (oldEditBtn) oldEditBtn.remove();
-      const editBtn = document.createElement('button');
-      editBtn.className = 'profile-edit-btn';
-      editBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.25 2.25 0 113.182 3.182l-10.5 10.5a2.25 2.25 0 01-.878.547l-4.5 1.5a.75.75 0 01-.948-.948l1.5-4.5a2.25 2.25 0 01.547-.878l10.5-10.5z"/></svg>';
-      editBtn.title = 'Edit name';
-      editBtn.style.background = 'none';
-      editBtn.style.border = 'none';
-      editBtn.style.color = '#1976d2';
-      editBtn.style.cursor = 'pointer';
-      editBtn.style.padding = '0 0 0 8px';
-      editBtn.style.verticalAlign = 'middle';
-      profileNameEl.style.display = 'inline-flex';
-      profileNameEl.style.alignItems = 'center';
-      profileNameEl.after(editBtn);
-      editBtn.onclick = function() {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = profileNameEl.textContent;
-        input.style.fontSize = '1.08rem';
-        input.style.padding = '4px 10px';
-        input.style.borderRadius = '6px';
-        input.style.border = '1px solid #90caf9';
-        input.style.marginLeft = '0';
-        input.style.width = 'calc(100% - 28px)';
-        input.style.display = 'inline-block';
-        input.style.verticalAlign = 'middle';
-        profileNameEl.replaceWith(input);
-        editBtn.style.display = 'none';
-        input.focus();
-        input.onblur = function() {
-          const newName = input.value.trim();
-          if (auth.currentUser && newName) {
-            auth.currentUser.updateProfile({ displayName: newName }).then(() => {
-              input.replaceWith(profileNameEl);
-              profileNameEl.textContent = newName;
-              editBtn.style.display = '';
-            });
-          } else {
-            input.replaceWith(profileNameEl);
-            editBtn.style.display = '';
-          }
-        };
-        input.onkeydown = function(e) {
-          if (e.key === 'Enter') {
-            input.blur();
-          }
-        };
-      };
     }
   }
   auth.onAuthStateChanged(async function(user) {
     if (user) {
       // Always register/sync user in backend DB
       try {
-        await fetch('https://d8aadbb38c76.ngrok-free.app/api/register',//3000
+        await fetch('https://b0ceedc0c97c.ngrok-free.app/api/register',//3000
          {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1016,7 +1076,7 @@ window.showConnectedUserName = showConnectedUserName;
 let allUsers = [];
 async function loadUsersToSearch() {
   try {
-    const res = await fetch('https://d8aadbb38c76.ngrok-free.app/api/users'); //3000
+    const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/users'); //3000
     allUsers = await res.json();
     window.allUsers = allUsers; // Expose globally for client.js
     renderUserList(allUsers);
@@ -1031,9 +1091,18 @@ function renderUserList(users) {
   users.forEach(user => {
     const div = document.createElement('div');
     div.className = 'user-result';
-    const avatar = user.avatarUrl && user.avatarUrl.startsWith('http') ? user.avatarUrl : `https://i.pravatar.cc/40?u=${encodeURIComponent(user.email)}`;
+    const avatar = (user.avatarUrl && user.avatarUrl.startsWith('http'))
+      ? user.avatarUrl
+      : (user.photoURL && user.photoURL.startsWith('http'))
+        ? user.photoURL
+        : "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 80 80' fill='none'%3E%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E%3C/svg%3E";
+    const emailLower = (user.email ? String(user.email).toLowerCase() : '');
+    const isOnline = !!(window.__onlineEmails && window.__onlineEmails.has(emailLower));
     div.innerHTML = `
-      <img src="${avatar}" alt="User" style="border-radius:50%;width:40px;height:40px;object-fit:cover;">
+      <div class="avatar-wrap" style="position:relative;display:inline-block;width:40px;height:40px;">
+        <img src="${avatar}" alt="User" style="border-radius:50%;width:40px;height:40px;object-fit:cover;">
+        ${isOnline ? '<span class="online-dot" style="position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #fff;"></span>' : ''}
+      </div>
       <span>${user.username || user.email}</span>
       <span class="user-prof" title="${(user.profession||'').replace(/"/g,'&quot;')}">${user.profession || 'User'}</span>
     `;
@@ -1058,6 +1127,85 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  // Presence: heartbeat + live count
+  (function initPresence(){
+    const BASE = (window.API_BASE || 'https://b0ceedc0c97c.ngrok-free.app');
+    const countEl = document.getElementById('liveUsersCount');
+    let currentId = '';
+    let lastBeatOk = 0;
+    function computePresenceId() {
+      // prefer stable auth identity, else persisted anon id
+      try { if (auth && auth.currentUser && auth.currentUser.email) return 'user:' + auth.currentUser.email; } catch {}
+      let id = localStorage.getItem('presenceId');
+      if (!id) {
+        id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('anon-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+        localStorage.setItem('presenceId', id);
+      }
+      return 'anon:' + id;
+    }
+    currentId = computePresenceId();
+    async function beat(aliases) {
+      try {
+        await fetch(BASE + '/api/presence/beat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentId, aliases: Array.isArray(aliases) ? aliases : [] })
+        });
+        lastBeatOk = Date.now();
+      } catch {}
+    }
+    async function refreshCount() {
+      try {
+        const res = await fetch(BASE + '/api/presence/count');
+        if (!res.ok) return;
+        const { count } = await res.json();
+        const n = (typeof count === 'number' ? count : 0);
+        if (countEl) countEl.textContent = ' ' + n;
+      } catch {}
+    }
+    // initial
+    beat();
+    setTimeout(refreshCount, 400); // small delay to allow the first beat to register
+    // periodic
+    setInterval(beat, 15000);         // every 15s
+    setInterval(refreshCount, 12000); // every 12s
+    // on auth change, send immediate beat with new identity
+    try {
+      auth.onAuthStateChanged(() => {
+        const oldId = currentId;
+        currentId = computePresenceId();
+        // send beat with alias = oldId to dedupe server-side
+        beat(oldId ? [oldId] : []);
+        refreshCount();
+      });
+    } catch {}
+    // on tab visibility regain, send beat and refresh
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { beat(); refreshCount(); } });
+    // on unload, send leave beacon to drop immediately
+    window.addEventListener('beforeunload', () => {
+      try {
+        const payload = JSON.stringify({ id: currentId || computePresenceId() });
+        navigator.sendBeacon(BASE + '/api/presence/leave', new Blob([payload], { type: 'application/json' }));
+      } catch {}
+    });
+    // fetch online authenticated emails periodically and update UI badges
+    async function refreshOnlineList() {
+      try {
+        const res = await fetch(BASE + '/api/presence/online');
+        if (!res.ok) return;
+        const data = await res.json();
+        const emails = Array.isArray(data.users) ? data.users : [];
+        window.__onlineEmails = new Set(emails.map(e => String(e).toLowerCase()));
+        // rerender search list to show dots
+        renderUserList(allUsers);
+        // notify client.js to refresh recents/all connections dots
+        if (window.__refreshRecentsOnline) window.__refreshRecentsOnline();
+      } catch {}
+    }
+    // initial and periodic
+    refreshOnlineList();
+    setInterval(refreshOnlineList, 12000);
+  })();
 });
 </script>
 </html>
