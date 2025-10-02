@@ -81,7 +81,7 @@ function pickProfession(userObj) {
 
 async function fetchAllUsers() {
     try {
-        const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/users');
+        const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/users'); //3000
         if (!res.ok) throw new Error('users HTTP '+res.status);
         const users = await res.json();
         window.allUsers = Array.isArray(users) ? users : [];
@@ -95,7 +95,7 @@ async function fetchAllUsers() {
 
 async function fetchAllCalls() {
     try {
-        const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/calls');
+        const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/calls'); //3000
         if (!res.ok) throw new Error('calls HTTP '+res.status);
         const calls = await res.json();
         return Array.isArray(calls) ? calls : [];
@@ -352,7 +352,8 @@ async function logCallSummaryIfNeeded(reason = '') {
         const usr2Name = getUsernameByEmail(remoteEmail) || (window.connectedUserName || remoteEmail);
         // Use same base as other API calls
         callLoggedThisCall = true; // set before sending to avoid double triggers
-        const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/call/log', {
+        const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/call/log', //3000
+             {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -379,11 +380,13 @@ async function debitPeasForCall(localEmail, remoteEmail) {
     }
     try {
         await Promise.all([
-            fetch('https://b0ceedc0c97c.ngrok-free.app/api/peas/update', {
+            fetch('https://b0ceedc0c97c.ngrok-free.app/api/peas/update', //3000
+                 {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: localEmail, amount: -5 })
             }),
-            fetch('https://b0ceedc0c97c.ngrok-free.app/api/peas/update', {
+            fetch('https://b0ceedc0c97c.ngrok-free.app/api/peas/update', //3000
+                 {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: remoteEmail, amount: -5 })
             })
