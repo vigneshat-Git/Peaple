@@ -72,6 +72,86 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+// In-memory presence tracking (lightweight)
+const presence = new Map(); // id -> lastSeenMs
+const PRESENCE_WINDOW_MS = 30 * 1000; // count users seen in the last 30s for more responsiveness
+function prunePresence(now = Date.now()) {
+    for (const [id, ts] of presence.entries()) {
+        if (now - ts > PRESENCE_WINDOW_MS * 3) { // hard prune after 3 windows
+            presence.delete(id);
+        }
+    }
+}
+
+// Client heartbeat: POST { id }
+app.post('/api/presence/beat', async (req, res) => {
+    try {
+        const id = (req.body && String(req.body.id || '').trim()) || req.ip;
+        const aliases = Array.isArray(req.body && req.body.aliases) ? req.body.aliases : [];
+        const now = Date.now();
+        presence.set(id, now);
+        // Remove any aliases (old IDs for the same person) to avoid double counting
+        for (const a of aliases) {
+            if (a && presence.has(a)) presence.delete(a);
+        }
+        prunePresence(now);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Live users count (seen within PRESENCE_WINDOW_MS)
+app.get('/api/presence/count', async (req, res) => {
+    try {
+        const now = Date.now();
+        // Build unique sets: dedupe authenticated users by email
+        const userEmails = new Set();
+        const anonIds = new Set();
+        for (const [id, ts] of presence.entries()) {
+            if (now - ts > PRESENCE_WINDOW_MS) continue;
+            if (String(id).startsWith('user:')) {
+                const email = String(id).slice(5).toLowerCase();
+                if (email) userEmails.add(email);
+            } else {
+                anonIds.add(String(id));
+            }
+        }
+        res.json({ count: userEmails.size + anonIds.size });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Optional: explicit leave to drop immediately
+app.post('/api/presence/leave', async (req, res) => {
+    try {
+        const id = (req.body && String(req.body.id || '').trim()) || '';
+        if (id) presence.delete(id);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Online authenticated users (emails)
+app.get('/api/presence/online', async (req, res) => {
+    try {
+        const now = Date.now();
+        const userEmails = new Set();
+        for (const [id, ts] of presence.entries()) {
+            if (now - ts > PRESENCE_WINDOW_MS) continue;
+            if (String(id).startsWith('user:')) {
+                const email = String(id).slice(5).toLowerCase();
+                if (email) userEmails.add(email);
+            }
+        }
+        res.json({ users: Array.from(userEmails) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Register user
 app.post('/api/register', async (req, res) => {
     try {
@@ -116,35 +196,42 @@ app.post('/api/peas/update', async (req, res) => {
     }
 });
 
-// Store call data
-app.post('/api/call', async (req, res) => {
+// Store call data (new schema): single document with emails and duration
+app.post('/api/call/log', async (req, res) => {
     try {
-        const { userId, peerId, callTime, duration, details } = req.body;
-        console.log('[SERVER DEBUG] /api/call called:', { userId, peerId, callTime });
-        
-        // Deduct 5 peas from both users (user1 -5, user2 -5, total 10 peas per call)
-        // This should only be called once per call by the offer role user
-        const user1 = await User.findById(userId);
-        const user2 = await User.findById(peerId);
-        if (!user1 || !user2) {
-            return res.status(400).json({ error: 'Both users must exist' });
+        const { user1, user2, dateTime, duration } = req.body;
+        if (!user1 || !user2 || !dateTime || typeof duration !== 'number') {
+            return res.status(400).json({ error: 'user1, user2, dateTime, and duration are required' });
         }
-        
-        console.log('[SERVER DEBUG] Before deduction:', { user1Peas: user1.peas, user2Peas: user2.peas });
-        
-        // Deduct 5 peas from both users
-        user1.peas = Math.max(0, (user1.peas || 0) - 5);
-        user2.peas = Math.max(0, (user2.peas || 0) - 5);
-        
-        console.log('[SERVER DEBUG] After deduction:', { user1Peas: user1.peas, user2Peas: user2.peas });
-        await user1.save();
-        await user2.save();
-        // Save call data for both users
-        const callData1 = new CallData({ userId, callTime, duration, details });
-        const callData2 = new CallData({ userId: peerId, callTime, duration, details });
-        await callData1.save();
-        await callData2.save();
-        res.status(201).json({ callData1, callData2, user1Peas: user1.peas, user2Peas: user2.peas });
+        // Normalize participant order so both sides map to the same key
+        const a = String(user1).trim();
+        const b = String(user2).trim();
+        const [u1, u2] = a.localeCompare(b) <= 0 ? [a, b] : [b, a];
+        const dt = new Date(dateTime);
+        // Quantize to 5-second buckets to coalesce slight differences between peers
+        const bucketMs = Math.floor(dt.getTime() / 5000) * 5000;
+        const keyDt = new Date(bucketMs);
+
+        // Upsert to guarantee exactly one record
+        const result = await CallData.updateOne(
+            { user1: u1, user2: u2, dateTime: keyDt },
+            { $set: { duration } },
+            { upsert: true }
+        );
+        const saved = await CallData.findOne({ user1: u1, user2: u2, dateTime: keyDt });
+        try {
+            console.log('[CALL LOG][SAVED]', {
+                collection: saved && saved.collection && saved.collection.name,
+                id: saved && saved._id && String(saved._id),
+                user1: saved && saved.user1,
+                user2: saved && saved.user2,
+                dateTime: saved && saved.dateTime,
+                duration: saved && saved.duration,
+                upserted: !!(result && result.upsertedId),
+                bucketed: keyDt
+            });
+        } catch {}
+        res.status(result && result.upsertedId ? 201 : 200).json(saved);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -231,6 +318,7 @@ app.post('/api/seed-test-data', async (req, res) => {
 
 // Start Express server
 const PORT = 3000;
+
 app.listen(PORT, () => {
     console.log(`REST API server running on http://localhost:${PORT}`);
 });

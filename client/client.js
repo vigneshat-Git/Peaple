@@ -1,34 +1,394 @@
-// Helper: Get MongoDB userId by email from allUsers (populated in index.html)
 function getUserIdByEmail(email) {
     if (window.allUsers && Array.isArray(window.allUsers)) {
         const user = window.allUsers.find(u => u.email === email);
         return user ? user._id : null;
     }
-    return null;
 }
 
-// Call this after a call is established (e.g., after signaling handshake is complete)
-async function debitPeasForCall(localEmail, remoteEmail, duration = 0, details = '') {
-    const userId = getUserIdByEmail(localEmail);
-    const peerId = getUserIdByEmail(remoteEmail);
-    console.log('[Peas Debug] debitPeasForCall:', { localEmail, remoteEmail, userId, peerId });
-    if (!userId || !peerId) {
-        console.warn('[Peas Debug] Missing userId or peerId, aborting peas debit.');
-        return;
-    }
+// Helper: Get username by email from allUsers; fallback to displayName/email
+function getUsernameByEmail(email) {
+    if (!email) return null;
     try {
-        await fetch('https://d8aadbb38c76.ngrok-free.app/api/call', //3000
-             {
+        if (window.allUsers && Array.isArray(window.allUsers)) {
+            const user = window.allUsers.find(u => u.email === email);
+            if (user && user.username) return user.username;
+        }
+        // Fallback to Firebase displayName if it's the local user
+        if (auth && auth.currentUser && auth.currentUser.email === email) {
+            return auth.currentUser.displayName || email;
+        }
+    } catch {}
+    // Final fallback: local-part of email
+    try { return String(email).split('@')[0] || null; } catch { return null; }
+}
+
+// ----- Recent Connections helpers -----
+// Default avatar (neutral SVG, no randomization)
+const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80" fill="none">\
+<rect width="80" height="80" rx="40" fill="%23e5e7eb"/>\
+<circle cx="40" cy="32" r="14" fill="%239ca3af"/>\
+<path d="M16 66c6-12 18-18 24-18s18 6 24 18" fill="%239ca3af"/>\
+</svg>';
+
+function getAvatarForUser(userObj) {
+    if (!userObj) return DEFAULT_AVATAR;
+    const url = (userObj.avatarUrl || '').trim();
+    return url ? url : DEFAULT_AVATAR;
+}
+
+function getAvatarByEmailOrUsername(identifier) {
+    if (!identifier) return DEFAULT_AVATAR;
+    try {
+        if (window.allUsers && Array.isArray(window.allUsers)) {
+            const byEmail = window.allUsers.find(u => u.email === identifier);
+            if (byEmail) return getAvatarForUser(byEmail);
+            const byName = window.allUsers.find(u => u.username === identifier);
+            if (byName) return getAvatarForUser(byName);
+        }
+    } catch {}
+    return DEFAULT_AVATAR;
+}
+// expose for inline scripts in index.html
+window.__getAvatarByEmailOrUsername = getAvatarByEmailOrUsername;
+function timeAgoCustom(dateInput) {
+    const now = Date.now();
+    const ts = (dateInput instanceof Date) ? dateInput.getTime() : new Date(dateInput).getTime();
+    if (isNaN(ts)) return '';
+    const diffMs = Math.max(0, now - ts);
+    const sec = Math.floor(diffMs / 1000);
+    const min = Math.floor(sec / 60);
+    const hr = Math.floor(min / 60);
+    const day = Math.floor(hr / 24);
+    const week = Math.floor(day / 7);
+    const month = Math.floor(day / 30);
+    const year = Math.floor(day / 365);
+    if (sec < 60) return `${sec || 1} sec ago`;
+    if (min < 60) return `${min} mins ago`;
+    if (hr < 24) return `${hr} hrs ago`;
+    if (day < 7) return `${day} days ago`;
+    if (day < 30) return `${Math.max(1, week)} weeks ago`;
+    if (day < 365) return `${Math.max(1, month)} months ago`;
+    return `${Math.max(1, year)} years ago`;
+}
+
+function pickProfession(userObj) {
+    if (!userObj) return 'Professional';
+    if (userObj.profession && String(userObj.profession).trim()) return userObj.profession;
+    if (userObj.bio && String(userObj.bio).trim()) return userObj.bio;
+    return 'Professional';
+}
+
+async function fetchAllUsers() {
+    try {
+        const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/users');
+        if (!res.ok) throw new Error('users HTTP '+res.status);
+        const users = await res.json();
+        window.allUsers = Array.isArray(users) ? users : [];
+        return window.allUsers;
+    } catch (e) {
+        console.warn('[RECENTS] failed to fetch users', e);
+        window.allUsers = window.allUsers || [];
+        return window.allUsers;
+    }
+}
+
+async function fetchAllCalls() {
+    try {
+        const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/calls');
+        if (!res.ok) throw new Error('calls HTTP '+res.status);
+        const calls = await res.json();
+        return Array.isArray(calls) ? calls : [];
+    } catch (e) {
+        console.warn('[RECENTS] failed to fetch calls', e);
+        return [];
+    }
+}
+
+// ----- Weekly Report -----
+function renderWeeklyReport(currentUsername, calls, users) {
+    try {
+        const card = document.querySelector('.weekly-report-card');
+        if (!card || !currentUsername) return;
+        const now = new Date();
+        const start = new Date(now);
+        start.setDate(now.getDate() - 6); // include today + past 6 days
+        start.setHours(0,0,0,0);
+
+        // Filter calls involving current user in last 7 days
+        const weekCalls = (calls || []).filter(c => {
+            if (!c || !c.user1 || !c.user2 || !c.dateTime) return false;
+            if (c.user1 !== currentUsername && c.user2 !== currentUsername) return false;
+            const dt = new Date(c.dateTime);
+            return dt >= start && dt <= now;
+        });
+
+        // Aggregate
+        const dayBuckets = []; // 0..6 days; 0=start day
+        for (let i=0;i<7;i++) dayBuckets.push({ count:0, duration:0 });
+        let totalDuration = 0; // seconds
+        let longest = 0; // seconds
+        const partners = new Set();
+        let lastCallDt = null;
+
+        weekCalls.forEach(c => {
+            const dt = new Date(c.dateTime);
+            const idx = Math.floor((dt.setHours(0,0,0,0) - start.getTime()) / (24*3600*1000));
+            const dur = Number(c.duration || 0);
+            if (idx>=0 && idx<7) {
+                dayBuckets[idx].count += 1;
+                dayBuckets[idx].duration += dur;
+            }
+            totalDuration += dur;
+            if (dur > longest) longest = dur;
+            const other = (c.user1 === currentUsername) ? c.user2 : c.user1;
+            if (other) partners.add(other);
+            const cdt = new Date(c.dateTime);
+            if (!lastCallDt || cdt > lastCallDt) lastCallDt = cdt;
+        });
+
+        const fmtDur = (sec) => {
+            const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
+            if (h>0) return `${h}h ${String(m).padStart(2,'0')}m`;
+            return `${m}m`;
+        };
+        const dayLabels = Array.from({length:7}, (_,i) => {
+            const d = new Date(start.getTime() + i*24*3600*1000);
+            return d.toLocaleDateString(undefined,{ weekday:'short' });
+        });
+        const maxCount = Math.max(1, ...dayBuckets.map(b=>b.count));
+
+        // Build mini chart bars
+        const bars = dayBuckets.map((b, i) => {
+            const h = Math.max(4, Math.round((b.count / maxCount) * 42));
+            return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                      <div title="${dayLabels[i]}: ${b.count} calls" style="width:20px;height:${h}px;background:#90caf9;border-radius:6px 6px 2px 2px;box-shadow:0 1px 3px rgba(0,0,0,0.1);"></div>
+                      <div style="font-size:0.72rem;color:#667">${dayLabels[i].slice(0,2)}</div>
+                    </div>`;
+        }).join('');
+
+        const lastCall = lastCallDt ? lastCallDt.toLocaleString() : '—';
+        const uniquePartners = partners.size;
+        const totalCalls = weekCalls.length;
+
+        card.innerHTML = `
+          <h2>This Week's Report</h2>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:stretch;">
+            <div style="background:linear-gradient(180deg,#ffffff,#f8fbff);border:1px solid #e5efff;border-radius:12px;padding:12px;">
+              <div style="font-size:0.85rem;color:#567">Connections</div>
+              <div style="font-weight:800;font-size:1.4rem;color:#0d47a1;">${totalCalls}</div>
+            </div>
+            <div style="background:linear-gradient(180deg,#ffffff,#f8fffa);border:1px solid #d7f5e3;border-radius:12px;padding:12px;">
+              <div style="font-size:0.85rem;color:#567">Total Duration</div>
+              <div style="font-weight:800;font-size:1.4rem;color:#1b5e20;">${fmtDur(totalDuration)}</div>
+            </div>
+            <div style="background:linear-gradient(180deg,#ffffff,#fff8fb);border:1px solid #ffd7e2;border-radius:12px;padding:12px;">
+              <div style="font-size:0.85rem;color:#567">Unique People</div>
+              <div style="font-weight:800;font-size:1.4rem;color:#880e4f;">${uniquePartners}</div>
+            </div>
+            <div style="background:linear-gradient(180deg,#ffffff,#fffdf6);border:1px solid #ffe6b3;border-radius:12px;padding:12px;">
+              <div style="font-size:0.85rem;color:#567">Longest Call</div>
+              <div style="font-weight:800;font-size:1.4rem;color:#b26a00;">${fmtDur(longest)}</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;background:#fff;border:1px solid #eee;border-radius:12px;padding:12px;">
+            <div style="display:flex;align-items:flex-end;gap:10px;justify-content:space-between;">
+              ${bars}
+            </div>
+            <div style="margin-top:8px;font-size:0.85rem;color:#666;display:flex;justify-content:space-between;">
+              <span>Last 7 days</span>
+              <span>Last call: ${lastCall}</span>
+            </div>
+          </div>
+        `;
+    } catch (e) {
+        console.warn('[WEEKLY] render error', e);
+    }
+}
+
+function renderRecentConnections(currentUsername, calls, users, showAll=false) {
+    const listEl = document.querySelector('.recent-connections .connection-list');
+    if (!listEl || !currentUsername) return;
+    // Take ALL calls involving current user
+    const items = [];
+    for (const c of calls) {
+        const u1 = c.user1; const u2 = c.user2;
+        if (!u1 || !u2 || !c.dateTime) continue;
+        if (u1 !== currentUsername && u2 !== currentUsername) continue;
+        const other = (u1 === currentUsername) ? u2 : u1;
+        items.push({ other, call: c });
+    }
+    items.sort((a,b) => new Date(b.call.dateTime) - new Date(a.call.dateTime));
+    const toRender = showAll ? items : items.slice(0, 2);
+
+    // Build DOM
+    listEl.innerHTML = '';
+    for (const { other, call } of toRender) {
+        const userObj = users.find(u => u.username === other) || null;
+        const profession = pickProfession(userObj);
+        const when = timeAgoCustom(call.dateTime);
+        const avatarSrc = getAvatarForUser(userObj);
+        const emailLower = (userObj && userObj.email) ? String(userObj.email).toLowerCase() : '';
+        const isOnline = !!(window.__onlineEmails && window.__onlineEmails.has(emailLower));
+        const item = document.createElement('div');
+        item.className = 'connection-item';
+        item.innerHTML = `
+            <div class="avatar-wrap" style="position:relative;display:inline-block;width:40px;height:40px;">
+              <img src="${avatarSrc}" alt="${other}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+              ${isOnline ? '<span class="online-dot" style="position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #fff;"></span>' : ''}
+            </div>
+            <div class="conn-info">
+              <span>${other}</span>
+              <span class="user-prof">${profession}</span>
+            </div>
+            <div class="conn-meta">
+              <span>${when}</span>
+              <button class="reconnect-btn" data-user="${other}">Reconnect</button>
+            </div>
+        `;
+        listEl.appendChild(item);
+    }
+}
+
+async function initRecentConnections() {
+    try {
+        const me = auth && auth.currentUser ? auth.currentUser : null;
+        if (!me) return; // wait for auth
+        const users = await fetchAllUsers();
+        // Resolve my username same way we log calls
+        const myUsername = getUsernameByEmail(me.email) || (me.displayName || me.email);
+        const calls = await fetchAllCalls();
+        // cache for toggling view-all without refetch
+        window.__recentUsers = users;
+        window.__recentCalls = calls;
+        window.__recentMe = myUsername;
+        window.__showAllConnections = false; // default collapsed on home list
+        renderRecentConnections(myUsername, calls, users, false);
+        // Also render weekly report
+        try { renderWeeklyReport(myUsername, calls, users); } catch (e) { console.warn('[WEEKLY] render failed', e); }
+    } catch (e) {
+        console.warn('[RECENTS] init failed', e);
+    }
+}
+
+function renderAllConnectionsPanel(currentUsername, calls, users) {
+    const overlay = document.getElementById('allConnectionsOverlay');
+    const listEl = document.getElementById('allConnectionsList');
+    const panel = document.getElementById('allConnectionsPanel');
+    if (!overlay || !listEl) return;
+    // Filter all calls for current user and sort desc
+    const items = [];
+    for (const c of (calls || [])) {
+        if (!c || !c.user1 || !c.user2 || !c.dateTime) continue;
+        if (c.user1 !== currentUsername && c.user2 !== currentUsername) continue;
+        const other = (c.user1 === currentUsername) ? c.user2 : c.user1;
+        items.push({ other, call: c });
+    }
+    items.sort((a,b) => new Date(b.call.dateTime) - new Date(a.call.dateTime));
+
+    // Build list (respect dark mode)
+    listEl.innerHTML = '';
+    const isDark = (document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark');
+    const colMuted = isDark ? '#94a3b8' : '#6b7280'; // slate-400 vs gray-500
+    const colMain = isDark ? '#e2e8f0' : '#374151'; // slate-200 vs gray-700
+    for (const { other, call } of items) {
+        const userObj = users.find(u => u.username === other) || null;
+        const profession = pickProfession(userObj);
+        const when = timeAgoCustom(call.dateTime);
+        const duration = (typeof call.duration === 'number') ? `${call.duration}s` : '';
+        const avatarSrc = getAvatarForUser(userObj);
+        const emailLower = (userObj && userObj.email) ? String(userObj.email).toLowerCase() : '';
+        const isOnline = !!(window.__onlineEmails && window.__onlineEmails.has(emailLower));
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; gap:12px; padding:10px 8px; border-bottom:1px solid #f0f2f5;';
+        row.innerHTML = `
+            <div class="avatar-wrap" style="position:relative;display:inline-block;width:44px;height:44px;">
+              <img src="${avatarSrc}" alt="${other}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" />
+              ${isOnline ? '<span class="online-dot" style="position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#22c55e;border:2px solid #fff;"></span>' : ''}
+            </div>
+            <div style="display:flex;flex-direction:column;">
+              <span style="font-weight:600;color:${colMain};">${other}</span>
+              <span style="font-size:0.9rem;color:${colMuted};">${profession}</span>
+            </div>
+            <div style="margin-left:auto; text-align:right; display:flex; flex-direction:column; gap:2px;">
+              <span style="font-size:0.92rem;color:${colMain};">${when}</span>
+              <span style="font-size:0.82rem;color:${colMuted};">${duration}</span>
+            </div>
+        `;
+        listEl.appendChild(row);
+    }
+    // Show panel with slide-in animation
+    overlay.style.display = 'flex';
+    try {
+        // ensure initial offscreen state before triggering
+        if (panel) {
+            panel.style.transform = 'translateX(100%)';
+            // next frame -> slide in
+            requestAnimationFrame(() => { panel.style.transform = 'translateX(0)'; });
+        }
+    } catch {}
+}
+// ----- Call summary logging -----
+function getCallDurationSeconds() {
+    if (!__callTimerStart) return 0;
+    return Math.max(0, Math.floor((Date.now() - __callTimerStart) / 1000));
+}
+function getCallStartedAt() {
+    return __callTimerStart ? new Date(__callTimerStart).toISOString() : null;
+}
+async function logCallSummaryIfNeeded(reason = '') {
+    // Allow either side to log once; server will dedupe via upsert
+    if (callLoggedThisCall) return;
+    try {
+        const localEmail = auth.currentUser ? auth.currentUser.email : null;
+        const remoteEmail = window.connectedUserEmail || null;
+        let startedAt = getCallStartedAt();
+        let duration = getCallDurationSeconds();
+        if (!localEmail || !remoteEmail) return;
+        // If timer never started (e.g., disconnected before media), fallback
+        if (!startedAt) { startedAt = new Date().toISOString(); duration = 0; }
+        // Resolve usernames for both parties per new schema
+        const user1Name = getUsernameByEmail(localEmail) || (auth.currentUser ? (auth.currentUser.displayName || localEmail) : localEmail);
+        const usr2Name = getUsernameByEmail(remoteEmail) || (window.connectedUserName || remoteEmail);
+        // Use same base as other API calls
+        callLoggedThisCall = true; // set before sending to avoid double triggers
+        const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/call/log', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                userId,
-                peerId,
-                callTime: new Date(),
-                duration,
-                details
+                user1: user1Name,
+                user2: usr2Name,
+                dateTime: startedAt,
+                duration
             })
         });
+        if (!res.ok) { throw new Error('HTTP '+res.status); }
+        console.log('[CALL LOG] summary saved', { user1: user1Name, user2: usr2Name, dateTime: startedAt, duration, reason, isOfferRole });
+    } catch (e) {
+        console.warn('[CALL LOG] failed to save summary', e);
+        // allow retry if something else triggers later
+        callLoggedThisCall = false;
+    }
+}
+
+// Call this after a call is established (e.g., after signaling handshake is complete)
+async function debitPeasForCall(localEmail, remoteEmail) {
+    if (!localEmail || !remoteEmail) {
+        console.warn('[Peas Debug] Missing emails, aborting peas debit.');
+        return;
+    }
+    try {
+        await Promise.all([
+            fetch('https://b0ceedc0c97c.ngrok-free.app/api/peas/update', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: localEmail, amount: -5 })
+            }),
+            fetch('https://b0ceedc0c97c.ngrok-free.app/api/peas/update', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: remoteEmail, amount: -5 })
+            })
+        ]);
+        console.log('[Peas Debug] Debited 5 peas from both users');
     } catch (e) { console.error('Failed to debit peas for call', e); }
 }
 // Firebase Authentication for browser:
@@ -85,7 +445,10 @@ function updateCallButtons(isConnected) {
         startButton.disabled = false;
     } else {
         startButton.textContent = 'Start Call';
-        endButton.style.display = 'none';
+        // Keep End visible if local media is active so user can terminate camera/mic
+        const hasLiveLocal = (typeof localStream !== 'undefined' && localStream &&
+          typeof localStream.getTracks === 'function' && localStream.getTracks().some(t => t.readyState === 'live'));
+        endButton.style.display = hasLiveLocal ? 'inline-flex' : 'none';
         startButton.disabled = false;
     }
 }
@@ -100,6 +463,17 @@ muteButton.addEventListener('click', () => {
 
 // End call button logic
 endButton.addEventListener('click', () => {
+    // Stop any active screen share first
+    try {
+        if (screenStream) {
+            screenStream.getTracks().forEach(t => { try { t.stop(); } catch {} });
+        }
+    } catch {}
+    screenStream = null;
+    isScreenSharing = false;
+    savedVideoSender = null;
+    savedCameraTrack = null;
+
     // Close peer connection and data channel
     if (peerConnection) {
         try { peerConnection.onicecandidate = null; } catch {}
@@ -128,6 +502,9 @@ endButton.addEventListener('click', () => {
     // Clear video elements
     try { if (remoteVideo) remoteVideo.srcObject = null; } catch {}
     try { if (localVideo) localVideo.srcObject = null; } catch {}
+    // Ensure videos are visible again for next call state
+    try { if (localVideo) localVideo.style.display = ''; } catch {}
+    try { if (remoteVideo) remoteVideo.style.display = ''; } catch {}
 
     // Notify and close signaling socket so server unmatches us
     if (signalingServer) {
@@ -175,13 +552,98 @@ endButton.addEventListener('click', () => {
     const fsMsg = document.getElementById('fsMessagesContainer');
     if (fsMsg) fsMsg.innerHTML = '';
     showChatEmptyState();
-    // Stop and hide timer
+    // Log call summary, then stop and hide timer
+    logCallSummaryIfNeeded('endButton');
     stopCallTimer(true);
 });
 
-// Screen share button logic (placeholder)
-screenShareButton.addEventListener('click', () => {
-    alert('Screen sharing feature coming soon!');
+// ----- Screen Share -----
+async function startScreenShare() {
+    if (!peerConnection) {
+        // Require a peer connection setup (after localStream is available)
+        if (!localStream) return;
+        setupPeerConnection(localStream);
+    }
+    try {
+        // Request display media
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'motion' }, audio: false });
+        const screenTrack = screenStream.getVideoTracks()[0];
+        if (!screenTrack) throw new Error('No screen video track');
+
+        // Save references to restore later
+        savedCameraTrack = (localStream && localStream.getVideoTracks()[0]) || null;
+        const sender = peerConnection && typeof peerConnection.getSenders === 'function'
+            ? peerConnection.getSenders().find(s => s.track && s.track.kind === 'video')
+            : null;
+        savedVideoSender = sender || null;
+
+        if (savedVideoSender) {
+            await savedVideoSender.replaceTrack(screenTrack);
+        } else if (peerConnection) {
+            peerConnection.addTrack(screenTrack, screenStream);
+        }
+
+        // When user stops sharing via browser UI, restore camera
+        screenTrack.onended = () => { try { stopScreenShare(); } catch {} };
+
+        // UI: toggle button and hide videos while sharing
+        isScreenSharing = true;
+        if (screenShareButton) {
+            screenShareButton.innerHTML = '<i class="fa-solid fa-stop"></i>';
+            screenShareButton.setAttribute('title', 'Stop sharing');
+            screenShareButton.setAttribute('aria-pressed', 'true');
+        }
+        try { if (localVideo) localVideo.style.display = 'none'; } catch {}
+        try { if (remoteVideo) remoteVideo.style.display = 'none'; } catch {}
+    } catch (e) {
+        console.warn('[ScreenShare] failed to start', e);
+        // Reset state if failed
+        try { if (screenStream) { screenStream.getTracks().forEach(t => { try { t.stop(); } catch {} }); } } catch {}
+        screenStream = null; isScreenSharing = false;
+    }
+}
+
+async function stopScreenShare() {
+    if (!isScreenSharing) return;
+    // Stop display media tracks
+    try {
+        if (screenStream) {
+            screenStream.getTracks().forEach(t => { try { t.stop(); } catch {} });
+        }
+    } catch {}
+
+    // Restore camera track
+    try {
+        const cameraTrack = savedCameraTrack || (localStream && localStream.getVideoTracks()[0]) || null;
+        if (savedVideoSender && cameraTrack) {
+            await savedVideoSender.replaceTrack(cameraTrack);
+        } else if (peerConnection && cameraTrack) {
+            // As a fallback, add camera track if sender not found
+            peerConnection.addTrack(cameraTrack, localStream);
+        }
+    } catch (e) { console.warn('[ScreenShare] restore camera failed', e); }
+
+    // UI: toggle back and show videos
+    isScreenSharing = false;
+    screenStream = null;
+    savedVideoSender = null;
+    // keep savedCameraTrack for potential reuse; optional: null it
+    if (screenShareButton) {
+        screenShareButton.innerHTML = '<i class="fa-solid fa-display"></i>';
+        screenShareButton.setAttribute('title', 'Share screen');
+        screenShareButton.setAttribute('aria-pressed', 'false');
+    }
+    try { if (localVideo) localVideo.style.display = ''; } catch {}
+    try { if (remoteVideo) remoteVideo.style.display = ''; } catch {}
+}
+
+// Screen share button logic: toggle start/stop
+screenShareButton.addEventListener('click', async () => {
+    if (!isScreenSharing) {
+        await startScreenShare();
+    } else {
+        await stopScreenShare();
+    }
 });
 
 // Settings button logic (placeholder)
@@ -198,19 +660,24 @@ const __qs = new URLSearchParams(window.location.search || '');
 const __forceLocal = __qs.get('localWs') === '1';
 const SIGNALING_URL = (__forceLocal || !__host || __host === 'localhost' || __host === '127.0.0.1')
     ? 'ws://localhost:8000'
-    : 'wss://06cbb40a90b2.ngrok-free.app';
+    : 'wss://dccdc335e3b3.ngrok-free.app';
 
 let peerConnection;
 let dataChannel;
 
 // Step 1: Get user media (camera and microphone) only when Start Call is clicked
 let localStream = null;
+let screenStream = null; // display media stream when screen sharing
+let isScreenSharing = false;
+let savedVideoSender = null; // RTCRtpSender for video
+let savedCameraTrack = null; // original camera video track
 let isMatched = false;
 let isOfferRole = false; // true if this client should be the one to debit peas
 let peasDebitedForThisCall = false; // ensure we only debit once per connection
 let userInitiated = false; // set true only when Start is clicked
 let offerPendingUntilMatched = false; // if PC ready before matched
 let readySent = false; // ensure we only send 'ready' once
+let callLoggedThisCall = false; // ensure we only log summary once per call
 
 // ----- Call duration timer -----
 let __callTimerInterval = null;
@@ -366,7 +833,76 @@ function goToNextMatch() {
 window.goToNextMatch = goToNextMatch;
 
 // Show empty-state on initial load
-window.addEventListener('DOMContentLoaded', () => { showChatEmptyState(); });
+window.addEventListener('DOMContentLoaded', () => {
+    showChatEmptyState();
+    // Render recents after auth is ready
+    try {
+        auth.onAuthStateChanged(() => {
+            initRecentConnections();
+        });
+    } catch {}
+    // Wire 'View all connections' link
+    try {
+        const viewAll = document.querySelector('.recent-connections .view-all-connections');
+        if (viewAll) {
+            viewAll.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Open slide-in and render full list
+                if (window.__recentMe && window.__recentCalls && window.__recentUsers) {
+                    renderAllConnectionsPanel(window.__recentMe, window.__recentCalls, window.__recentUsers);
+                } else {
+                    // Ensure data exists first, then open
+                    initRecentConnections();
+                    setTimeout(() => {
+                        if (window.__recentMe && window.__recentCalls && window.__recentUsers) {
+                            renderAllConnectionsPanel(window.__recentMe, window.__recentCalls, window.__recentUsers);
+                        }
+                    }, 300);
+                }
+            });
+        }
+    } catch {}
+    // Wire close handlers for panel
+    try {
+        const overlay = document.getElementById('allConnectionsOverlay');
+        const panel = document.getElementById('allConnectionsPanel');
+        const closeBtn = document.getElementById('allConnCloseBtn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                if (!overlay || !panel) return;
+                try {
+                    panel.style.transform = 'translateX(100%)';
+                    setTimeout(() => { overlay.style.display = 'none'; }, 300);
+                } catch { overlay.style.display = 'none'; }
+            });
+        }
+        if (overlay) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    if (!panel) { overlay.style.display = 'none'; return; }
+                    try {
+                        panel.style.transform = 'translateX(100%)';
+                        setTimeout(() => { overlay.style.display = 'none'; }, 300);
+                    } catch { overlay.style.display = 'none'; }
+                }
+            });
+        }
+    } catch {}
+});
+
+// Expose a small helper so index.html can re-render recents when online list updates
+window.__refreshRecentsOnline = function() {
+  try {
+    if (window.__recentMe && window.__recentCalls && window.__recentUsers) {
+      renderRecentConnections(window.__recentMe, window.__recentCalls, window.__recentUsers, window.__showAllConnections || false);
+      // If panel is open, re-render it too
+      const overlay = document.getElementById('allConnectionsOverlay');
+      if (overlay && overlay.style.display !== 'none') {
+        renderAllConnectionsPanel(window.__recentMe, window.__recentCalls, window.__recentUsers);
+      }
+    }
+  } catch {}
+};
 
 function sendReadyOnce() {
     if (!userInitiated || readySent || !signalingServer) return;
@@ -525,7 +1061,8 @@ function ensureSocket() {
                 updateCallButtons(false);
                 setLocalVideoActive(false);
                 showChatEmptyState();
-                // Stop and hide timer on disconnect
+                // Log call summary, then stop and hide timer on disconnect
+                logCallSummaryIfNeeded('ws:disconnected');
                 stopCallTimer(true);
             }
         } catch (error) {
@@ -574,7 +1111,8 @@ function ensureSocket() {
         updateCallButtons(false);
         setLocalVideoActive(false);
         showChatEmptyState();
-        // Stop and hide timer on socket close
+        // Log call summary, then stop and hide timer on socket close
+        logCallSummaryIfNeeded('ws:onclose');
         stopCallTimer(true);
     };
 }
@@ -597,6 +1135,7 @@ function setupPeerConnection(stream) {
         hideChatEmptyState();
         // Start timer when remote media is received (connected)
         startCallTimer();
+        callLoggedThisCall = false;
     };
     peerConnection.onicecandidate = event => {
         if (event.candidate && signalingServer && signalingServer.readyState === WebSocket.OPEN) {
@@ -762,6 +1301,8 @@ function startCallIfAuthenticated() {
             .then(stream => {
                 localStream = stream;
                 setLocalVideoActive(true); // Show video, hide placeholder
+                // Show End button immediately when camera is active (even if not connected yet)
+                try { if (endButton) endButton.style.display = 'inline-flex'; } catch {}
                 setupPeerConnection(stream);
                 // Only now connect to signaling and send ready
                 ensureSocket();
@@ -778,6 +1319,8 @@ function startCallIfAuthenticated() {
             });
     } else {
         setLocalVideoActive(true); // Show video, hide placeholder
+        // We already have local media, ensure End button is visible to allow terminating camera
+        try { if (endButton) endButton.style.display = 'inline-flex'; } catch {}
         setupPeerConnection(localStream);
         // Local media already available; proceed to signaling now
         ensureSocket();
