@@ -250,11 +250,108 @@ window.auth = firebase.auth(); // Make auth globally available
   // For local development use localhost; when deploying via ngrok, set this to the ngrok URL.
   //window.API_BASE = 'http://localhost:3000';
   // Example for ngrok (uncomment and update):
-  window.API_BASE = 'https://b0ceedc0c97c.ngrok-free.app'; //3000
+  window.API_BASE = 'https://ed89cda10c3e.ngrok-free.app'; //3000
 </script>
  
   
   <style>
+    /* Login Prompt Styles */
+    .login-prompt {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 100%;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* Dark mode styles */
+    [data-theme="dark"] .login-prompt {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .login-prompt-content {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .login-prompt-icon {
+      font-size: 48px;
+      color: #4a6bff;
+      background: rgba(74, 107, 255, 0.1);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      transition: background 0.3s ease;
+    }
+
+    [data-theme="dark"] .login-prompt-icon {
+      background: rgba(74, 107, 255, 0.2);
+    }
+
+    .login-prompt h2 {
+      color: #1a237e;
+      font-size: 28px;
+      margin-bottom: 12px;
+      font-weight: 700;
+      transition: color 0.3s ease;
+    }
+
+    [data-theme="dark"] .login-prompt h2 {
+      color: #e0e7ff;
+    }
+
+    .login-prompt p {
+      color: #546e7a;
+      font-size: 16px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+      transition: color 0.3s ease;
+    }
+
+    [data-theme="dark"] .login-prompt p {
+      color: #94a3b8;
+    }
+
+    .login-prompt-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(45deg, #4a6bff, #6a5acd);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(74, 107, 255, 0.3);
+      border: none;
+      cursor: pointer;
+    }
+
+    [data-theme="dark"] .login-prompt-btn {
+      box-shadow: 0 4px 15px rgba(74, 107, 255, 0.2);
+    }
+
+    .login-prompt-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 107, 255, 0.4);
+      background: linear-gradient(45deg, #3a5bff, #5a4acd);
+    }
+
+    [data-theme="dark"] .login-prompt-btn:hover {
+      box-shadow: 0 6px 20px rgba(74, 107, 255, 0.3);
+    }
+
     .messages-container {
       width: 100%;
       height: 220px;
@@ -371,6 +468,138 @@ window.auth = firebase.auth(); // Make auth globally available
       color: #888;
       opacity: 0.7;
     }
+
+    /* Login Prompt Styles */
+    .login-prompt {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .login-prompt-content {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .login-prompt-icon {
+      font-size: 48px;
+      color: #4a6bff;
+      margin-bottom: 20px;
+      background: rgba(74, 107, 255, 0.1);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .login-prompt h2 {
+      color: #1a237e;
+      font-size: 28px;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .login-prompt p {
+      color: #546e7a;
+      font-size: 16px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .login-prompt-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(45deg, #4a6bff, #6a5acd);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(74, 107, 255, 0.3);
+      border: none;
+      cursor: pointer;
+    }
+
+    .login-prompt-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 107, 255, 0.4);
+      background: linear-gradient(45deg, #3a5bff, #5a4acd);
+    }
+
+    /* Login Prompt Styles */
+    .login-prompt {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .login-prompt-content {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .login-prompt-icon {
+      font-size: 48px;
+      color: #4a6bff;
+      margin-bottom: 20px;
+      background: rgba(74, 107, 255, 0.1);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .login-prompt h2 {
+      color: #1a237e;
+      font-size: 28px;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .login-prompt p {
+      color: #546e7a;
+      font-size: 16px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .login-prompt-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(45deg, #4a6bff, #6a5acd);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(74, 107, 255, 0.3);
+      border: none;
+      cursor: pointer;
+    }
+
+    .login-prompt-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 107, 255, 0.4);
+      background: linear-gradient(45deg, #3a5bff, #5a4acd);
+    }
     .local-video-pip.active + .local-video-placeholder {
       display: none !important;
     }
@@ -465,18 +694,30 @@ window.auth = firebase.auth(); // Make auth globally available
   </section>
 
   <!-- Profile & Weekly Report Section -->
+  <!-- Profile & Weekly Report Section -->
   <section class="profile-report-section">
-    <div class="profile-card">
+    <!-- Login Prompt (shown when not logged in) -->
+    <div id="loginPrompt" class="login-prompt" style="display: none;">
+      <div class="login-prompt-content">
+        <div class="login-prompt-icon">
+          <i class="fas fa-sign-in-alt"></i>
+        </div>
+        <h2>Log in and Explore!</h2>
+        <p>Join our community to connect with professionals and grow your network</p>
+        <a href="login.html" class="login-prompt-btn">
+          <i class="fas fa-arrow-right"></i>
+          <span>Log In / Sign Up</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Profile Card (shown when logged in) -->
+    <div id="profileCard" class="profile-card">
       <div class="profile-cover">
-        <img class="profile-pic" src="data:image/svg+xml;utf8,\
-%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 80 80' fill='none'%3E\
-%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E\
-%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E\
-%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E\
-%3C/svg%3E" alt="Profile">
+        <img class="profile-pic" src="data:image/svg+xml;utf8,\%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 80 80' fill='none'%3E\%3Crect width='80' height='80' rx='40' fill='%23e5e7eb'/%3E\%3Ccircle cx='40' cy='32' r='14' fill='%239ca3af'/%3E\%3Cpath d='M16 66c6-12 18-18 24-18s18 6 24 18' fill='%239ca3af'/%3E\%3C/svg%3E" alt="Profile">
       </div>
       <div class="profile-card-content">
-  <h2 id="profileUserName">&nbsp;</h2>
+        <h2 id="profileUserName">&nbsp;</h2>
         <div class="profile-title">Professional Title</div>
         <div class="professionalism-meter">
           <label>Professionalism Meter</label>
@@ -492,7 +733,9 @@ window.auth = firebase.auth(); // Make auth globally available
         <a href="#" class="buy-peas-btn">Buy Peas</a>
       </div>
     </div>
-    <div class="weekly-report-card">
+
+    <!-- Weekly Report (shown when logged in) -->
+    <div id="weeklyReportCard" class="weekly-report-card">
       <h2>This Week's Report</h2>
       <div>Connections made: <strong>8</strong></div>
       <div>Peas earned: <strong>35</strong></div>
@@ -868,7 +1111,7 @@ if (startBtn) {
       if (!user) return 0;
       if (typeof window.__myPeas === 'number') return window.__myPeas;
       try {
-        const res = await fetch((window.API_BASE || 'https://b0ceedc0c97c.ngrok-free.app') + '/api/peas/' + encodeURIComponent(user.email)); //3000
+        const res = await fetch((window.API_BASE || 'https://ed89cda10c3e.ngrok-free.app') + '/api/peas/' + encodeURIComponent(user.email)); //3000
         if (res.ok) { const j = await res.json(); window.__myPeas = Number(j.peas || 0); return window.__myPeas; }
       } catch {}
       return 0;
@@ -951,7 +1194,7 @@ window.addEventListener('DOMContentLoaded', function() {
     let avatar = '';
     let peas = 0;
     try {
-      const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/users'); //3000
+      const res = await fetch('https://ed89cda10c3e.ngrok-free.app/api/users'); //3000
       const users = await res.json();
       const found = users.find(u => u.email === user.email);
       avatar = found && found.avatarUrl ? found.avatarUrl : '';
@@ -976,7 +1219,7 @@ window.addEventListener('DOMContentLoaded', function() {
       buyPeasBtn.onclick = async function(e) {
         e.preventDefault();
         try {
-          const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/peas/update',//3000
+          const res = await fetch('https://ed89cda10c3e.ngrok-free.app/api/peas/update',//3000
            {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -999,11 +1242,32 @@ window.addEventListener('DOMContentLoaded', function() {
       if (oldEditBtn) oldEditBtn.remove();
     }
   }
+  // Function to update UI based on auth state
+  function updateAuthUI(user) {
+    const loginPrompt = document.getElementById('loginPrompt');
+    const profileCard = document.getElementById('profileCard');
+    const weeklyReportCard = document.getElementById('weeklyReportCard');
+    
+    if (user) {
+      // User is logged in
+      if (loginPrompt) loginPrompt.style.display = 'none';
+      if (profileCard) profileCard.style.display = 'block';
+      if (weeklyReportCard) weeklyReportCard.style.display = 'block';
+    } else {
+      // User is not logged in
+      if (loginPrompt) loginPrompt.style.display = 'block';
+      if (profileCard) profileCard.style.display = 'none';
+      if (weeklyReportCard) weeklyReportCard.style.display = 'none';
+    }
+  }
+
   auth.onAuthStateChanged(async function(user) {
+    updateAuthUI(user);
+    
     if (user) {
       // Always register/sync user in backend DB
       try {
-        await fetch('https://b0ceedc0c97c.ngrok-free.app/api/register',//3000
+        await fetch('https://ed89cda10c3e.ngrok-free.app/api/register',//3000
          {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1076,7 +1340,7 @@ window.showConnectedUserName = showConnectedUserName;
 let allUsers = [];
 async function loadUsersToSearch() {
   try {
-    const res = await fetch('https://b0ceedc0c97c.ngrok-free.app/api/users'); //3000
+    const res = await fetch('https://ed89cda10c3e.ngrok-free.app/api/users'); //3000
     allUsers = await res.json();
     window.allUsers = allUsers; // Expose globally for client.js
     renderUserList(allUsers);
@@ -1129,7 +1393,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   // Presence: heartbeat + live count
   (function initPresence(){
-    const BASE = (window.API_BASE || 'https://b0ceedc0c97c.ngrok-free.app'); //3000
+    const BASE = (window.API_BASE || 'https://ed89cda10c3e.ngrok-free.app'); //3000
     const countEl = document.getElementById('liveUsersCount');
     let currentId = '';
     let lastBeatOk = 0;

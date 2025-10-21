@@ -237,13 +237,94 @@ app.post('/api/call/log', async (req, res) => {
     }
 });
 
-// Store profile data
+// Upsert profile data by email
 app.post('/api/profile', async (req, res) => {
     try {
-        const { userId, bio, avatarUrl, otherInfo } = req.body;
-        const profile = new Profile({ userId, bio, avatarUrl, otherInfo });
-        await profile.save();
-        res.status(201).json(profile);
+        const {
+            email,
+            userId,
+            avatarUrl,
+            bio,
+            profession,
+            workplace,
+            skills,
+            gender,
+            dateOfBirth,
+            city,
+            languages,
+            experience,
+            linkedin,
+            github
+        } = req.body || {};
+
+        if (!email) return res.status(400).json({ error: 'email is required' });
+
+        // normalize arrays if provided as comma-separated strings
+        const normSkills = Array.isArray(skills)
+            ? skills
+            : (typeof skills === 'string' ? skills.split(',').map(s => s.trim()).filter(Boolean) : undefined);
+        const normLangs = Array.isArray(languages)
+            ? languages
+            : (typeof languages === 'string' ? languages.split(',').map(s => s.trim()).filter(Boolean) : undefined);
+
+        // link to userId if not provided
+        let linkedUserId = userId;
+        if (!linkedUserId) {
+            const u = await User.findOne({ email });
+            if (u) linkedUserId = u._id;
+        }
+
+        const update = {
+            email,
+            avatarUrl,
+            bio,
+            profession,
+            workplace,
+            gender,
+            dateOfBirth,
+            city,
+            experience,
+            linkedin,
+            github,
+        };
+        if (typeof linkedUserId !== 'undefined') update.userId = linkedUserId;
+        if (typeof normSkills !== 'undefined') update.skills = normSkills;
+        if (typeof normLangs !== 'undefined') update.languages = normLangs;
+
+        const saved = await Profile.findOneAndUpdate(
+            { email },
+            { $set: update },
+            { upsert: true, new: true }
+        );
+
+        // Also mirror basic info into User for quick access where UI reads from User
+        try {
+            await User.updateOne(
+                { email },
+                {
+                    $set: {
+                        bio: bio || undefined,
+                        profession: profession || undefined,
+                        avatarUrl: avatarUrl || undefined,
+                    }
+                }
+            );
+        } catch {}
+
+        res.status(200).json(saved);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get profile by email
+app.get('/api/profile', async (req, res) => {
+    try {
+        const email = String(req.query.email || '').trim();
+        if (!email) return res.status(400).json({ error: 'email is required' });
+        const profile = await Profile.findOne({ email });
+        if (!profile) return res.status(404).json({ error: 'Profile not found' });
+        res.json(profile);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
