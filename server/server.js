@@ -2,7 +2,34 @@ const WebSocket = require('ws');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const axios = require('axios');
+const admin = require('firebase-admin');
+require('dotenv').config({ path: '../.env' });
+
 const { User, CallData, Profile } = require('./db');
+
+// Initialize Firebase Admin with service account from environment variable
+const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+// Log the service account path for debugging
+console.log('Service account path:', serviceAccountPath);
+
+try {
+  // Load the service account file directly
+  const serviceAccount = require(serviceAccountPath);
+  
+  // Initialize Firebase Admin
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`
+  });
+  
+  console.log('Firebase Admin SDK initialized successfully');
+} catch (error) {
+  console.error('Failed to initialize Firebase Admin SDK:', error);
+  console.error('Please verify the service account file exists and is valid');
+  process.exit(1);
+}
 
 // WebSocket setup (unchanged)
 const wss = new WebSocket.Server({ port: 8000 });
@@ -394,6 +421,95 @@ app.post('/api/seed-test-data', async (req, res) => {
         res.json({ users, calls, profiles });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// LinkedIn OAuth2 Callback
+app.get('/auth/linkedin/callback', async (req, res) => {
+    const { code, state, error, error_description } = req.query;
+    
+    // Check for OAuth errors first
+    if (error) {
+        console.error('LinkedIn OAuth Error:', error, error_description);
+        return res.status(400).send(`
+            <h2>LinkedIn Authentication Error</h2>
+            <p><strong>Error:</strong> ${error}</p>
+            <p><strong>Description:</strong> ${error_description || 'No description provided'}</p>
+            <p>Please ensure your LinkedIn app has the required permissions (r_liteprofile and r_emailaddress) and the redirect URIs are correctly configured.</p>
+            <p><a href="/client/login.html">Return to login page</a></p>
+        `);
+    }
+
+    if (!code) {
+        return res.status(400).send('Error: LinkedIn authorization code is missing.');
+    }
+
+    try {
+        // 1. Exchange authorization code for an access token
+        const tokenResponse = await axios.post('https://www.linkedin.com/oauth/v2/accessToken',
+            new URLSearchParams({
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: `http://localhost:3000/auth/linkedin/callback`,
+                client_id: process.env.LINKEDIN_CLIENT_ID,
+                client_secret: process.env.LINKEDIN_CLIENT_SECRET,
+            }).toString(),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            }
+        );
+
+        const accessToken = tokenResponse.data.access_token;
+
+        // 2. Fetch user's profile from LinkedIn
+        const profileResponse = await axios.get('https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,profilePicture(displayImage~:playableStreams))', {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+
+        // 3. Fetch user's email address
+        const emailResponse = await axios.get('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+
+        const linkedInProfile = profileResponse.data;
+        const email = emailResponse.data.elements[0]['handle~'].emailAddress;
+        const name = `${linkedInProfile.localizedFirstName} ${linkedInProfile.localizedLastName}`;
+        const photoURL = linkedInProfile.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier;
+
+        // 4. Create or update user in Firebase Auth
+        let userRecord;
+        try {
+            userRecord = await admin.auth().getUserByEmail(email);
+            // Optional: Update user profile if it has changed
+            await admin.auth().updateUser(userRecord.uid, {
+                displayName: name,
+                photoURL: photoURL,
+            });
+        } catch (error) {
+            if (error.code === 'auth/user-not-found') {
+                userRecord = await admin.auth().createUser({
+                    email: email,
+                    emailVerified: true,
+                    displayName: name,
+                    photoURL: photoURL,
+                });
+            } else {
+                throw error; // Re-throw other errors
+            }
+        }
+
+        // 5. Create a custom token for the user
+        const customToken = await admin.auth().createCustomToken(userRecord.uid);
+
+        // 6. Redirect user back to the frontend with the custom token
+        // The frontend will handle signing in with this token.
+        res.redirect(`https://thoughts-stating-extreme-register.trycloudflare.com/client/login.html?linkedin_token=${customToken}`);
+
+    } catch (error) {
+        console.error('LinkedIn authentication error:', error.response ? error.response.data : error.message);
+        res.status(500).send('An error occurred during LinkedIn authentication.');
     }
 });
 

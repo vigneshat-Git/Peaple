@@ -39,6 +39,61 @@
       window.auth = firebase.auth();
     </script>
     <style>
+      /* Loading Animation */
+      #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+      }
+
+      [data-theme="dark"] #loading-overlay {
+        background: #0f172a;
+      }
+
+      .loader {
+        width: 48px;
+        height: 48px;
+        border: 5px solid #4a6bff;
+        border-bottom-color: transparent;
+        border-radius: 50%;
+        display: inline-block;
+        box-sizing: border-box;
+        animation: rotation 1s linear infinite;
+      }
+
+      .loading-text {
+        margin-top: 16px;
+        color: #4a6bff;
+        font-size: 1.1rem;
+        font-weight: 500;
+      }
+
+      [data-theme="dark"] .loading-text {
+        color: #a5b4fc;
+      }
+
+      @keyframes rotation {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .fade-out {
+        opacity: 0;
+        visibility: hidden;
+      }
       /* Ensure login page respects global theme */
       html[data-theme="dark"] body {
         background: linear-gradient(180deg, #0b1220, #0a0f1f) !important;
@@ -60,6 +115,11 @@
   <body
     class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex items-center justify-center"
   >
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+      <span class="loader"></span>
+      <span class="loading-text">Loading Peaple...</span>
+    </div>
     <!-- Theme toggle (floating) -->
     <button id="loginThemeToggle" aria-label="Toggle theme" title="Toggle theme"><i class="fa-solid fa-moon"></i></button>
     <!-- header -->
@@ -187,6 +247,15 @@
             />
             <span class="text-sm">Google</span>
           </button>
+          <button
+            id="linkedinLoginBtn"
+            class="bg-[#0A66C2] text-white px-4 py-2 rounded-lg hover:bg-[#004182] transition-colors flex items-center space-x-2"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/>
+            </svg>
+            <span class="text-sm">LinkedIn</span>
+          </button>
         </div>
       </form>
 
@@ -261,6 +330,15 @@
               class="w-5 h-5"
             />
             <span class="text-sm">Google</span>
+          </button>
+          <button
+            id="linkedinRegisterBtn"
+            class="w-full flex items-center justify-center gap-2 bg-[#0A66C2] text-white font-medium py-2 px-4 rounded-lg hover:bg-[#004182] transition-colors"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/>
+            </svg>
+            Continue with LinkedIn
           </button>
         </div>
       </form>
@@ -369,7 +447,7 @@
             .signInWithEmailAndPassword(email, password)
             .then((cred) => {
               // Send login data to backend for MongoDB storage
-              fetch('https://b0ceedc0c97c.ngrok-free.app/api/register',//3000
+              fetch('https://turned-trustees-components-own.trycloudflare.com/api/register',//3000
                {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -405,7 +483,7 @@
             .then((cred) => cred.user.updateProfile({ displayName: firstName + " " + lastName }))
             .then(() => {
               // Send registration data to backend for MongoDB storage
-              fetch('https://b0ceedc0c97c.ngrok-free.app/api/register',//3000
+              fetch('https://turned-trustees-components-own.trycloudflare.com/api/register',//3000
                {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -428,7 +506,7 @@
             .signInWithPopup(provider)
             .then((result) => {
               // Send Google user data to backend for MongoDB storage
-              fetch('https://b0ceedc0c97c.ngrok-free.app/api/register',//3000
+              fetch('https://turned-trustees-components-own.trycloudflare.com/api/register',//3000
                {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -444,8 +522,114 @@
             })
             .catch((err) => alert(err.message));
         }
+        // LinkedIn Login Handler
+        const handleLinkedInLogin = () => {
+          // Generate a random state parameter for security
+          const state = Math.random().toString(36).substring(2);
+          localStorage.setItem('linkedin_auth_state', state);
+          
+          // LinkedIn OAuth2 parameters
+          const params = new URLSearchParams({
+            response_type: 'code',
+            client_id: '86s3hqiene2q7p', // Will be replaced by server-side env var
+            redirect_uri: `${window.location.origin}/auth/linkedin/callback`,
+            scope: 'r_liteprofile r_emailaddress',
+            state: state
+          });
+          
+          // Redirect to LinkedIn OAuth
+          window.location.href = `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
+        };
+
+        // Add event listeners
         googleLoginBtn.addEventListener("click", handleGoogleLogin);
         googleRegisterBtn.addEventListener("click", handleGoogleLogin);
+        
+        const linkedinLoginBtn = document.getElementById('linkedinLoginBtn');
+        const linkedinRegisterBtn = document.getElementById('linkedinRegisterBtn');
+        
+        if (linkedinLoginBtn) linkedinLoginBtn.addEventListener("click", handleLinkedInLogin);
+        if (linkedinRegisterBtn) linkedinRegisterBtn.addEventListener("click", handleLinkedInLogin);
+      });
+    </script>
+    <script>
+      // Handle LinkedIn custom token from URL
+      (function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('linkedin_token');
+        const HOME_URL = 'index.html'; // Your home page URL
+
+        if (token) {
+          // Immediately show a loading indicator
+          const loadingOverlay = document.getElementById('loading-overlay');
+          if (loadingOverlay) {
+            loadingOverlay.style.opacity = '1';
+            loadingOverlay.style.visibility = 'visible';
+          }
+
+          // Sign in with the custom token
+          firebase.auth().signInWithCustomToken(token)
+            .then((userCredential) => {
+              // User is signed in.
+              console.log('Successfully signed in with LinkedIn:', userCredential.user);
+              
+              // Now, let's save the user data to your backend/DB
+              const user = userCredential.user;
+              const profileData = {
+                name: user.displayName,
+                email: user.email,
+                provider: "linkedin",
+                verified: true,
+                linkedinProfile: `https://linkedin.com/in/${user.providerData[0]?.uid || ''}`,
+                avatarUrl: user.photoURL
+              };
+
+              // POST to your backend to save user data
+              fetch('https://turned-trustees-components-own.trycloudflare.com/api/profile', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(profileData)
+              })
+              .then(response => response.json())
+              .then(data => console.log('Profile saved:', data))
+              .catch(err => console.error('Failed to save profile:', err))
+              .finally(() => {
+                  // Redirect to home page after everything is done
+                  window.location.href = HOME_URL;
+              });
+            })
+            .catch((error) => {
+              console.error('Error signing in with custom token:', error);
+              // Optionally, show an error message to the user
+              alert('Failed to sign in with LinkedIn. Please try again.');
+              if (loadingOverlay) {
+                  loadingOverlay.classList.add('fade-out');
+              }
+            });
+        }
+      })();
+
+      // Hide loading overlay when page is fully loaded
+      window.addEventListener('load', function() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+          // Add fade-out class to start the fade-out animation
+          loadingOverlay.classList.add('fade-out');
+          
+          // Remove the overlay from the DOM after animation completes
+          setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+          }, 500); // Match this with the CSS transition time
+        }
+      });
+
+      // Show loading overlay when page is about to unload (for page transitions)
+      window.addEventListener('beforeunload', function() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) {
+          loadingOverlay.classList.remove('fade-out');
+          loadingOverlay.style.display = 'flex';
+        }
       });
     </script>
   </body>

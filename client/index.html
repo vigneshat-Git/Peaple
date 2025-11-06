@@ -250,7 +250,7 @@ window.auth = firebase.auth(); // Make auth globally available
   // For local development use localhost; when deploying via ngrok, set this to the ngrok URL.
   //window.API_BASE = 'http://localhost:3000';
   // Example for ngrok (uncomment and update):
-  window.API_BASE = 'https://ed89cda10c3e.ngrok-free.app'; //3000
+  window.API_BASE = 'https://turned-trustees-components-own.trycloudflare.com'; //3000
 </script>
  
   
@@ -394,6 +394,63 @@ window.auth = firebase.auth(); // Make auth globally available
     #messagesContainer .message.received { background:#fff !important; color:#222 !important; border:1px solid #e0e0e0 !important; }
     #fsMessagesContainer .message.sent { background:#09ff00 !important; color:#000 !important; }
     #fsMessagesContainer .message.received { background:#fff !important; color:#222 !important; border:1px solid #e0e0e0 !important; }
+    
+    /* Loading Animation */
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+    }
+
+    [data-theme="dark"] #loading-overlay {
+      background: #0f172a;
+    }
+
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 5px solid #4a6bff;
+      border-bottom-color: transparent;
+      border-radius: 50%;
+      display: inline-block;
+      box-sizing: border-box;
+      animation: rotation 1s linear infinite;
+    }
+
+    .loading-text {
+      margin-top: 16px;
+      color: #4a6bff;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    [data-theme="dark"] .loading-text {
+      color: #a5b4fc;
+    }
+
+    @keyframes rotation {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+    
     .input-container {
       display: flex;
       gap: 8px;
@@ -628,9 +685,15 @@ window.auth = firebase.auth(); // Make auth globally available
   </style>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-</head>
-<body>
-  <!-- Header -->
+  </head>
+  <body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+      <span class="loader"></span>
+      <span class="loading-text">Loading Peaple...</span>
+    </div>
+    
+    <!-- Header -->
   <header class="header">
     <div class="header-container">
       <div class="header_logo">
@@ -822,14 +885,32 @@ window.auth = firebase.auth(); // Make auth globally available
             </div>
           </div>
         </div>
+        <!-- Room Controls -->
+        <div class="room-controls" style="margin: 15px 0; display: flex; gap: 10px; justify-content: center;">
+          <button id="createRoomBtn" class="btn-primary" style="padding: 8px 16px; border-radius: 20px; background: #4a6bff; color: white; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-plus"></i> Create Room
+          </button>
+          <button id="joinRoomBtn" class="btn-secondary" style="padding: 8px 16px; border-radius: 20px; background: #f0f2f5; color: #050505; border: 1px solid #ddd; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-door-open"></i> Join Room
+          </button>
+        </div>
+
+        <!-- Active Rooms List -->
+        <div id="activeRooms" class="active-rooms" style="margin: 15px 0; max-height: 200px; overflow-y: auto; display: none;">
+          <h4 style="margin: 0 0 10px 0; color: #4a6bff;">Active Public Rooms</h4>
+          <div id="roomList" class="room-list">
+            <!-- Rooms will be populated here -->
+          </div>
+        </div>
+
         <div class="call-tools">
           <div style="display:flex;justify-content:center;align-items:center;gap:18px;width:100%;">
-            <button id="muteButton" title="Mute" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;">
-              <i id="muteIcon" class="fa-solid fa-microphone" style="font-size:1.1em;color:#333;"></i>
+            <button id="muteButton" title="Mute" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;" disabled>
+              <i id="muteIcon" class="fa-solid fa-microphone" style="font-size:1.1em;color:#aaa;"></i>
             </button>
-            <button id="startButton" style="display:flex;align-items:center;">Start Call</button>
-            <button id="endButton" title="End Call" style="background:none;border:none;cursor:pointer;display:none;padding:0;align-items:center;">
-              <i class="fa-solid fa-phone-slash" style="font-size:1.1em;color:#e53935;"></i>
+            <button id="startButton" style="display:flex;align-items:center;" disabled>Call</button>
+            <button id="endButton" title="End Call" style="background:none;border:none;cursor:pointer;display:none;padding:0;align-items:center;" disabled>
+              <i class="fa-solid fa-phone-slash" style="font-size:1.1em;color:#aaa;"></i>
             </button>
             <button id="screenShareButton" title="Share Screen" style="background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;">
               <i class="fa-solid fa-display" style="font-size:1.1em;color:#333;"></i>
@@ -1017,9 +1098,9 @@ window.auth = firebase.auth(); // Make auth globally available
       </div>
       <div class="footer-social">
         <h4>Follow Us</h4>
-        <a href=" https://x.com/SoulTechYT2?t=dtXMcyBBl-tE33wNeMJSRg&s=08 "><i class="fa-brands fa-x-twitter fa-lg"></i></a>
+        <a href="https://x.com/SoulTechYT2?t=dtXMcyBBl-tE33wNeMJSRg&s=08 "><i class="fa-brands fa-x-twitter fa-lg"></i></a>
         <a href="https://www.linkedin.com/in/vignesh-p-2a05b0254?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"><i class="fa-brands fa-linkedin-in fa-lg"></i></a>
-        <a href="https://www.instagram.com/vixin.debian?igsh=cDZuNDhoNGIyc21t"><i class="fa-brands fa-instagram fa-lg"></i></a>
+        <a href="https://www.instagram.com/vixin.debian?igshid=cDZuNDhoNGIyc21t"><i class="fa-brands fa-instagram fa-lg"></i></a>
         <a href="https://www.facebook.com/share/1JH7zF32ho/?mibextid=qi2Omg"><i class="fa-brands fa-facebook-f fa-lg"></i></a>
       </div>
     </div>
@@ -1111,7 +1192,7 @@ if (startBtn) {
       if (!user) return 0;
       if (typeof window.__myPeas === 'number') return window.__myPeas;
       try {
-        const res = await fetch((window.API_BASE || 'https://ed89cda10c3e.ngrok-free.app') + '/api/peas/' + encodeURIComponent(user.email)); //3000
+        const res = await fetch((window.API_BASE || 'https://turned-trustees-components-own.trycloudflare.com') + '/api/peas/' + encodeURIComponent(user.email)); //3000
         if (res.ok) { const j = await res.json(); window.__myPeas = Number(j.peas || 0); return window.__myPeas; }
       } catch {}
       return 0;
@@ -1194,7 +1275,7 @@ window.addEventListener('DOMContentLoaded', function() {
     let avatar = '';
     let peas = 0;
     try {
-      const res = await fetch('https://ed89cda10c3e.ngrok-free.app/api/users'); //3000
+      const res = await fetch('https://turned-trustees-components-own.trycloudflare.com/api/users'); //3000
       const users = await res.json();
       const found = users.find(u => u.email === user.email);
       avatar = found && found.avatarUrl ? found.avatarUrl : '';
@@ -1219,7 +1300,7 @@ window.addEventListener('DOMContentLoaded', function() {
       buyPeasBtn.onclick = async function(e) {
         e.preventDefault();
         try {
-          const res = await fetch('https://ed89cda10c3e.ngrok-free.app/api/peas/update',//3000
+          const res = await fetch('https://turned-trustees-components-own.trycloudflare.com/api/peas/update',//3000
            {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1267,7 +1348,7 @@ window.addEventListener('DOMContentLoaded', function() {
     if (user) {
       // Always register/sync user in backend DB
       try {
-        await fetch('https://ed89cda10c3e.ngrok-free.app/api/register',//3000
+        await fetch('https://turned-trustees-components-own.trycloudflare.com/api/register',//3000
          {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1340,7 +1421,7 @@ window.showConnectedUserName = showConnectedUserName;
 let allUsers = [];
 async function loadUsersToSearch() {
   try {
-    const res = await fetch('https://ed89cda10c3e.ngrok-free.app/api/users'); //3000
+    const res = await fetch('https://turned-trustees-components-own.trycloudflare.com/api/users'); //3000
     allUsers = await res.json();
     window.allUsers = allUsers; // Expose globally for client.js
     renderUserList(allUsers);
@@ -1393,7 +1474,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   // Presence: heartbeat + live count
   (function initPresence(){
-    const BASE = (window.API_BASE || 'https://ed89cda10c3e.ngrok-free.app'); //3000
+    const BASE = (window.API_BASE || 'https://turned-trustees-components-own.trycloudflare.com'); //3000
     const countEl = document.getElementById('liveUsersCount');
     let currentId = '';
     let lastBeatOk = 0;
@@ -1471,5 +1552,494 @@ window.addEventListener('DOMContentLoaded', () => {
     setInterval(refreshOnlineList, 12000);
   })();
 });
-</script>
+  </script>
+  <script>
+    // Loading overlay functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const loadingOverlay = document.getElementById('loading-overlay');
+      
+      // Hide loading overlay when page is fully loaded
+      window.addEventListener('load', function() {
+        if (loadingOverlay) {
+          // Add fade-out class to start the fade-out animation
+          loadingOverlay.classList.add('fade-out');
+          
+          // Remove the overlay from the DOM after animation completes
+          setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+          }, 500); // Match this with the CSS transition time
+        }
+      });
+
+      // Show loading overlay when page is about to unload (for page transitions)
+      window.addEventListener('beforeunload', function() {
+        if (loadingOverlay) {
+          loadingOverlay.classList.remove('fade-out');
+          loadingOverlay.style.display = 'flex';
+        }
+      });
+    });
+  </script>
+
+  <!-- Create Room Modal -->
+  <div id="createRoomModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="modal-content" style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: #1a1a1a; font-size: 1.5rem;">Create a Room</h2>
+        <button id="closeCreateRoomModal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</button>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label for="roomName" style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">Room Name</label>
+        <input type="text" id="roomName" placeholder="Enter room name" style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">Room Type</label>
+        <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="radio" name="roomType" value="public" checked style="margin-right: 8px;">
+            <span>Public (Anyone can join)</span>
+          </label>
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="radio" name="roomType" value="private" style="margin-right: 8px;">
+            <span>Private</span>
+          </label>
+        </div>
+      </div>
+      
+      <div id="passwordField" style="margin-bottom: 20px; display: none;">
+        <label for="roomPassword" style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">Password (4-12 characters)</label>
+        <input type="password" id="roomPassword" placeholder="Set a password" style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button id="cancelCreateRoom" style="padding: 10px 20px; border: 1px solid #ddd; background: #f5f5f5; border-radius: 8px; cursor: pointer; font-weight: 500;">Cancel</button>
+        <button id="confirmCreateRoom" style="padding: 10px 20px; background: #4a6bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">Create Room</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Join Room Modal -->
+  <div id="joinRoomModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="modal-content" style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: #1a1a1a; font-size: 1.5rem;">Join a Room</h2>
+        <button id="closeJoinRoomModal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666;">&times;</button>
+      </div>
+      
+      <div id="roomListContainer" style="margin-bottom: 20px; max-height: 300px; overflow-y: auto;">
+        <h3 style="margin: 0 0 10px 0; color: #4a6bff; font-size: 1rem;">Available Public Rooms</h3>
+        <div id="publicRoomList" class="room-list">
+          <!-- Public rooms will be listed here -->
+          <div class="no-rooms" style="padding: 15px; text-align: center; color: #666; font-style: italic;">
+            No public rooms available. Create one!
+          </div>
+        </div>
+        
+        <div style="margin: 20px 0; text-align: center; position: relative;">
+          <div style="height: 1px; background-color: #eee; position: relative; margin: 20px 0;">
+            <span style="background: white; padding: 0 15px; position: relative; top: -10px; color: #666; font-size: 0.9rem;">OR</span>
+          </div>
+        </div>
+        
+        <h3 style="margin: 0 0 10px 0; color: #4a6bff; font-size: 1rem;">Join by Room ID</h3>
+        <div style="margin-bottom: 15px;">
+          <input type="text" id="roomIdInput" placeholder="Enter Room ID" style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; margin-bottom: 10px;">
+          <input type="password" id="roomPasswordInput" placeholder="Password (if private)" style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; margin-bottom: 15px;">
+        </div>
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <button id="cancelJoinRoom" style="padding: 10px 20px; border: 1px solid #ddd; background: #f5f5f5; border-radius: 8px; cursor: pointer; font-weight: 500;">Cancel</button>
+        <button id="confirmJoinRoom" style="padding: 10px 20px; background: #4a6bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">Join Room</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Room Controls (for when in a room) -->
+  <div id="roomControls" style="display: none; margin: 15px 0; padding: 15px; background: #f8f9ff; border-radius: 10px; border: 1px solid #e0e5ff;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <div>
+        <h3 style="margin: 0; color: #4a6bff; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-users" style="font-size: 1.1em;"></i>
+          <span id="currentRoomName">Room Name</span>
+          <span id="roomLockIcon" style="font-size: 0.9em; color: #666; margin-left: 5px;"><i class="fa-solid fa-lock"></i></span>
+        </h3>
+        <div style="font-size: 0.9em; color: #666; margin-top: 2px;">
+          <span id="participantCount">1</span> participant(s)
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px;
+      ">
+        <button id="copyInviteLink" title="Copy Invite Link" style="background: #e8f0fe; border: 1px solid #d2e3fc; color: #1a73e8; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9em;">
+          <i class="fa-solid fa-link"></i> Copy Link
+        </button>
+        <button id="leaveRoomBtn" title="Leave Room" style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9em;">
+          <i class="fa-solid fa-sign-out-alt"></i> Leave
+        </button>
+      </div>
+    </div>
+    
+    <div id="participantsList" class="participants-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 15px;">
+      <!-- Participants will be listed here -->
+    </div>
+  </div>
+
+  <script>
+    // Global variable to track call state
+    let isInCall = false;
+    let callWindow = null;
+    
+    // Function to generate a random room ID
+    function generateRoomId() {
+      return 'room-' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    // Function to update call UI state
+    function updateCallUI(inCall) {
+      isInCall = inCall;
+      const startButton = document.getElementById('startButton');
+      const endButton = document.getElementById('endButton');
+      const muteButton = document.getElementById('muteButton');
+      
+      if (inCall) {
+        startButton.style.display = 'none';
+        endButton.style.display = 'flex';
+        startButton.disabled = true;
+        endButton.disabled = false;
+        muteButton.disabled = false;
+        document.querySelector('#muteIcon').style.color = '#333';
+      } else {
+        startButton.style.display = 'flex';
+        endButton.style.display = 'none';
+        startButton.disabled = false;
+        endButton.disabled = true;
+        muteButton.disabled = true;
+        document.querySelector('#muteIcon').style.color = '#aaa';
+      }
+      
+      // Disable/enable the connect now section based on call state
+      const connectSection = document.querySelector('.connect-now');
+      if (connectSection) {
+        connectSection.style.opacity = inCall ? '0.6' : '1';
+        connectSection.style.pointerEvents = inCall ? 'none' : 'auto';
+      }
+    }
+    
+    // Function to start a call
+    function startCall(roomId) {
+      if (isInCall) return;
+      
+      // Generate a room ID if not provided
+      const callRoomId = roomId || generateRoomId();
+      
+      // Open the video call page in a new tab
+      const url = `video-call.html?room=${encodeURIComponent(callRoomId)}`;
+      callWindow = window.open(url, '_blank');
+      
+      // Update UI
+      updateCallUI(true);
+      
+      // Set up beforeunload handler to detect when the call tab is closed
+      const checkTabClosed = setInterval(() => {
+        if (callWindow.closed) {
+          clearInterval(checkTabClosed);
+          endCall();
+        }
+      }, 1000);
+    }
+    
+    // Function to end a call
+    function endCall() {
+      if (callWindow && !callWindow.closed) {
+        callWindow.close();
+      }
+      updateCallUI(false);
+    }
+    
+    // Room Management JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+      // DOM Elements
+      const createRoomBtn = document.getElementById('createRoomBtn');
+      const joinRoomBtn = document.getElementById('joinRoomBtn');
+      const createRoomModal = document.getElementById('createRoomModal');
+      const joinRoomModal = document.getElementById('joinRoomModal');
+      const closeCreateRoomModal = document.getElementById('closeCreateRoomModal');
+      const closeJoinRoomModal = document.getElementById('closeJoinRoomModal');
+      const cancelCreateRoom = document.getElementById('cancelCreateRoom');
+      const cancelJoinRoom = document.getElementById('cancelJoinRoom');
+      const confirmCreateRoom = document.getElementById('confirmCreateRoom');
+      const confirmJoinRoom = document.getElementById('confirmJoinRoom');
+      const roomTypeRadios = document.getElementsByName('roomType');
+      const passwordField = document.getElementById('passwordField');
+      const roomControls = document.getElementById('roomControls');
+      const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+      const copyInviteLinkBtn = document.getElementById('copyInviteLink');
+      
+      // Toggle password field based on room type selection
+      roomTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+          passwordField.style.display = this.value === 'private' ? 'block' : 'none';
+        });
+      });
+      
+      // Modal open/close handlers
+      function openModal(modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+      
+      function closeModal(modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+      
+      // Event Listeners
+      createRoomBtn.addEventListener('click', () => openModal(createRoomModal));
+      joinRoomBtn.addEventListener('click', () => openModal(joinRoomModal));
+      
+      closeCreateRoomModal.addEventListener('click', () => closeModal(createRoomModal));
+      closeJoinRoomModal.addEventListener('click', () => closeModal(joinRoomModal));
+      cancelCreateRoom.addEventListener('click', () => closeModal(createRoomModal));
+      cancelJoinRoom.addEventListener('click', () => closeModal(joinRoomModal));
+      
+      // Close modals when clicking outside
+      window.addEventListener('click', (e) => {
+        if (e.target === createRoomModal) closeModal(createRoomModal);
+        if (e.target === joinRoomModal) closeModal(joinRoomModal);
+      });
+      
+      // Create Room
+      confirmCreateRoom.addEventListener('click', () => {
+        const roomName = document.getElementById('roomName').value.trim();
+        const isPrivate = document.querySelector('input[name="roomType"]:checked').value === 'private';
+        const password = isPrivate ? document.getElementById('roomPassword').value.trim() : '';
+        
+        if (!roomName) {
+          alert('Please enter a room name');
+          return;
+        }
+        
+        if (isPrivate && (password.length < 4 || password.length > 12)) {
+          alert('Password must be between 4 and 12 characters');
+          return;
+        }
+        
+        // Generate a room ID and start the call
+        const roomId = generateRoomId();
+        closeModal(createRoomModal);
+        startCall(roomId);
+        
+        // In a real app, you would make an API call to create the room
+        console.log('Creating room:', { roomId, roomName, isPrivate, hasPassword: isPrivate });
+      });
+      
+      // Join Room
+      confirmJoinRoom.addEventListener('click', () => {
+        const roomId = document.getElementById('roomIdInput').value.trim();
+        const password = document.getElementById('roomPasswordInput').value.trim();
+        
+        if (!roomId) {
+          alert('Please enter a room ID');
+          return;
+        }
+        
+        // Start the call with the specified room ID
+        closeModal(joinRoomModal);
+        startCall(roomId);
+        
+        // In a real app, you would make an API call to join the room
+        console.log('Joining room:', { roomId, hasPassword: password.length > 0 });
+      });
+      
+      // Leave Room
+      leaveRoomBtn.addEventListener('click', () => {
+        endCall();
+        
+        // In a real app, you would make an API call to leave the room
+        console.log('Leaving room');
+      });
+      
+      // Copy Invite Link
+      copyInviteLinkBtn.addEventListener('click', () => {
+        const roomId = 'demo-room-123'; // This would come from your room data
+        const inviteLink = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+        
+        navigator.clipboard.writeText(inviteLink).then(() => {
+          const originalText = copyInviteLinkBtn.innerHTML;
+          copyInviteLinkBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+          copyInviteLinkBtn.style.background = '#e6f4ea';
+          copyInviteLinkBtn.style.borderColor = '#b7e1cd';
+          copyInviteLinkBtn.style.color = '#137333';
+          
+          setTimeout(() => {
+            copyInviteLinkBtn.innerHTML = originalText;
+            copyInviteLinkBtn.style.background = '#e8f0fe';
+            copyInviteLinkBtn.style.borderColor = '#d2e3fc';
+            copyInviteLinkBtn.style.color = '#1a73e8';
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy invite link:', err);
+          alert('Failed to copy invite link. Please try again.');
+        });
+      });
+      
+      // Check for room ID in URL (for invite links)
+      function checkForInviteLink() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+        
+        if (roomId) {
+          // Remove the room ID from the URL without refreshing the page
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+          
+          // Auto-open the join modal with the room ID pre-filled
+          document.getElementById('roomIdInput').value = roomId;
+          openModal(joinRoomModal);
+        }
+      }
+      
+      // Simulate room creation (for demo)
+      function simulateRoomCreation(roomName, isPrivate) {
+        // Start the call
+        startCall();
+        
+        // In a real app, you would connect to your WebRTC signaling server here
+        console.log(`Room "${roomName}" created successfully!`);
+      }
+      
+      // Simulate joining a room (for demo)
+      function simulateJoiningRoom(roomId) {
+        // Start the call with the specified room ID
+        startCall(roomId);
+        
+        // In a real app, you would connect to your WebRTC signaling server here
+        console.log(`Joined room ${roomId} successfully!`);
+      }
+      
+      // Simulate leaving a room (for demo)
+      function simulateLeavingRoom() {
+        endCall();
+      }
+      
+      // Update participants list
+      function updateParticipants(participants) {
+        const participantsList = document.getElementById('participantsList');
+        participantsList.innerHTML = '';
+        
+        participants.forEach(participant => {
+          const participantEl = document.createElement('div');
+          participantEl.className = 'participant-card';
+          participantEl.style.background = '#f8f9ff';
+          participantEl.style.borderRadius = '8px';
+          participantEl.style.padding = '12px';
+          participantEl.style.display = 'flex';
+          participantEl.style.flexDirection = 'column';
+          participantEl.style.alignItems = 'center';
+          participantEl.style.gap = '8px';
+          
+          // Participant avatar
+          const avatar = document.createElement('div');
+          avatar.style.width = '60px';
+          avatar.style.height = '60px';
+          avatar.style.borderRadius = '50%';
+          avatar.style.background = '#e0e5ff';
+          avatar.style.display = 'flex';
+          avatar.style.alignItems = 'center';
+          avatar.style.justifyContent = 'center';
+          avatar.style.fontSize = '24px';
+          avatar.style.color = '#4a6bff';
+          avatar.textContent = participant.name.charAt(0).toUpperCase();
+          
+          // Participant name and status
+          const name = document.createElement('div');
+          name.style.fontWeight = '600';
+          name.style.fontSize = '0.9em';
+          name.textContent = participant.name;
+          
+          const status = document.createElement('div');
+          status.style.display = 'flex';
+          status.style.alignItems = 'center';
+          status.style.gap = '5px';
+          status.style.fontSize = '0.8em';
+          status.style.color = '#666';
+          
+          if (participant.isHost) {
+            const hostBadge = document.createElement('span');
+            hostBadge.style.background = '#e6f4ea';
+            hostBadge.style.color = '#137333';
+            hostBadge.style.padding = '2px 6px';
+            hostBadge.style.borderRadius = '4px';
+            hostBadge.style.fontSize = '0.75em';
+            hostBadge.textContent = 'Host';
+            status.appendChild(hostBadge);
+          }
+          
+          const micIcon = document.createElement('i');
+          micIcon.className = participant.isMuted ? 'fa-solid fa-microphone-slash' : 'fa-solid fa-microphone';
+          micIcon.style.color = participant.isMuted ? '#dc2626' : '#22c55e';
+          
+          const videoIcon = document.createElement('i');
+          videoIcon.className = participant.isVideoOn ? 'fa-solid fa-video' : 'fa-solid fa-video-slash';
+          videoIcon.style.color = participant.isVideoOn ? '#22c55e' : '#dc2626';
+          
+          status.appendChild(micIcon);
+          status.appendChild(videoIcon);
+          
+          // Add elements to participant card
+          participantEl.appendChild(avatar);
+          participantEl.appendChild(name);
+          participantEl.appendChild(status);
+          
+          // Add to participants list
+          participantsList.appendChild(participantEl);
+        });
+        
+        // Update participant count
+        document.getElementById('participantCount').textContent = participants.length;
+      }
+      
+      // Initialize
+      checkForInviteLink();
+      
+      // Set up click handler for the call button
+      const startButton = document.getElementById('startButton');
+      if (startButton) {
+        startButton.addEventListener('click', () => {
+          if (!isInCall) {
+            startCall();
+          }
+        });
+      }
+      
+      // Set up click handler for the end call button
+      const endButton = document.getElementById('endButton');
+      if (endButton) {
+        endButton.addEventListener('click', endCall);
+      }
+      
+      // Set up click handler for the mute button
+      const muteButton = document.getElementById('muteButton');
+      if (muteButton) {
+        let isMuted = false;
+        muteButton.addEventListener('click', () => {
+          isMuted = !isMuted;
+          const icon = document.querySelector('#muteIcon');
+          if (isMuted) {
+            icon.classList.remove('fa-microphone');
+            icon.classList.add('fa-microphone-slash');
+            icon.style.color = '#dc3545';
+          } else {
+            icon.classList.remove('fa-microphone-slash');
+            icon.classList.add('fa-microphone');
+            icon.style.color = '#333';
+          }
+          // In a real app, you would mute/unmute the audio track here
+        });
+      }
+    });
+  </script>
+</body>
 </html>
