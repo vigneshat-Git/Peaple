@@ -52,7 +52,6 @@
           <div class="badges">
             <div id="peasBadge" class="badge peas"><i class="fa-solid fa-coins"></i> <span id="peas">0</span> Peas</div>
             <div id="professionBadge" class="badge">User</div>
-            <div id="linkedinBadge" class="badge" style="display: none; background-color: #0A66C2; color: white; border-color: #0A66C2;">✅ LinkedIn Verified</div>
           </div>
           <div id="peasWarn" class="warn" style="display:none; margin-top:6px;">Insufficient peas, buy some to connect call!</div>
           <div class="actions" style="margin-top:12px;">
@@ -94,7 +93,7 @@
   </script>
   <script>
     // Use same API base as index.html (fallback to ngrok URL)
-    window.API_BASE = window.API_BASE || 'https://turned-trustees-components-own.trycloudflare.com'; //3000
+    window.API_BASE = window.API_BASE || 'https://too-configurations-ent-ping.trycloudflare.com'; //3000
   </script>
 
   <script>
@@ -125,33 +124,15 @@
       let profileBio = 'User';
       let peas = 0;
       try {
-        // Fetch the full user profile from your backend
-        const profileRes = await fetch(`${window.API_BASE}/api/profile?email=${encodeURIComponent(email)}`);
-        if (profileRes.ok) {
-            const profile = await profileRes.json();
-            
-            // Update UI with profile data
-            profileBio = profile.bio || profile.profession || 'User';
-            if (profile.avatarUrl) avatarEl.src = profile.avatarUrl;
-            text(professionBadge, profile.profession || 'User');
-
-            // Check for LinkedIn verification
-            if (profile.provider === 'linkedin' && profile.verified) {
-                const linkedinBadge = document.getElementById('linkedinBadge');
-                if (linkedinBadge) linkedinBadge.style.display = 'inline-flex';
-            }
-        }
-
-        // Fetch peas balance separately or use the one from the main user object if available
-        const userRes = await fetch(`${window.API_BASE}/api/users`);
-        const users = await userRes.json();
+        const resUsers = await fetch(window.API_BASE + '/api/users');
+        const users = await resUsers.json();
         const me = users.find(u => u.email === email);
         if (me) {
-            peas = typeof me.peas === 'number' ? me.peas : 0;
+          profileBio = me.bio || me.profession || 'User';
+          if (me.avatarUrl) avatarEl.src = me.avatarUrl;
+          peas = typeof me.peas === 'number' ? me.peas : 0;
         }
-      } catch (err) {
-        console.error('Error fetching profile or peas:', err);
-      }
+      } catch {}
       text(bioEl, profileBio);
       text(peasEl, peas);
       peasBadge.classList.toggle('low', peas <= 5);

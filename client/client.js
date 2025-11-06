@@ -81,7 +81,7 @@ function pickProfession(userObj) {
 
 async function fetchAllUsers() {
     try {
-        const res = await fetch('https://turned-trustees-components-own.trycloudflare.com/api/users'); //3000
+        const res = await fetch('https://too-configurations-ent-ping.trycloudflare.com/api/users'); //3000
         if (!res.ok) throw new Error('users HTTP '+res.status);
         const users = await res.json();
         window.allUsers = Array.isArray(users) ? users : [];
@@ -95,7 +95,7 @@ async function fetchAllUsers() {
 
 async function fetchAllCalls() {
     try {
-        const res = await fetch('https://turned-trustees-components-own.trycloudflare.com/api/calls'); //3000
+        const res = await fetch('https://too-configurations-ent-ping.trycloudflare.com/api/calls'); //3000
         if (!res.ok) throw new Error('calls HTTP '+res.status);
         const calls = await res.json();
         return Array.isArray(calls) ? calls : [];
@@ -352,7 +352,7 @@ async function logCallSummaryIfNeeded(reason = '') {
         const usr2Name = getUsernameByEmail(remoteEmail) || (window.connectedUserName || remoteEmail);
         // Use same base as other API calls
         callLoggedThisCall = true; // set before sending to avoid double triggers
-        const res = await fetch('https://turned-trustees-components-own.trycloudflare.com/api/call/log', //3000
+        const res = await fetch('https://too-configurations-ent-ping.trycloudflare.com/api/call/log', //3000
              {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -380,12 +380,12 @@ async function debitPeasForCall(localEmail, remoteEmail) {
     }
     try {
         await Promise.all([
-            fetch('https://turned-trustees-components-own.trycloudflare.com/api/peas/update', //3000
+            fetch('https://too-configurations-ent-ping.trycloudflare.com/api/peas/update', //3000
                  {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: localEmail, amount: -5 })
             }),
-            fetch('https://turned-trustees-components-own.trycloudflare.com/api/peas/update', //3000
+            fetch('https://too-configurations-ent-ping.trycloudflare.com/api/peas/update', //3000
                  {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: remoteEmail, amount: -5 })
@@ -663,7 +663,7 @@ const __qs = new URLSearchParams(window.location.search || '');
 const __forceLocal = __qs.get('localWs') === '1';
 const SIGNALING_URL = (__forceLocal || !__host || __host === 'localhost' || __host === '127.0.0.1')
     ? 'ws://localhost:8000'
-    : 'wss://suggested-weddings-jail-unlikely.trycloudflare.com';
+    : 'wss://although-mar-tract-toddler.trycloudflare.com';
 
 let peerConnection;
 let dataChannel;
