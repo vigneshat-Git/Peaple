@@ -10,9 +10,9 @@ const Navbar = () => {
         {/* Left */}
         <div className="flex items-center gap-4 flex-1">
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">P</span>
-            </div>
+            
+
+            
             <span className="text-lg font-bold text-foreground hidden sm:block">Peaple</span>
           </Link>
 
@@ -21,8 +21,8 @@ const Navbar = () => {
             <input
               type="text"
               placeholder="Search communities, posts..."
-              className="w-full h-9 pl-9 pr-4 rounded-lg bg-secondary border-0 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
+              className="w-full h-9 pl-9 pr-4 rounded-lg bg-secondary border-0 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20" />
+            
           </div>
         </div>
 
@@ -43,8 +43,8 @@ const Navbar = () => {
           </Link>
         </div>
       </div>
-    </header>
-  );
+    </header>);
+
 };
 
 export default Navbar;
