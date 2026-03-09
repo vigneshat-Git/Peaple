@@ -103,6 +103,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const loginWithGoogle = () => {
+    const redirectUri = `${window.location.origin}/auth/google/callback`;
+    window.location.href = `${API_BASE_URL}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`;
+  };
+
+  // Handle Google OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const callbackToken = params.get("token");
+    const callbackUser = params.get("user");
+
+    if (callbackToken && callbackUser) {
+      try {
+        const parsedUser = JSON.parse(decodeURIComponent(callbackUser));
+        localStorage.setItem("peaple_token", callbackToken);
+        localStorage.setItem("peaple_user", JSON.stringify(parsedUser));
+        setToken(callbackToken);
+        setUser(parsedUser);
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch {
+        console.error("Failed to parse Google callback data");
+      }
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -112,6 +138,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         register,
         logout,
+        loginWithGoogle,
         isAuthenticated: !!user,
       }}
     >

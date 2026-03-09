@@ -63,10 +63,7 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    toast({
-      title: "Coming soon",
-      description: "Google login will be available soon.",
-    });
+    loginWithGoogle();
   };
 
   return (

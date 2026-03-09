@@ -87,10 +87,7 @@ const RegisterPage = () => {
   };
 
   const handleGoogleSignup = () => {
-    toast({
-      title: "Coming soon",
-      description: "Google signup will be available soon.",
-    });
+    loginWithGoogle();
   };
 
   return (
