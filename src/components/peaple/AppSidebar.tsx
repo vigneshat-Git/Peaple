@@ -20,6 +20,12 @@ const topCommunities = [
 
 const AppSidebar = () => {
   const location = useLocation();
+  const { user } = useAuth();
+
+  const navItems = [
+    ...baseNavItems,
+    ...(user ? [{ label: "Profile", icon: User, path: `/user/${user.username}` }] : []),
+  ];
 
   return (
     <aside className="w-60 shrink-0 hidden lg:block sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto py-4 pr-2">
@@ -56,3 +62,4 @@ const AppSidebar = () => {
 };
 
 export default AppSidebar;
+
