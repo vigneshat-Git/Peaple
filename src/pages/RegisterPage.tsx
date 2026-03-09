@@ -23,7 +23,7 @@ const RegisterPage = () => {
     confirmPassword?: string;
   }>({});
 
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
