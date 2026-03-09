@@ -1,8 +1,9 @@
-import { Search, Bell, Plus } from "lucide-react";
+import { Search, Bell, Plus, Compass, Flame } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import UserDropdown from "./UserDropdown";
+import ThemeToggle from "./ThemeToggle";
 
 const Navbar = () => {
   const { user, isAuthenticated } = useAuth();
@@ -30,7 +31,26 @@ const Navbar = () => {
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Always-visible items */}
+          <Link
+            to="/popular"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            <Flame className="h-4 w-4" />
+            <span className="hidden lg:inline">Popular</span>
+          </Link>
+
+          <Link
+            to="/communities"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            <Compass className="h-4 w-4" />
+            <span className="hidden lg:inline">Explore</span>
+          </Link>
+
+          <ThemeToggle />
+
           {isAuthenticated ? (
             <>
               <Link to="/create-post">

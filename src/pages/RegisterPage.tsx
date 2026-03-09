@@ -23,7 +23,7 @@ const RegisterPage = () => {
     confirmPassword?: string;
   }>({});
 
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -87,10 +87,7 @@ const RegisterPage = () => {
   };
 
   const handleGoogleSignup = () => {
-    toast({
-      title: "Coming soon",
-      description: "Google signup will be available soon.",
-    });
+    loginWithGoogle();
   };
 
   return (

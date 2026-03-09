@@ -15,7 +15,7 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -63,10 +63,7 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    toast({
-      title: "Coming soon",
-      description: "Google login will be available soon.",
-    });
+    loginWithGoogle();
   };
 
   return (
