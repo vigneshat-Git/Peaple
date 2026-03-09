@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: peaple-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: peaple
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - peaple-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: peaple-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - peaple-network
+    command: redis-server --appendonly yes
+
+  backend:
+    build: .
+    container_name: peaple-backend
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: peaple
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: dev-secret-key
+      JWT_REFRESH_SECRET: dev-refresh-secret
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - peaple-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  peaple-network:
+    driver: bridge
