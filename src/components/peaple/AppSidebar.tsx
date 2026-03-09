@@ -1,14 +1,14 @@
 import { Home, TrendingUp, Users, PlusCircle, Bookmark, User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import CommunityCard from "./CommunityCard";
+import { useAuth } from "@/contexts/AuthContext";
 
-const navItems = [
+const baseNavItems = [
   { label: "Home", icon: Home, path: "/" },
   { label: "Popular", icon: TrendingUp, path: "/popular" },
   { label: "Communities", icon: Users, path: "/communities" },
   { label: "Create Community", icon: PlusCircle, path: "/create-community" },
   { label: "Saved Posts", icon: Bookmark, path: "/saved" },
-  { label: "Profile", icon: User, path: "/user/johndoe" },
 ];
 
 const topCommunities = [
