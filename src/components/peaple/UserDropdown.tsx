@@ -43,7 +43,7 @@ const UserDropdown = ({ username, avatarUrl }: UserDropdownProps) => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="focus:outline-none focus:ring-2 focus:ring-primary/20 rounded-full">
-          <UserAvatar name={username} src={avatarUrl} size="sm" />
+          <UserAvatar name={username} image={avatarUrl} size="sm" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

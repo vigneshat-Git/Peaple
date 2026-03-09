@@ -56,7 +56,7 @@ const CreateCommunityPage = () => {
         name: name.toLowerCase(),
         description,
         rules: rules || undefined,
-      });
+      }) as { name: string };
       toast({
         title: "Community created!",
         description: `c/${community.name} is now live.`,
