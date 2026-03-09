@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import { postService } from './post.service.js';
 import { verifyToken, optionalAuth, AuthRequest } from '../../middleware/auth.js';
 import { sendSuccess, sendError, sendPaginationResponse } from '../../utils/response.js';
@@ -6,6 +7,14 @@ import { validate, validationSchemas } from '../../utils/validation.js';
 import { uploadToR2, deleteFromR2 } from '../../config/storage.js';
 
 const router = Router();
+
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max
+  }
+});
 
 // Create post
 router.post('/', verifyToken, async (req: AuthRequest, res: Response) => {
@@ -159,25 +168,24 @@ router.get('/trending/top/:timeframe', optionalAuth, async (req: Request, res: R
 });
 
 // Upload media endpoint
-router.post('/media/upload', verifyToken, async (req: AuthRequest, res: Response) => {
+router.post('/media/upload', verifyToken, upload.single('file'), async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return sendError(res, 'Unauthorized', 401);
     }
 
-    if (!req.files || Object.keys(req.files).length === 0) {
+    if (!req.file) {
       return sendError(res, 'No file uploaded', 400);
     }
 
-    const file = req.files.file as any;
-    const url = await uploadToR2(file.data, file.name, {
-      contentType: file.mimetype,
+    const url = await uploadToR2(req.file.buffer, req.file.originalname, {
+      contentType: req.file.mimetype,
     });
 
     sendSuccess(res, { url }, 'File uploaded successfully', 201);
   } catch (error: any) {
     console.error('Upload media error:', error);
-    sendError(res, error.message || 'Failed to upload media', 400);
+    sendError(res, error.message || 'File upload failed', 500);
   }
 });
 

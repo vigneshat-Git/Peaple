@@ -13,7 +13,7 @@ declare global {
 }
 
 export interface AuthRequest extends Request {
-  user: JWTPayload;
+  user?: JWTPayload;
 }
 
 export function verifyToken(req: Request, res: Response, next: NextFunction) {
@@ -60,6 +60,24 @@ export function verifyToken(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
+  verifyToken(req, res, (err?: any) => {
+    if (err) {
+      return next(err);
+    }
+    
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required',
+        statusCode: 401,
+      });
+    }
+    
+    next();
+  });
+}
+
 export function optionalAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
@@ -78,17 +96,26 @@ export function optionalAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 export function generateAccessToken(payload: JWTPayload): string {
+  if (!env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRY,
+    expiresIn: env.JWT_EXPIRY as any,
   });
 }
 
 export function generateRefreshToken(payload: JWTPayload): string {
+  if (!env.JWT_REFRESH_SECRET) {
+    throw new Error('JWT_REFRESH_SECRET is not defined');
+  }
   return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRY,
+    expiresIn: env.JWT_REFRESH_EXPIRY as any,
   });
 }
 
 export function verifyRefreshToken(token: string): JWTPayload {
+  if (!env.JWT_REFRESH_SECRET) {
+    throw new Error('JWT_REFRESH_SECRET is not defined');
+  }
   return jwt.verify(token, env.JWT_REFRESH_SECRET) as JWTPayload;
 }

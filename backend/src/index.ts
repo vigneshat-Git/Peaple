@@ -12,6 +12,7 @@ import communityRoutes from './services/communities/community.routes.js';
 import commentRoutes from './services/comments/comment.routes.js';
 import voteRoutes from './services/votes/vote.routes.js';
 import feedRoutes from './services/feed/feed.routes.js';
+import uploadRoutes from './services/upload/upload.routes.js';
 
 const app: Express = express();
 
@@ -26,6 +27,7 @@ app.use('/api/communities', communityRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/votes', voteRoutes);
 app.use('/api/feed', feedRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
@@ -49,6 +51,7 @@ app.get('/api', (req: Request, res: Response) => {
       comments: '/api/comments',
       votes: '/api/votes',
       feed: '/api/feed',
+      upload: '/api/upload',
     },
     documentation: 'https://github.com/peaple/backend#api-documentation',
   });

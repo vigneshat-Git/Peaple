@@ -6,7 +6,8 @@ export interface User {
   id: string;
   username: string;
   email: string;
-  password_hash: string;
+  password_hash?: string;
+  google_id?: string;
   profile_image?: string;
   bio?: string;
   created_at: Date;

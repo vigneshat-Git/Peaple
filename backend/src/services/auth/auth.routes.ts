@@ -137,4 +137,30 @@ router.get('/:userId', async (req: Request, res: Response) => {
   }
 });
 
+// Google OAuth
+router.post('/google', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return sendError(res, 'Google token is required', 400);
+    }
+
+    const result = await authService.authenticateWithGoogle(token);
+
+    sendSuccess(
+      res,
+      {
+        user: result.user,
+        access_token: result.access_token,
+        refresh_token: result.refresh_token,
+      },
+      'Google authentication successful'
+    );
+  } catch (error: any) {
+    console.error('Google auth error:', error);
+    sendError(res, error.message || 'Google authentication failed', 401);
+  }
+});
+
 export default router;

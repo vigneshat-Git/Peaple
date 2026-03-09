@@ -2,6 +2,7 @@ import { query } from '../../config/database.js';
 import { User, JWTPayload } from '../../types/index.js';
 import { hashPassword, verifyPassword, generateId } from '../../utils/helpers.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../middleware/auth.js';
+import { OAuth2Client } from 'google-auth-library';
 
 export class AuthService {
   async register(username: string, email: string, password: string): Promise<User> {
@@ -179,6 +180,123 @@ export class AuthService {
       const result = await query(
         'SELECT * FROM users WHERE id = $1',
         [userId]
+      );
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const user = result.rows[0];
+      delete user.password_hash;
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async authenticateWithGoogle(googleToken: string): Promise<{
+    user: User;
+    access_token: string;
+    refresh_token: string;
+  }> {
+    try {
+      const { env } = await import('../../config/env.js');
+      
+      if (!env.GOOGLE_CLIENT_ID) {
+        throw new Error('Google OAuth not configured');
+      }
+
+      const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+      const ticket = await client.verifyIdToken({
+        idToken: googleToken,
+        audience: env.GOOGLE_CLIENT_ID,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new Error('Invalid Google token');
+      }
+
+      const { email, name, picture } = payload;
+      const username = name?.replace(/\s+/g, '').toLowerCase() || email.split('@')[0];
+
+      // Check if user exists
+      let user = await this.getUserByEmail(email);
+
+      if (!user) {
+        // Create new user
+        user = await this.createGoogleUser(username, email, picture);
+      }
+
+      const jwtPayload: JWTPayload = {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+      };
+
+      const access_token = generateAccessToken(jwtPayload);
+      const refresh_token = generateRefreshToken(jwtPayload);
+
+      return {
+        user,
+        access_token,
+        refresh_token,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      const result = await query(
+        'SELECT * FROM users WHERE email = $1',
+        [email]
+      );
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const user = result.rows[0];
+      delete user.password_hash;
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async createGoogleUser(username: string, email: string, profileImage?: string): Promise<User> {
+    try {
+      // Ensure username is unique
+      let finalUsername = username;
+      let counter = 1;
+      
+      while (await this.getUserByUsername(finalUsername)) {
+        finalUsername = `${username}${counter}`;
+        counter++;
+      }
+
+      const result = await query(
+        `INSERT INTO users (username, email, google_id, profile_image)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [finalUsername, email, email, profileImage] // Using email as google_id for simplicity
+      );
+
+      const user = result.rows[0];
+      delete user.password_hash;
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  private async getUserByUsername(username: string): Promise<User | null> {
+    try {
+      const result = await query(
+        'SELECT * FROM users WHERE username = $1',
+        [username]
       );
 
       if (result.rows.length === 0) {
