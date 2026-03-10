@@ -5,8 +5,12 @@ import cors from 'cors';
 import { env } from '../config/env.js';
 
 export function setupMiddleware(app: express.Application) {
-  // Security middleware
-  app.use(helmet());
+  // Security middleware with popup allowance for Google OAuth
+  app.use(
+    helmet({
+      crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
+    })
+  );
 
   // CORS configuration
   app.use(

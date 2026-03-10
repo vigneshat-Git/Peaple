@@ -353,7 +353,7 @@ export function handleApiError(error: any) {
 The backend is configured with CORS for the frontend URL:
 
 ```env
-FRONTEND_URL=http://localhost:3000  # Development
+FRONTEND_URL=http://localhost:8080  # Development
 FRONTEND_URL=https://your-vercel-domain.vercel.app  # Production
 ```
 

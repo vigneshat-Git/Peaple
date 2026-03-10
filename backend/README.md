@@ -93,7 +93,7 @@ Server will run on `http://localhost:5000`
 NODE_ENV=development
 PORT=5000
 API_BASE_URL=http://localhost:5000
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:8080
 
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/peaple

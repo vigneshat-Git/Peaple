@@ -103,31 +103,86 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const loginWithGoogle = () => {
-    const redirectUri = `${window.location.origin}/auth/google/callback`;
-    window.location.href = `${API_BASE_URL}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`;
+  const loginWithGoogle = async () => {
+    try {
+      // Use Google OAuth 2.0 popup flow
+      const clientId = '814546020627-04jjtfg6kl5kcj7d7lkfr6h3nscqngmo.apps.googleusercontent.com';
+      const redirectUri = `${window.location.origin}/auth/google/callback`;
+      const scope = 'openid email profile';
+      
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${clientId}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `response_type=id_token&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `nonce=${Math.random().toString(36).substring(2, 15)}`;
+      
+      // Open popup
+      const popup = window.open(authUrl, 'google-auth', 'width=500,height=600,scrollbars=yes');
+      
+      if (!popup) {
+        throw new Error('Popup blocked. Please allow popups for this site.');
+      }
+      
+      // Listen for messages from popup
+      return new Promise<void>((resolve, reject) => {
+        const messageListener = (event: MessageEvent) => {
+          if (event.origin !== window.location.origin) return;
+          
+          if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+            popup.close();
+            window.removeEventListener('message', messageListener);
+            handleGoogleSignIn(event.data.token).then(resolve).catch(reject);
+          } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+            popup.close();
+            window.removeEventListener('message', messageListener);
+            reject(new Error(event.data.error || 'Google authentication failed'));
+          }
+        };
+        
+        window.addEventListener('message', messageListener);
+        
+        // Check if popup was closed manually
+        const checkClosed = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            window.removeEventListener('message', messageListener);
+            reject(new Error('Authentication cancelled'));
+          }
+        }, 1000);
+      });
+    } catch (error) {
+      console.error('Google Sign-In initialization failed:', error);
+      throw error;
+    }
   };
 
-  // Handle Google OAuth callback
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const callbackToken = params.get("token");
-    const callbackUser = params.get("user");
+  const handleGoogleSignIn = async (idToken: string) => {
+    try {
+      // Send the Google ID token to your backend
+      const backendResponse = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: idToken }),
+      });
 
-    if (callbackToken && callbackUser) {
-      try {
-        const parsedUser = JSON.parse(decodeURIComponent(callbackUser));
-        localStorage.setItem("peaple_token", callbackToken);
-        localStorage.setItem("peaple_user", JSON.stringify(parsedUser));
-        setToken(callbackToken);
-        setUser(parsedUser);
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } catch {
-        console.error("Failed to parse Google callback data");
+      if (!backendResponse.ok) {
+        const error = await backendResponse.json().catch(() => ({}));
+        throw new Error(error.message || 'Google authentication failed');
       }
+
+      const data = await backendResponse.json();
+      const { token: newToken, user: newUser } = data.data || data;
+
+      localStorage.setItem('peaple_token', newToken);
+      localStorage.setItem('peaple_user', JSON.stringify(newUser));
+      setToken(newToken);
+      setUser(newUser);
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      throw error;
     }
-  }, []);
+  };
 
   return (
     <AuthContext.Provider
