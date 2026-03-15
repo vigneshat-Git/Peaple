@@ -13,7 +13,7 @@ export interface PostData {
   community: string;
   votes: number;
   comments: number;
-  tags: string[];
+  tags?: string[];
   timeAgo: string;
 }
 
@@ -45,7 +45,7 @@ const PostCard = ({ post }: { post: PostData }) => {
             {post.content}
           </p>
           <div className="flex items-center gap-2 flex-wrap mb-3">
-            {post.tags.map(tag => (
+            {post.tags?.map(tag => (
               <Badge key={tag} variant="secondary" className="text-xs font-normal bg-primary-light text-primary-dark border-0">
                 {tag}
               </Badge>

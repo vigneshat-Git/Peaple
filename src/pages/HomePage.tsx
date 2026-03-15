@@ -1,74 +1,92 @@
+import { useState, useEffect } from "react";
 import PostCard, { PostData } from "@/components/peaple/PostCard";
-
-const mockPosts: PostData[] = [
-  {
-    id: "1",
-    title: "Why Server Components are the future of React",
-    content: "After spending 6 months building with RSC in production, here's what I've learned about performance, DX, and the tradeoffs you need to consider...",
-    author: "sarah_dev",
-    community: "webdev",
-    votes: 342,
-    comments: 89,
-    tags: ["react", "server-components", "performance"],
-    timeAgo: "3h ago",
-  },
-  {
-    id: "2",
-    title: "I bootstrapped my SaaS to $10k MRR — here's my playbook",
-    content: "No VC money, no co-founder. Just a laptop, determination, and a lot of cold outreach. Here's exactly how I did it step by step...",
-    author: "indie_alex",
-    community: "startups",
-    votes: 567,
-    comments: 134,
-    tags: ["bootstrapping", "saas", "growth"],
-    timeAgo: "5h ago",
-  },
-  {
-    id: "3",
-    title: "The design system that scaled our team from 5 to 50",
-    content: "When we started, everyone styled components differently. Here's how we built a design system that brought consistency and sped up development by 3x...",
-    author: "jordan_ux",
-    community: "design",
-    votes: 218,
-    comments: 42,
-    tags: ["design-systems", "ui", "scaling"],
-    timeAgo: "8h ago",
-  },
-  {
-    id: "4",
-    title: "Understanding market cycles: A quantitative approach",
-    content: "Using historical data from the past 50 years, I've identified patterns that repeat with surprising consistency. Here's my analysis framework...",
-    author: "quant_trader",
-    community: "trading",
-    votes: 445,
-    comments: 97,
-    tags: ["markets", "analysis", "data"],
-    timeAgo: "12h ago",
-  },
-  {
-    id: "5",
-    title: "TypeScript 6.0 features you need to know about",
-    content: "The latest TypeScript release brings pattern matching, pipe operator support, and improved type inference. Let me walk you through the highlights...",
-    author: "ts_guru",
-    community: "webdev",
-    votes: 289,
-    comments: 63,
-    tags: ["typescript", "javascript", "programming"],
-    timeAgo: "1d ago",
-  },
-];
+import { apiService, ApiError } from "@/lib/api";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const sortOptions = ["Hot", "New", "Top"];
 
 const HomePage = () => {
+  const [posts, setPosts] = useState<PostData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeSort, setActiveSort] = useState("Hot");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  const fetchPosts = async (reset = false) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const currentPage = reset ? 1 : page;
+      const sortMap = { "Hot": "hot", "New": "new", "Top": "top" };
+      const sortValue = sortMap[activeSort as keyof typeof sortMap] || "new";
+      
+      const response = await apiService.getFeed(currentPage, 20, sortValue);
+      
+      const postsData = (response as any).data || (response as any) || [];
+      
+      if (reset) {
+        setPosts(postsData);
+        setPage(1);
+      } else {
+        setPosts(prev => [...prev, ...postsData]);
+      }
+      
+      setHasMore(postsData.length === 20);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Failed to load posts");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts(true);
+  }, [activeSort]);
+
+  const handleSortChange = (sort: string) => {
+    setActiveSort(sort);
+  };
+
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1);
+    fetchPosts(false);
+  };
+
+  if (loading && posts.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span className="ml-2 text-muted-foreground">Loading posts...</span>
+      </div>
+    );
+  }
+
+  if (error && posts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <AlertCircle className="h-8 w-8 text-destructive mb-2" />
+        <p className="text-destructive mb-4">{error}</p>
+        <Button onClick={() => fetchPosts(true)}>Try Again</Button>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        {sortOptions.map((opt, i) => (
+        {sortOptions.map((opt) => (
           <button
             key={opt}
+            onClick={() => handleSortChange(opt)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              i === 0
+              activeSort === opt
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground hover:bg-secondary"
             }`}
@@ -77,11 +95,39 @@ const HomePage = () => {
           </button>
         ))}
       </div>
-      <div className="space-y-3">
-        {mockPosts.map(post => (
-          <PostCard key={post.id} post={post} />
-        ))}
-      </div>
+      
+      {posts.length === 0 && !loading ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No posts found. Be the first to create one!</p>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {posts.map(post => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+          
+          {hasMore && (
+            <div className="flex justify-center mt-6">
+              <Button 
+                variant="outline" 
+                onClick={handleLoadMore}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  "Load More"
+                )}
+              </Button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

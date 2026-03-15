@@ -1,17 +1,98 @@
-import { useState } from "react";
-import { Image, X, Tag } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Image, X, Tag, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { apiService, ApiError } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
-const communities = ["webdev", "startups", "design", "trading", "typescript", "indie-hackers"];
+interface Community {
+  id: string;
+  name: string;
+  description: string;
+  member_count: number;
+}
 
 const CreatePostPage = () => {
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [selectedCommunity, setSelectedCommunity] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const addTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput("");
+  useEffect(() => {
+    const fetchCommunities = async () => {
+      try {
+        const response = await apiService.getCommunities(1, 100);
+        const communitiesData = (response as any).data || (response as any) || [];
+        setCommunities(communitiesData);
+
+        // Pre-select community if specified in URL
+        const communityName = searchParams.get('community');
+        if (communityName) {
+          const community = communitiesData.find((c: any) => c.name === communityName);
+          if (community) {
+            setSelectedCommunity(community.id);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch communities:', err);
+      }
+    };
+
+    fetchCommunities();
+  }, [searchParams]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a post",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedCommunity || !title.trim() || !content.trim()) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      await apiService.createPost({
+        title: title.trim(),
+        content: content.trim(),
+        community_id: selectedCommunity,
+      });
+
+      const community = communities.find(c => c.id === selectedCommunity);
+      toast({
+        title: "Post created",
+        description: "Your post has been published successfully",
+      });
+
+      navigate(`/c/${community?.name}`);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Failed to create post");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -19,79 +100,80 @@ const CreatePostPage = () => {
     <div className="max-w-2xl mx-auto">
       <h1 className="text-xl font-bold text-foreground mb-6">Create Post</h1>
 
-      <div className="bg-card rounded-lg border p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-card rounded-lg border p-6 space-y-5">
         {/* Community select */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Community</label>
-          <select className="w-full h-10 px-3 rounded-lg border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          <Label htmlFor="community">Community</Label>
+          <select
+            id="community"
+            value={selectedCommunity}
+            onChange={(e) => setSelectedCommunity(e.target.value)}
+            className="w-full h-10 px-3 rounded-lg border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            required
+          >
             <option value="">Select a community</option>
             {communities.map(c => (
-              <option key={c} value={c}>c/{c}</option>
+              <option key={c.id} value={c.id}>c/{c.name}</option>
             ))}
           </select>
         </div>
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Title</label>
-          <input
-            type="text"
+          <Label htmlFor="title">Title</Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="An interesting title..."
-            className="w-full h-10 px-3 rounded-lg border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            required
           />
         </div>
 
         {/* Content */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Content</label>
-          <textarea
+          <Label htmlFor="content">Content</Label>
+          <Textarea
+            id="content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
             placeholder="Share your thoughts..."
             rows={8}
-            className="w-full p-3 rounded-lg border bg-background text-sm text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            required
           />
         </div>
 
-        {/* Image upload */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Image (optional)</label>
-          <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-            <Image className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">Click to upload or drag and drop</p>
+        {error && (
+          <div className="flex items-center gap-2 text-destructive text-sm">
+            <AlertCircle className="h-4 w-4" />
+            {error}
           </div>
-        </div>
+        )}
 
-        {/* Tags */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Tags</label>
-          <div className="flex items-center gap-2 flex-wrap mb-2">
-            {tags.map(tag => (
-              <span key={tag} className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-primary-light text-primary-dark rounded-md">
-                {tag}
-                <button onClick={() => setTags(tags.filter(t => t !== tag))}>
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-              placeholder="Add a tag..."
-              className="flex-1 h-9 px-3 rounded-lg border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-            <Button onClick={addTag} size="sm" variant="outline" className="text-xs">
-              <Tag className="h-3.5 w-3.5 mr-1" /> Add
-            </Button>
-          </div>
+        <div className="flex gap-3">
+          <Button
+            type="submit"
+            disabled={loading}
+            className="flex-1"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              "Create Post"
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(-1)}
+          >
+            Cancel
+          </Button>
         </div>
-
-        {/* Submit */}
-        <Button className="w-full bg-primary text-primary-foreground hover:bg-primary-dark btn-primary-glow font-medium">
-          Publish Post
-        </Button>
-      </div>
+      </form>
     </div>
   );
 };

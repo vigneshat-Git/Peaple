@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { communityService } from "@/lib/api";
+import { apiService, ApiError } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CreateCommunityPage = () => {
   const [name, setName] = useState("");
@@ -19,6 +20,7 @@ const CreateCommunityPage = () => {
     description?: string;
   }>({});
 
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -48,26 +50,43 @@ const CreateCommunityPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a community",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      const community = await communityService.createCommunity({
+      const community = await apiService.createCommunity({
         name: name.toLowerCase(),
         description,
-        rules: rules || undefined,
-      }) as { name: string };
+      });
+
       toast({
         title: "Community created!",
         description: `c/${community.name} is now live.`,
       });
       navigate(`/c/${community.name}`);
-    } catch (error) {
-      toast({
-        title: "Failed to create community",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (error instanceof ApiError) {
+        toast({
+          title: "Failed to create community",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to create community",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }

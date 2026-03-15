@@ -43,6 +43,37 @@ router.post('/', verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// Get all posts
+router.get('/', optionalAuth, async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const sort = (req.query.sort as 'new' | 'trending' | 'hot') || 'new';
+
+    const result = await postService.getPosts(page, limit, sort);
+
+    sendPaginationResponse(res, result.posts, result.total, page, limit);
+  } catch (error: any) {
+    console.error('Get posts error:', error);
+    sendError(res, error.message || 'Failed to get posts', 500);
+  }
+});
+
+// Get trending posts
+router.get('/trending', optionalAuth, async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const result = await postService.getTrendingPosts(page, limit);
+
+    sendPaginationResponse(res, result.posts, result.total, page, limit);
+  } catch (error: any) {
+    console.error('Get trending posts error:', error);
+    sendError(res, error.message || 'Failed to get trending posts', 500);
+  }
+});
+
 // Get post by ID
 router.get('/:postId', optionalAuth, async (req: Request, res: Response) => {
   try {

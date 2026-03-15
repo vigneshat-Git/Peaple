@@ -31,15 +31,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("peaple_token");
+    const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("peaple_user");
-    if (storedToken && storedUser) {
+    
+    // Only restore if token is valid and not "undefined"
+    if (storedToken && storedToken !== "undefined" && storedUser) {
       try {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       } catch {
-        localStorage.removeItem("peaple_token");
+        // Clear invalid data
+        localStorage.removeItem("token");
         localStorage.removeItem("peaple_user");
+      }
+    } else {
+      // Clear invalid token if it exists
+      if (storedToken === "undefined") {
+        localStorage.removeItem("token");
       }
     }
     setIsLoading(false);
@@ -58,9 +66,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const data = await response.json();
-    const { token: newToken, user: newUser } = data.data || data;
+    
+    console.log("Login backend response:", data);
+    
+    const newToken =
+      data?.data?.token ||
+      data?.token ||
+      data?.accessToken ||
+      null;
+    
+    const newUser =
+      data?.data?.user ||
+      data?.user ||
+      null;
 
-    localStorage.setItem("peaple_token", newToken);
+    console.log("Stored token:", newToken);
+
+    if (!newToken || newToken === "undefined") {
+      throw new Error("No valid token received from server");
+    }
+
+    localStorage.setItem("token", newToken);
     localStorage.setItem("peaple_user", JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
@@ -79,9 +105,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const data = await response.json();
-    const { token: newToken, user: newUser } = data.data || data;
+    
+    console.log("Register backend response:", data);
+    
+    const newToken =
+      data?.data?.token ||
+      data?.token ||
+      data?.accessToken ||
+      null;
+    
+    const newUser =
+      data?.data?.user ||
+      data?.user ||
+      null;
 
-    localStorage.setItem("peaple_token", newToken);
+    console.log("Stored token:", newToken);
+
+    if (!newToken || newToken === "undefined") {
+      throw new Error("No valid token received from server");
+    }
+
+    localStorage.setItem("token", newToken);
     localStorage.setItem("peaple_user", JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
@@ -96,7 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     } finally {
-      localStorage.removeItem("peaple_token");
+      localStorage.removeItem("token");
       localStorage.removeItem("peaple_user");
       setToken(null);
       setUser(null);
@@ -172,12 +216,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const data = await backendResponse.json();
-      const { token: newToken, user: newUser } = data.data || data;
+      
+      console.log("Google backend response:", data);
+      
+      const newToken = data?.data?.access_token;
+      const newUser = data?.data?.user;
 
-      localStorage.setItem('peaple_token', newToken);
+      console.log("Extracted token:", newToken);
+
+      if (!newToken) {
+        throw new Error("No valid token received from server");
+      }
+
+      localStorage.setItem('token', newToken);
       localStorage.setItem('peaple_user', JSON.stringify(newUser));
       setToken(newToken);
       setUser(newUser);
+      
+      console.log("Google authentication successful, user logged in");
     } catch (error) {
       console.error('Google sign-in error:', error);
       throw error;

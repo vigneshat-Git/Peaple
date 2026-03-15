@@ -44,6 +44,40 @@ export class PostService {
     }
   }
 
+  async getPosts(
+    page: number = 1,
+    limit: number = 20,
+    sort: 'new' | 'trending' | 'hot' = 'new'
+  ): Promise<{ posts: Post[]; total: number; page: number; limit: number }> {
+    try {
+      const { offset } = getPaginationParams(page, limit);
+
+      let orderBy = 'created_at DESC';
+      if (sort === 'trending' || sort === 'hot') {
+        orderBy = 'score DESC, created_at DESC';
+      }
+
+      const totalResult = await query('SELECT COUNT(*) FROM posts');
+      const total = parseInt(totalResult.rows[0].count, 10);
+
+      const result = await query(
+        `SELECT * FROM posts
+         ORDER BY ${orderBy}
+         LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      );
+
+      return {
+        posts: result.rows,
+        total,
+        page,
+        limit,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getPostsByAuthor(
     authorId: string,
     page: number = 1,
