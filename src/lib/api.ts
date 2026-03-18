@@ -18,6 +18,12 @@ class ApiService {
   ): Promise<T> {
     const token = localStorage.getItem("token");
     
+    // Debug logging for authentication
+    console.log(`[API Debug] Request to: ${endpoint}`);
+    console.log(`[API Debug] Token exists: ${!!token}`);
+    console.log(`[API Debug] Token value: ${token?.substring(0, 20)}...`);
+    console.log(`[API Debug] Token is "undefined": ${token === "undefined"}`);
+    
     const config: RequestInit = {
       ...options,
       headers: {
@@ -29,11 +35,25 @@ class ApiService {
       }
     };
 
+    const headers = config.headers as Record<string, string>;
+    console.log(`[API Debug] Authorization header:`, headers.Authorization);
+
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        
+        // Handle 401 Unauthorized specifically
+        if (response.status === 401) {
+          console.error('[API Error] 401 Unauthorized - clearing invalid token');
+          localStorage.removeItem("token");
+          localStorage.removeItem("peaple_user");
+          
+          // Trigger a page reload to redirect to login
+          window.location.href = '/login';
+        }
+        
         throw new ApiError(
           errorData.message || errorData.error || 'Request failed',
           response.status,
