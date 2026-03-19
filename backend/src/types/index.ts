@@ -39,6 +39,15 @@ export interface Post {
   comment_count: number;
   created_at: Date;
   updated_at: Date;
+  // Nested objects for API responses
+  author?: {
+    id: string;
+    username: string;
+  };
+  community?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface Comment {

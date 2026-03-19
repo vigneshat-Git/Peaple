@@ -34,11 +34,33 @@ export class PostService {
   async getPostById(postId: string): Promise<Post | null> {
     try {
       const result = await query(
-        `SELECT * FROM posts WHERE id = $1`,
+        `SELECT 
+          posts.*,
+          users.username AS author_username,
+          users.id AS author_user_id,
+          communities.name AS community_name,
+          communities.id AS community_id_ref
+         FROM posts
+         JOIN users ON posts.author_id = users.id
+         JOIN communities ON posts.community_id = communities.id
+         WHERE posts.id = $1`,
         [postId]
       );
 
-      return result.rows[0] || null;
+      if (!result.rows[0]) return null;
+
+      const post = result.rows[0];
+      return {
+        ...post,
+        author: {
+          id: post.author_user_id,
+          username: post.author_username
+        },
+        community: {
+          id: post.community_id_ref,
+          name: post.community_name
+        }
+      };
     } catch (error) {
       throw error;
     }
@@ -52,23 +74,43 @@ export class PostService {
     try {
       const { offset } = getPaginationParams(page, limit);
 
-      let orderBy = 'created_at DESC';
+      let orderBy = 'posts.created_at DESC';
       if (sort === 'trending' || sort === 'hot') {
-        orderBy = 'score DESC, created_at DESC';
+        orderBy = 'posts.score DESC, posts.created_at DESC';
       }
 
       const totalResult = await query('SELECT COUNT(*) FROM posts');
       const total = parseInt(totalResult.rows[0].count, 10);
 
       const result = await query(
-        `SELECT * FROM posts
+        `SELECT 
+          posts.*,
+          users.username AS author_username,
+          users.id AS author_user_id,
+          communities.name AS community_name,
+          communities.id AS community_id_ref
+         FROM posts
+         JOIN users ON posts.author_id = users.id
+         JOIN communities ON posts.community_id = communities.id
          ORDER BY ${orderBy}
          LIMIT $1 OFFSET $2`,
         [limit, offset]
       );
 
+      const posts = result.rows.map(post => ({
+        ...post,
+        author: {
+          id: post.author_user_id,
+          username: post.author_username
+        },
+        community: {
+          id: post.community_id_ref,
+          name: post.community_name
+        }
+      }));
+
       return {
-        posts: result.rows,
+        posts,
         total,
         page,
         limit,
@@ -294,15 +336,35 @@ export class PostService {
       const total = parseInt(totalResult.rows[0].count, 10);
 
       const result = await query(
-        `SELECT * FROM posts
-         WHERE created_at > NOW() - INTERVAL '7 days'
-         ORDER BY score DESC
+        `SELECT 
+          posts.*,
+          users.username AS author_username,
+          users.id AS author_user_id,
+          communities.name AS community_name,
+          communities.id AS community_id_ref
+         FROM posts
+         JOIN users ON posts.author_id = users.id
+         JOIN communities ON posts.community_id = communities.id
+         WHERE posts.created_at > NOW() - INTERVAL '7 days'
+         ORDER BY posts.score DESC
          LIMIT $1 OFFSET $2`,
         [limit, offset]
       );
 
+      const posts = result.rows.map(post => ({
+        ...post,
+        author: {
+          id: post.author_user_id,
+          username: post.author_username
+        },
+        community: {
+          id: post.community_id_ref,
+          name: post.community_name
+        }
+      }));
+
       return {
-        posts: result.rows,
+        posts,
         total,
         page,
         limit,

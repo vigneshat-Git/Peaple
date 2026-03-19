@@ -9,8 +9,8 @@ export interface PostData {
   id: string;
   title: string;
   content: string;
-  author: string;
-  community: string;
+  author: string | { id: string; username: string };
+  community: string | { id: string; name: string };
   votes: number;
   comments: number;
   tags?: string[];
@@ -18,6 +18,19 @@ export interface PostData {
 }
 
 const PostCard = ({ post }: { post: PostData }) => {
+  // Handle both string and object formats for backward compatibility
+  const communityName = typeof post.community === 'string' 
+    ? post.community 
+    : post.community?.name || 'unknown';
+    
+  const authorName = typeof post.author === 'string' 
+    ? post.author 
+    : post.author?.username || 'unknown';
+    
+  const communityId = typeof post.community === 'string' 
+    ? post.community 
+    : post.community?.id || post.community?.name || 'unknown';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -28,11 +41,11 @@ const PostCard = ({ post }: { post: PostData }) => {
         <VoteButtons initialVotes={post.votes} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <Link to={`/c/${post.community}`} className="font-semibold text-foreground hover:text-primary transition-colors">
-              c/{post.community}
+            <Link to={`/c/${communityId}`} className="font-semibold text-foreground hover:text-primary transition-colors">
+              c/{communityName}
             </Link>
             <span>•</span>
-            <span>Posted by {post.author}</span>
+            <span>Posted by {authorName}</span>
             <span>•</span>
             <span>{post.timeAgo}</span>
           </div>

@@ -20,6 +20,15 @@ interface Post {
   comment_count: number;
   created_at: string;
   updated_at: string;
+  // Nested objects from API
+  author?: {
+    id: string;
+    username: string;
+  };
+  community?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface Comment {
@@ -311,9 +320,9 @@ const PostPage = () => {
           <VoteButtons initialVotes={post.upvotes} />
           <div className="flex-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <span className="font-semibold text-foreground">c/{post.community_id}</span>
+              <span className="font-semibold text-foreground">c/{post.community?.name || post.community_id}</span>
               <span>•</span>
-              <span>Posted by {post.author_id}</span>
+              <span>Posted by {post.author?.username || post.author_id}</span>
               <span>•</span>
               <span>{formatTime(post.created_at)}</span>
             </div>
