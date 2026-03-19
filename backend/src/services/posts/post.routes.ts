@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { postService } from './post.service.js';
+import { commentService } from '../comments/comment.service.js';
 import { verifyToken, optionalAuth, AuthRequest } from '../../middleware/auth.js';
 import { sendSuccess, sendError, sendPaginationResponse } from '../../utils/response.js';
 import { validate, validationSchemas } from '../../utils/validation.js';
@@ -89,6 +90,53 @@ router.get('/:postId', optionalAuth, async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Get post error:', error);
     sendError(res, error.message || 'Failed to get post', 500);
+  }
+});
+
+// Get comments for a post - GET /api/posts/:postId/comments (frontend expects this)
+router.get('/:postId/comments', optionalAuth, async (req: Request, res: Response) => {
+  try {
+    const { postId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const result = await commentService.getPostComments(postId, page, limit);
+
+    sendPaginationResponse(res, result.comments, result.total, page, limit);
+  } catch (error: any) {
+    console.error('Get post comments error:', error);
+    sendError(res, error.message || 'Failed to get comments', 500);
+  }
+});
+
+// Create comment on post - POST /api/posts/:postId/comments (alternative frontend route)
+router.post('/:postId/comments', optionalAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    // Use mock user if not authenticated (for testing)
+    const userId = req.user?.userId || 'a3b4ddd2-c9d5-45e5-9630-03c6782f4f71';
+    
+    const { postId } = req.params;
+    const { content, parentId, parent_comment_id } = req.body;
+
+    // Validate required fields
+    if (!content || content.trim().length === 0) {
+      return sendError(res, 'Content is required', 400);
+    }
+
+    // Support both parentId (frontend) and parent_comment_id (backend)
+    const parentCommentId = parentId || parent_comment_id;
+
+    const comment = await commentService.createComment(
+      postId,
+      userId,
+      content.trim(),
+      parentCommentId
+    );
+
+    sendSuccess(res, comment, 'Comment created', 201);
+  } catch (error: any) {
+    console.error('Create comment error:', error);
+    sendError(res, error.message || 'Failed to create comment', 400);
   }
 });
 

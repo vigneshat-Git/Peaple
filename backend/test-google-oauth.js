@@ -98,7 +98,7 @@ const googleAuth = async (req, res) => {
       email: user.email 
     });
 
-    console.log('🎉 Google authentication successful!');
+    //console.log('🎉 Google authentication successful!');
 
     res.json({
       data: {

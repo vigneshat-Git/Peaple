@@ -59,15 +59,15 @@ export class CommentService {
 
       const totalResult = await query(
         `SELECT COUNT(*) FROM comments
-         WHERE post_id = $1 AND parent_comment_id IS NULL`,
+         WHERE post_id = $1`,
         [postId]
       );
       const total = parseInt(totalResult.rows[0].count, 10);
 
       const result = await query(
         `SELECT * FROM comments
-         WHERE post_id = $1 AND parent_comment_id IS NULL
-         ORDER BY created_at DESC
+         WHERE post_id = $1
+         ORDER BY created_at ASC
          LIMIT $2 OFFSET $3`,
         [postId, limit, offset]
       );

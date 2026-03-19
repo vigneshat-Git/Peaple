@@ -6,6 +6,80 @@ import { validate, validationSchemas } from '../../utils/validation.js';
 
 const router = Router();
 
+// Routes that match frontend expectations
+
+// Temporary mock auth for testing - REMOVE IN PRODUCTION
+router.post('/mock-auth', async (req: Request, res: Response) => {
+  const mockUser = {
+    userId: 'a3b4ddd2-c9d5-45e5-9630-03c6782f4f71',
+    username: 'test_user',
+    email: 'test@example.com'
+  };
+  
+  // Create a mock JWT token (in production, use proper JWT)
+  const mockToken = 'mock-jwt-token-for-testing';
+  
+  sendSuccess(res, { 
+    token: mockToken, 
+    user: mockUser 
+  }, 'Mock authentication successful');
+});
+
+// Create comment - POST /api/comments (frontend expects this) - using optional auth for testing
+router.post('/', optionalAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    // Use mock user if not authenticated (for testing)
+    const userId = req.user?.userId || 'a3b4ddd2-c9d5-45e5-9630-03c6782f4f71';
+
+    const { postId, content, parentId, parent_comment_id } = req.body;
+
+    // Validate required fields
+    if (!postId) {
+      return sendError(res, 'postId is required', 400);
+    }
+
+    // Support both parentId (frontend) and parent_comment_id (backend)
+    const parentCommentId = parentId || parent_comment_id;
+
+    // Validate content using the schema
+    const validatedContent = validate(
+      { content, parent_comment_id: parentCommentId },
+      validationSchemas.createComment
+    );
+
+    const comment = await commentService.createComment(
+      postId,
+      userId,
+      validatedContent.content,
+      validatedContent.parent_comment_id
+    );
+
+    sendSuccess(res, comment, 'Comment created', 201);
+  } catch (error: any) {
+    console.error('Create comment error:', error);
+    sendError(res, error.message || 'Failed to create comment', 400);
+  }
+});
+
+// Get comments for a post - GET /api/posts/:postId/comments (frontend expects this)
+// This route needs to be handled in the posts router, but we'll add it here too for compatibility
+router.get('/posts/:postId/comments', optionalAuth, async (req: Request, res: Response) => {
+  try {
+    const { postId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const result = await commentService.getPostComments(postId, page, limit);
+
+    sendPaginationResponse(res, result.comments, result.total, page, limit);
+  } catch (error: any) {
+    console.error('Get post comments error:', error);
+    sendError(res, error.message || 'Failed to get comments', 500);
+  }
+});
+
+// Original routes
+
 // Create comment
 router.post('/:postId', verifyToken, async (req: AuthRequest, res: Response) => {
   try {

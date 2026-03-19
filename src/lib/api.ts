@@ -19,10 +19,10 @@ class ApiService {
     const token = localStorage.getItem("token");
     
     // Debug logging for authentication
-    console.log(`[API Debug] Request to: ${endpoint}`);
-    console.log(`[API Debug] Token exists: ${!!token}`);
-    console.log(`[API Debug] Token value: ${token?.substring(0, 20)}...`);
-    console.log(`[API Debug] Token is "undefined": ${token === "undefined"}`);
+    //console.log(`[API Debug] Request to: ${endpoint}`);
+    //console.log(`[API Debug] Token exists: ${!!token}`);
+    //console.log(`[API Debug] Token value: ${token?.substring(0, 20)}...`);
+    //console.log(`[API Debug] Token is "undefined": ${token === "undefined"}`);
     
     const config: RequestInit = {
       ...options,
@@ -36,7 +36,7 @@ class ApiService {
     };
 
     const headers = config.headers as Record<string, string>;
-    console.log(`[API Debug] Authorization header:`, headers.Authorization);
+    //console.log(`[API Debug] Authorization header:`, headers.Authorization);
 
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
@@ -186,9 +186,9 @@ class ApiService {
   }
 
   async createComment(data: {
-    post_id: string;
+    postId: string;
     content: string;
-    parent_comment_id?: string;
+    parentCommentId?: string;
   }) {
     return this.request('/comments', {
       method: 'POST',

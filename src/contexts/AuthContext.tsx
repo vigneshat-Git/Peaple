@@ -217,12 +217,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const data = await backendResponse.json();
       
-      console.log("Google backend response:", data);
+      //console.log("Google backend response:", data);
       
       const newToken = data?.data?.access_token;
       const newUser = data?.data?.user;
 
-      console.log("Extracted token:", newToken);
+      //console.log("Extracted token:", newToken);
 
       if (!newToken) {
         throw new Error("No valid token received from server");
@@ -233,7 +233,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(newToken);
       setUser(newUser);
       
-      console.log("Google authentication successful, user logged in");
+      //console.log("Google authentication successful, user logged in");
     } catch (error) {
       console.error('Google sign-in error:', error);
       throw error;

@@ -17,12 +17,16 @@ app.use(
   createProxyMiddleware({ target: AUTH_URL, changeOrigin: true, pathRewrite: { '^/api/auth': '' } })
 );
 app.use(
+  '/api/posts/:id/comments',
+  createProxyMiddleware({ target: COMMENT_URL, changeOrigin: true })
+);
+app.use(
   '/api/posts',
   createProxyMiddleware({ target: POST_URL, changeOrigin: true, pathRewrite: { '^/api/posts': '' } })
 );
 app.use(
   '/api/comments',
-  createProxyMiddleware({ target: COMMENT_URL, changeOrigin: true, pathRewrite: { '^/api/comments': '' } })
+  createProxyMiddleware({ target: COMMENT_URL, changeOrigin: true })
 );
 app.use(
   '/api/votes',
