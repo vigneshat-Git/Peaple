@@ -11,13 +11,18 @@ export interface PostData {
   content: string;
   author: string | { id: string; username: string };
   community: string | { id: string; name: string };
-  votes: number;
+  votes?: number; // for backward compatibility
+  upvotes?: number; // from API
+  score?: string; // from API
   comments: number;
   tags?: string[];
   timeAgo: string;
 }
 
-const PostCard = ({ post }: { post: PostData }) => {
+const PostCard = ({ post, onVoteChange }: { 
+  post: PostData; 
+  onVoteChange?: (newVotes: number, userVote: "up" | "down" | null) => void;
+}) => {
   // Handle both string and object formats for backward compatibility
   const communityName = typeof post.community === 'string' 
     ? post.community 
@@ -26,10 +31,9 @@ const PostCard = ({ post }: { post: PostData }) => {
   const authorName = typeof post.author === 'string' 
     ? post.author 
     : post.author?.username || 'unknown';
-    
-  const communityId = typeof post.community === 'string' 
-    ? post.community 
-    : post.community?.id || post.community?.name || 'unknown';
+
+  // Use upvotes from API, fallback to votes for backward compatibility
+  const voteCount = post.upvotes ?? post.votes ?? 0;
 
   return (
     <motion.div
@@ -38,10 +42,17 @@ const PostCard = ({ post }: { post: PostData }) => {
       className="bg-card rounded-lg border p-4 card-hover"
     >
       <div className="flex gap-3">
-        <VoteButtons initialVotes={post.votes} />
+        <VoteButtons 
+          initialVotes={voteCount} 
+          postId={post.id}
+          onVoteChange={(newVotes, userVote) => {
+            // Update parent component
+            onVoteChange?.(newVotes, userVote);
+          }}
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <Link to={`/c/${communityId}`} className="font-semibold text-foreground hover:text-primary transition-colors">
+            <Link to={`/c/${communityName}`} className="font-semibold text-foreground hover:text-primary transition-colors">
               c/{communityName}
             </Link>
             <span>•</span>

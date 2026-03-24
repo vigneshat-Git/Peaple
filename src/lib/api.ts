@@ -218,13 +218,21 @@ class ApiService {
     return this.request(`/posts/trending?page=${page}&limit=${limit}`);
   }
 
+  // Generic POST method for voting and other requests
+  async post(endpoint: string, data: any) {
+    return this.request(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Users
   async getUserById(id: string) {
     return this.request(`/auth/${id}`);
   }
 
   async getUserCommunities(page = 1, limit = 20) {
-    return this.request(`/communities/user?page=${page}&limit=${limit}`);
+    return this.request(`/user/communities?page=${page}&limit=${limit}`);
   }
 
   // Search

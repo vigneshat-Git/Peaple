@@ -69,26 +69,78 @@ const formatTime = (dateString: string) => {
 // CommentVotes component for upvote/downvote functionality
 const CommentVotes = ({ 
   votes, 
-  onUpvote, 
-  onDownvote 
+  commentId,
+  onVoteChange 
 }: { 
   votes: number; 
-  onUpvote?: () => void; 
-  onDownvote?: () => void;
+  commentId: string;
+  onVoteChange?: (newVotes: number) => void;
 }) => {
+  const [currentVotes, setCurrentVotes] = useState(votes);
+  const [userVote, setUserVote] = useState<"up" | "down" | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleVote = async (type: "up" | "down") => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+    
+    try {
+      const value = type === "up" ? 1 : -1;
+      
+      // If user is clicking the same vote, remove it
+      if (userVote === type) {
+        await apiService.post('/votes', {
+          commentId,
+          value
+        });
+        setCurrentVotes(prev => userVote === "up" ? prev - 1 : prev + 1);
+        setUserVote(null);
+        onVoteChange?.(currentVotes - (type === "up" ? 1 : -1));
+      } else {
+        // If changing vote or adding new vote
+        let voteChange = value;
+        if (userVote === "up") voteChange = -2; // Changing from up to down
+        else if (userVote === "down") voteChange = 2; // Changing from down to up
+        
+        await apiService.post('/votes', {
+          commentId,
+          value
+        });
+        
+        setCurrentVotes(prev => prev + voteChange);
+        setUserVote(type);
+        onVoteChange?.(currentVotes + voteChange);
+      }
+    } catch (error) {
+      console.error('Vote failed:', error);
+      // Revert on error
+      setCurrentVotes(votes);
+      setUserVote(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center mr-3 text-muted-foreground">
       <button 
-        onClick={onUpvote} 
-        className="hover:text-primary transition-colors p-1"
+        onClick={() => handleVote("up")} 
+        disabled={isLoading}
+        className={`hover:text-primary transition-colors p-1 ${
+          userVote === "up" ? "text-primary" : ""
+        } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
         aria-label="Upvote"
       >
         ▲
       </button>
-      <span className="text-xs font-medium">{votes}</span>
+      <span className="text-xs font-medium">{currentVotes}</span>
       <button 
-        onClick={onDownvote} 
-        className="hover:text-red-500 transition-colors p-1"
+        onClick={() => handleVote("down")} 
+        disabled={isLoading}
+        className={`hover:text-red-500 transition-colors p-1 ${
+          userVote === "down" ? "text-red-500" : ""
+        } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
         aria-label="Downvote"
       >
         ▼
@@ -109,6 +161,7 @@ const CommentItem = ({
 }) => {
   const [replyText, setReplyText] = useState("");
   const [showReply, setShowReply] = useState(false);
+  const [currentComment, setCurrentComment] = useState(comment);
   const maxDepth = 5; // Prevent infinite nesting
 
   const handleReplySubmit = () => {
@@ -119,14 +172,26 @@ const CommentItem = ({
     }
   };
 
-  const votes = comment.votes_count || comment.score || 0;
+  const handleVoteChange = (newVotes: number) => {
+    setCurrentComment(prev => ({
+      ...prev,
+      votes_count: newVotes,
+      score: newVotes
+    }));
+  };
+
+  const votes = currentComment.votes_count || currentComment.score || 0;
 
   return (
     <div className={`${depth > 0 ? 'ml-6 border-l border-border pl-3' : ''} mb-4`}>
       <div className="flex gap-3">
         
         {/* Vote Buttons */}
-        <CommentVotes votes={votes} />
+        <CommentVotes 
+          votes={votes} 
+          commentId={comment.id}
+          onVoteChange={handleVoteChange}
+        />
 
         {/* Comment Content */}
         <div className="flex-1 bg-card border rounded-lg p-3 hover:bg-muted/50 transition-colors">
@@ -186,9 +251,9 @@ const CommentItem = ({
       </div>
 
       {/* Nested Replies */}
-      {comment.children && comment.children.length > 0 && depth < maxDepth && (
+      {currentComment.children && currentComment.children.length > 0 && depth < maxDepth && (
         <div className="mt-3">
-          {comment.children.map(child => (
+          {currentComment.children.map(child => (
             <CommentItem 
               key={child.id} 
               comment={child} 
@@ -317,7 +382,18 @@ const PostPage = () => {
     <div className="max-w-3xl">
       <div className="bg-card rounded-lg border p-6 mb-4">
         <div className="flex gap-4">
-          <VoteButtons initialVotes={post.upvotes} />
+          <VoteButtons 
+            initialVotes={post.upvotes} 
+            postId={post.id}
+            onVoteChange={(newVotes, userVote) => {
+              // Update the post data with new vote count
+              setPost(prev => prev ? {
+                ...prev,
+                upvotes: newVotes,
+                score: newVotes.toString()
+              } : null);
+            }}
+          />
           <div className="flex-1">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <span className="font-semibold text-foreground">c/{post.community?.name || post.community_id}</span>

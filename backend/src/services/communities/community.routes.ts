@@ -48,12 +48,31 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// Get community by ID
-router.get('/:communityId', async (req: Request, res: Response) => {
+// Get user's communities - MUST be defined BEFORE /:communityId to avoid route conflict
+router.get('/user/communities', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { communityId } = req.params;
+    if (!req.user) {
+      return sendError(res, 'Unauthorized', 401);
+    }
+    
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
 
-    const community = await communityService.getCommunityById(communityId);
+    const result = await communityService.getUserCommunities(req.user.userId, page, limit);
+
+    sendPaginationResponse(res, result.communities, result.total, page, limit);
+  } catch (error: any) {
+    console.error('Get user communities error:', error);
+    sendError(res, error.message || 'Failed to get user communities', 500);
+  }
+});
+
+// Get community by name (NOT by ID) - defined AFTER static routes
+router.get('/:name', async (req: Request, res: Response) => {
+  try {
+    const { name } = req.params;
+
+    const community = await communityService.getCommunityByName(name);
 
     if (!community) {
       return sendError(res, 'Community not found', 404);
@@ -67,16 +86,22 @@ router.get('/:communityId', async (req: Request, res: Response) => {
 });
 
 // Update community
-router.patch('/:communityId', verifyToken, async (req: AuthRequest, res: Response) => {
+router.patch('/:name', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return sendError(res, 'Unauthorized', 401);
     }
 
-    const { communityId } = req.params;
+    const { name } = req.params;
+    
+    // Find community by name first
+    const existingCommunity = await communityService.getCommunityByName(name);
+    if (!existingCommunity) {
+      return sendError(res, 'Community not found', 404);
+    }
 
     const community = await communityService.updateCommunity(
-      communityId,
+      existingCommunity.id,
       req.user.userId,
       req.body
     );
@@ -92,20 +117,20 @@ router.patch('/:communityId', verifyToken, async (req: AuthRequest, res: Respons
 });
 
 // Join community
-router.post('/:communityId/join', verifyToken, async (req: AuthRequest, res: Response) => {
+router.post('/:name/join', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return sendError(res, 'Unauthorized', 401);
     }
 
-    const { communityId } = req.params;
+    const { name } = req.params;
 
-    const community = await communityService.getCommunityById(communityId);
+    const community = await communityService.getCommunityByName(name);
     if (!community) {
       return sendError(res, 'Community not found', 404);
     }
 
-    await communityService.joinCommunity(req.user.userId, communityId);
+    await communityService.joinCommunity(req.user.userId, community.id);
 
     sendSuccess(res, { message: 'Joined community' }, 'Community joined', 201);
   } catch (error: any) {
@@ -115,15 +140,20 @@ router.post('/:communityId/join', verifyToken, async (req: AuthRequest, res: Res
 });
 
 // Leave community
-router.post('/:communityId/leave', verifyToken, async (req: AuthRequest, res: Response) => {
+router.post('/:name/leave', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return sendError(res, 'Unauthorized', 401);
     }
 
-    const { communityId } = req.params;
+    const { name } = req.params;
+    
+    const community = await communityService.getCommunityByName(name);
+    if (!community) {
+      return sendError(res, 'Community not found', 404);
+    }
 
-    await communityService.leaveCommunity(req.user.userId, communityId);
+    await communityService.leaveCommunity(req.user.userId, community.id);
 
     sendSuccess(res, { message: 'Left community' }, 'Community left');
   } catch (error: any) {
@@ -149,13 +179,18 @@ router.get('/:userId/communities', async (req: Request, res: Response) => {
 });
 
 // Get community members
-router.get('/:communityId/members', async (req: Request, res: Response) => {
+router.get('/:name/members', async (req: Request, res: Response) => {
   try {
-    const { communityId } = req.params;
+    const { name } = req.params;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
 
-    const result = await communityService.getCommunityMembers(communityId, page, limit);
+    const community = await communityService.getCommunityByName(name);
+    if (!community) {
+      return sendError(res, 'Community not found', 404);
+    }
+
+    const result = await communityService.getCommunityMembers(community.id, page, limit);
 
     sendPaginationResponse(res, result.members, result.total, page, limit);
   } catch (error: any) {

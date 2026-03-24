@@ -2,12 +2,13 @@ import { Link } from "react-router-dom";
 import { Users } from "lucide-react";
 
 interface CommunityCardProps {
+  id: string;
   name: string;
   members: number;
   description?: string;
 }
 
-const CommunityCard = ({ name, members, description }: CommunityCardProps) => {
+const CommunityCard = ({ id, name, members, description }: CommunityCardProps) => {
   return (
     <Link
       to={`/c/${name}`}

@@ -6,6 +6,23 @@ import { Button } from "@/components/ui/button";
 
 const sortOptions = ["Hot", "New", "Top"];
 
+// Helper function for formatting time
+const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+  
+  if (diffInHours < 1) {
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    return `${diffInMinutes}m ago`;
+  } else if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  } else {
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
+  }
+};
+
 const HomePage = () => {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +30,17 @@ const HomePage = () => {
   const [activeSort, setActiveSort] = useState("Hot");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  // Handle vote changes from PostCard
+  const handleVoteChange = (postId: string, newVotes: number, userVote: "up" | "down" | null) => {
+    setPosts(prev => 
+      prev.map(post => 
+        post.id === postId 
+          ? { ...post, upvotes: newVotes, votes: newVotes }
+          : post
+      )
+    );
+  };
 
   const fetchPosts = async (reset = false) => {
     try {
@@ -27,11 +55,17 @@ const HomePage = () => {
       
       const postsData = (response as any).data || (response as any) || [];
       
+      // Add timeAgo field to each post
+      const postsWithTimeAgo = postsData.map((post: any) => ({
+        ...post,
+        timeAgo: formatTime(post.created_at)
+      }));
+      
       if (reset) {
-        setPosts(postsData);
+        setPosts(postsWithTimeAgo);
         setPage(1);
       } else {
-        setPosts(prev => [...prev, ...postsData]);
+        setPosts(prev => [...prev, ...postsWithTimeAgo]);
       }
       
       setHasMore(postsData.length === 20);
@@ -104,7 +138,11 @@ const HomePage = () => {
         <>
           <div className="space-y-3">
             {posts.map(post => (
-              <PostCard key={post.id} post={post} />
+              <PostCard 
+                key={post.id} 
+                post={post} 
+                onVoteChange={(newVotes, userVote) => handleVoteChange(post.id, newVotes, userVote)}
+              />
             ))}
           </div>
           

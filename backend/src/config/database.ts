@@ -1,23 +1,33 @@
 import { Pool, PoolClient } from 'pg';
-import { env } from './env.js';
 
+// Check if using Railway (DATABASE_URL contains railway.app)
+const isRailway = process.env.DATABASE_URL?.includes('railway.app');
+
+// Use Railway PostgreSQL DATABASE_URL with SSL, or local without SSL
 const pool = new Pool({
-  host: env.DATABASE_HOST,
-  port: env.DATABASE_PORT,
-  database: env.DATABASE_NAME,
-  user: env.DATABASE_USER,
-  password: env.DATABASE_PASSWORD,
+  connectionString: process.env.DATABASE_URL,
+  ssl: isRailway ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
 });
 
+pool.on('connect', () => {
+  console.log("Connected DB:", process.env.DATABASE_URL);
+  console.log('[✓] Database connected');
+});
+
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
+  console.error('Database connection error:', err);
 });
 
 export async function getConnection(): Promise<PoolClient> {
-  return pool.connect();
+  try {
+    return await pool.connect();
+  } catch (error) {
+    console.error('Failed to get database connection:', error);
+    throw error;
+  }
 }
 
 export async function query(text: string, params?: unknown[]) {

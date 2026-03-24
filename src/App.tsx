@@ -39,7 +39,7 @@ const App = () => (
               <Route path="/" element={<HomePage />} />
               <Route path="/popular" element={<HomePage />} />
               <Route path="/saved" element={<HomePage />} />
-              <Route path="/c/:name" element={<CommunityPage />} />
+              <Route path="/c/:communityName" element={<CommunityPage />} />
               <Route path="/post/:id" element={<PostPage />} />
               <Route
                 path="/create-post"

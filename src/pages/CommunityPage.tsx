@@ -19,7 +19,7 @@ interface Community {
 }
 
 const CommunityPage = () => {
-  const { name } = useParams();
+  const { communityName } = useParams();
   const [community, setCommunity] = useState<Community | null>(null);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,16 +31,16 @@ const CommunityPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!name) return;
+      if (!communityName) return;
       
       try {
         setLoading(true);
         setError(null);
 
-        // Find community by name (we'll need to implement this endpoint)
+        // Find community by name
         const communitiesResponse = await apiService.getCommunities(1, 100);
         const communitiesData = (communitiesResponse as any).data || (communitiesResponse as any) || [];
-        const foundCommunity = communitiesData.find((c: any) => c.name === name);
+        const foundCommunity = communitiesData.find((c: any) => c.name === communityName);
 
         if (!foundCommunity) {
           setError('Community not found');
@@ -77,7 +77,7 @@ const CommunityPage = () => {
     };
 
     fetchData();
-  }, [name, user]);
+  }, [communityName, user]);
 
   const handleJoinCommunity = async () => {
     if (!community || !user) return;

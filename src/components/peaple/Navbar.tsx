@@ -42,7 +42,7 @@ const Navbar = () => {
           </Link>
 
           <Link
-            to="/communities"
+            to="/"
             className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             <Compass className="h-4 w-4" />

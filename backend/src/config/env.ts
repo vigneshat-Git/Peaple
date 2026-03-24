@@ -9,12 +9,12 @@ export const env = {
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:8080",
 
   // Database
-  DATABASE_URL: process.env.DATABASE_URL,
+  DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:ByOiarfBLYvjjevBrVuMqTQKzCVjeoFQ@ballast.proxy.rlwy.net:58471/railway',
   DATABASE_HOST: process.env.DATABASE_HOST || 'localhost',
   DATABASE_PORT: parseInt(process.env.DATABASE_PORT || '5432', 10),
   DATABASE_NAME: process.env.DATABASE_NAME || 'peaple',
   DATABASE_USER: process.env.DATABASE_USER || 'postgres',
-  DATABASE_PASSWORD: process.env.DATABASE_PASSWORD || 'postgres',
+  DATABASE_PASSWORD: process.env.DATABASE_PASSWORD || 'ByOiarfBLYvjjevBrVuMqTQKzCVjeoFQ',
 
   // Redis
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',

@@ -341,12 +341,13 @@ export class PostService {
           users.username AS author_username,
           users.id AS author_user_id,
           communities.name AS community_name,
-          communities.id AS community_id_ref
+          communities.id AS community_id_ref,
+          (posts.score / POWER(EXTRACT(EPOCH FROM (NOW() - posts.created_at))/3600 + 2, 1.5)) AS rank
          FROM posts
          JOIN users ON posts.author_id = users.id
          JOIN communities ON posts.community_id = communities.id
          WHERE posts.created_at > NOW() - INTERVAL '7 days'
-         ORDER BY posts.score DESC
+         ORDER BY rank DESC
          LIMIT $1 OFFSET $2`,
         [limit, offset]
       );
