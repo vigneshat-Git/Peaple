@@ -45,7 +45,14 @@ export async function connectRedis() {
   try {
     await redisClient.connect();
   } catch (error) {
-    console.warn('⚠️ Redis not available, continuing without it');
+    console.warn('⚠️ Redis not available, disabling it');
+
+    // 🔥 IMPORTANT: stop further retries
+    try {
+      await redisClient.disconnect();
+    } catch {}
+
+    return;
   }
 }
 
