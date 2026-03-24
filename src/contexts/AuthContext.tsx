@@ -148,9 +148,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const loginWithGoogle = () => {
-    // Redirect to backend Google OAuth endpoint
-    window.location.href = `${API_BASE_URL}/auth/google`;
+  const loginWithGoogle = async () => {
+    // Open backend Google OAuth in popup
+    const authUrl = `${API_BASE_URL}/auth/google`;
+    const popup = window.open(authUrl, 'google-auth', 'width=500,height=600,scrollbars=yes');
+    
+    if (!popup) {
+      throw new Error('Popup blocked. Please allow popups for this site.');
+    }
+    
+    // Listen for messages from popup
+    return new Promise<void>((resolve, reject) => {
+      const messageListener = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+          popup.close();
+          window.removeEventListener('message', messageListener);
+          handleGoogleSignIn(event.data.token, event.data.user).then(resolve).catch(reject);
+        } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+          popup.close();
+          window.removeEventListener('message', messageListener);
+          reject(new Error(event.data.error || 'Google authentication failed'));
+        }
+      };
+      
+      window.addEventListener('message', messageListener);
+      
+      // Check if popup was closed manually
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageListener);
+          reject(new Error('Authentication cancelled'));
+        }
+      }, 1000);
+    });
+  };
+
+  const handleGoogleSignIn = async (token: string, userData: User) => {
+    if (!token || token === 'undefined') {
+      throw new Error('No valid token received from server');
+    }
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('peaple_user', JSON.stringify(userData));
+    setToken(token);
+    setUser(userData);
   };
 
   return (

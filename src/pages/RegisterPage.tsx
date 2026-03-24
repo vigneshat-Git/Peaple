@@ -87,10 +87,24 @@ const RegisterPage = () => {
     }
   };
 
-  const handleGoogleSignup = () => {
+  const handleGoogleSignup = async () => {
     setIsGoogleLoading(true);
-    loginWithGoogle();
-    // Page will redirect to backend, then to Google, then back to frontend
+    try {
+      await loginWithGoogle();
+      toast({
+        title: "Welcome to Peaple!",
+        description: "Your account has been created successfully with Google.",
+      });
+      navigate("/");
+    } catch (error) {
+      toast({
+        title: "Google signup failed",
+        description: error instanceof Error ? error.message : "Unable to create account with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (

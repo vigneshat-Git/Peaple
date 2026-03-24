@@ -63,10 +63,24 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
-    loginWithGoogle();
-    // Page will redirect to backend, then to Google, then back to frontend
+    try {
+      await loginWithGoogle();
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully logged in with Google.",
+      });
+      navigate("/");
+    } catch (error) {
+      toast({
+        title: "Google login failed",
+        description: error instanceof Error ? error.message : "Unable to sign in with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
