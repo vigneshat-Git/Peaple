@@ -4,10 +4,10 @@ services:
     container_name: peaple-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ByOiarfBLYvjjevBrVuMqTQKzCVjeoFQ
       POSTGRES_DB: peaple
     ports:
-      - "5432:5432"
+      - "58471:58471"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -30,10 +30,10 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
+      DATABASE_PORT: 58471
       DATABASE_NAME: peaple
       DATABASE_USER: postgres
-      DATABASE_PASSWORD: password
+      DATABASE_PASSWORD: ByOiarfBLYvjjevBrVuMqTQKzCVjeoFQ
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: dev-secret-key
