@@ -15,7 +15,6 @@ import CreateCommunityPage from "@/pages/CreateCommunityPage";
 import ProfilePage from "@/pages/ProfilePage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
-import GoogleCallback from "@/pages/GoogleCallback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,7 +31,6 @@ const App = () => (
             {/* Public auth routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
             {/* App routes with shared layout */}
             <Route element={<AppLayout />}>
