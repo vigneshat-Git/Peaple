@@ -41,7 +41,7 @@ async function restartServices() {
     
     console.log('\n✅ Services restarted successfully!');
     console.log('📍 Auth Service: http://localhost:4001');
-    console.log('📍 API Gateway: http://localhost:5000');
+    console.log('📍 API Gateway: https://peaple-production.up.railway.app');
     console.log('\n🎯 Google OAuth should now be working!');
     
   } catch (error) {

@@ -25,7 +25,7 @@ try {
   console.log('\n📝 Important: Make sure these Google OAuth values are set in your .env:');
   console.log('   GOOGLE_CLIENT_ID=814546020627-04jjtfg6kl5kcj7d7lkfr6h3nscqngmo.apps.googleusercontent.com');
   console.log('   GOOGLE_CLIENT_SECRET=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');
-  console.log('   GOOGLE_REDIRECT_URI=http://localhost:5000/api/auth/google/callback');
+  console.log('   GOOGLE_REDIRECT_URI=https://peaple-production.up.railway.app/api/auth/google/callback');
   console.log('\n🚀 Restart your backend server after updating the .env file');
 } catch (error) {
   console.error('❌ Error creating .env file:', error.message);
