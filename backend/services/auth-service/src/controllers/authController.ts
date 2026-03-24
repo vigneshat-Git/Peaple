@@ -6,7 +6,8 @@ import { OAuth2Client } from 'google-auth-library';
 
 // Direct database connection
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/peaple'
+  //connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/peaple'
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:ByOiarfBLYvjjevBrVuMqTQKzCVjeoFQ@ballast.proxy.rlwy.net:58471/railway'
 });
 
 // Direct token function

@@ -10,16 +10,16 @@ export const env = {
 
   // Database
   DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:ByOiarfBLYvjjevBrVuMqTQKzCVjeoFQ@ballast.proxy.rlwy.net:58471/railway',
-  DATABASE_HOST: process.env.DATABASE_HOST || 'localhost',
-  DATABASE_PORT: parseInt(process.env.DATABASE_PORT || '5432', 10),
+  //DATABASE_HOST: process.env.DATABASE_HOST || 'localhost',
+  //DATABASE_PORT: parseInt(process.env.DATABASE_PORT || '5432', 10),
   DATABASE_NAME: process.env.DATABASE_NAME || 'peaple',
   DATABASE_USER: process.env.DATABASE_USER || 'postgres',
   DATABASE_PASSWORD: process.env.DATABASE_PASSWORD || 'ByOiarfBLYvjjevBrVuMqTQKzCVjeoFQ',
 
   // Redis
-  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
-  REDIS_HOST: process.env.REDIS_HOST || 'localhost',
-  REDIS_PORT: parseInt(process.env.REDIS_PORT || '6379', 10),
+  //REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+  //REDIS_HOST: process.env.REDIS_HOST || 'localhost',
+  //REDIS_PORT: parseInt(process.env.REDIS_PORT || '6379', 10),
 
   // JWT
   JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key',

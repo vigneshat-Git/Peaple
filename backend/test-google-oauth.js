@@ -16,7 +16,8 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Database connection
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/peaple'
+  //connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/peaple'
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:ByOiarfBLYvjjevBrVuMqTQKzCVjeoFQ@ballast.proxy.rlwy.net:58471/railway'
 });
 
 // Google OAuth client
