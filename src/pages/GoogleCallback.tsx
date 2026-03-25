@@ -19,28 +19,30 @@ const GoogleCallback = () => {
           type: 'GOOGLE_AUTH_ERROR',
           error: error
         }, '*');
-        window.close();
+        setTimeout(() => window.close(), 100);
         return;
       }
 
       if (token && userJson) {
         try {
           const user = JSON.parse(decodeURIComponent(userJson));
-          console.log('[GoogleCallback] Sending success message');
+          console.log('[GoogleCallback] Sending success message with token');
           // Send success message to parent window
           window.opener?.postMessage({
             type: 'GOOGLE_AUTH_SUCCESS',
             token: token,
             user: user
           }, '*');
+          // Delay close to ensure message is delivered
+          setTimeout(() => window.close(), 100);
         } catch (e) {
           console.log('[GoogleCallback] Parse error:', e);
           window.opener?.postMessage({
             type: 'GOOGLE_AUTH_ERROR',
             error: 'Failed to parse user data'
           }, '*');
+          setTimeout(() => window.close(), 100);
         }
-        window.close();
       } else {
         console.log('[GoogleCallback] No token found');
         // No token found
@@ -48,7 +50,7 @@ const GoogleCallback = () => {
           type: 'GOOGLE_AUTH_ERROR',
           error: 'No authentication token received'
         }, '*');
-        window.close();
+        setTimeout(() => window.close(), 100);
       }
     };
 
