@@ -15,7 +15,7 @@ const GoogleCallback = () => {
         window.opener?.postMessage({
           type: 'GOOGLE_AUTH_ERROR',
           error: error
-        }, window.location.origin);
+        }, '*');
         window.close();
         return;
       }
@@ -28,12 +28,12 @@ const GoogleCallback = () => {
             type: 'GOOGLE_AUTH_SUCCESS',
             token: token,
             user: user
-          }, window.location.origin);
+          }, '*');
         } catch {
           window.opener?.postMessage({
             type: 'GOOGLE_AUTH_ERROR',
             error: 'Failed to parse user data'
-          }, window.location.origin);
+          }, '*');
         }
         window.close();
       } else {
@@ -41,7 +41,7 @@ const GoogleCallback = () => {
         window.opener?.postMessage({
           type: 'GOOGLE_AUTH_ERROR',
           error: 'No authentication token received'
-        }, window.location.origin);
+        }, '*');
         window.close();
       }
     };

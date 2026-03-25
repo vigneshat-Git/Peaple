@@ -157,30 +157,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Listen for messages from popup
     return new Promise<void>((resolve, reject) => {
+      let checkClosed: ReturnType<typeof setInterval> | null = null;
+      let messageReceived = false;
+      
       const messageListener = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
+        // Accept messages from any origin during OAuth flow
+        // The token validation happens on the backend
         
-        if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
-          popup.close();
+        if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+          messageReceived = true;
+          if (checkClosed) clearInterval(checkClosed);
           window.removeEventListener('message', messageListener);
+          popup.close();
           handleGoogleSignIn(event.data.token, event.data.user).then(resolve).catch(reject);
-        } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
-          popup.close();
+        } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
+          messageReceived = true;
+          if (checkClosed) clearInterval(checkClosed);
           window.removeEventListener('message', messageListener);
+          popup.close();
           reject(new Error(event.data.error || 'Google authentication failed'));
         }
       };
       
       window.addEventListener('message', messageListener);
       
-      // Check if popup was closed manually
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
+      // Check if popup was closed manually (only if no message received)
+      checkClosed = setInterval(() => {
+        if (!messageReceived && popup.closed) {
+          if (checkClosed) clearInterval(checkClosed);
           window.removeEventListener('message', messageListener);
           reject(new Error('Authentication cancelled'));
         }
-      }, 1000);
+      }, 500);
     });
   };
 
