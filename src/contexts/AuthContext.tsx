@@ -157,25 +157,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Listen for messages from popup
     return new Promise<void>((resolve, reject) => {
-      let checkClosed: ReturnType<typeof setInterval> | null = null;
-      let messageReceived = false;
-      
       console.log('[AuthContext] Starting OAuth flow, waiting for message...');
       
       const messageListener = (event: MessageEvent) => {
-        console.log('[AuthContext] Received message:', event.data?.type, event.origin);
+        console.log('[AuthContext] Received message:', event.data?.type);
         
         if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
           console.log('[AuthContext] Success message received');
-          messageReceived = true;
-          if (checkClosed) clearInterval(checkClosed);
           window.removeEventListener('message', messageListener);
           popup.close();
           handleGoogleSignIn(event.data.token, event.data.user).then(resolve).catch(reject);
         } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
           console.log('[AuthContext] Error message received:', event.data.error);
-          messageReceived = true;
-          if (checkClosed) clearInterval(checkClosed);
           window.removeEventListener('message', messageListener);
           popup.close();
           reject(new Error(event.data.error || 'Google authentication failed'));
@@ -183,18 +176,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
       
       window.addEventListener('message', messageListener);
-      
-      // Wait a bit before starting closed check (give time for redirects)
-      setTimeout(() => {
-        checkClosed = setInterval(() => {
-          if (!messageReceived && popup.closed) {
-            console.log('[AuthContext] Popup closed without message - cancelling');
-            if (checkClosed) clearInterval(checkClosed);
-            window.removeEventListener('message', messageListener);
-            reject(new Error('Authentication cancelled'));
-          }
-        }, 500);
-      }, 3000);
     });
   };
 
