@@ -193,9 +193,31 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     // Authenticate with the ID token
     const result = await authService.authenticateWithGoogle(idToken);
     
-    // Redirect to frontend with token
-    const userJson = encodeURIComponent(JSON.stringify(result.user));
-    res.redirect(`${env.FRONTEND_URL}/auth/google/callback?token=${result.access_token}&user=${userJson}`);
+    // Return HTML that immediately sends postMessage and closes
+    const userJson = JSON.stringify(result.user);
+    const html = `<!DOCTYPE html>
+<html>
+<head><title>Authenticating...</title></head>
+<body>
+<script>
+(function() {
+  var data = {
+    type: 'GOOGLE_AUTH_SUCCESS',
+    token: '${result.access_token}',
+    user: ${userJson}
+  };
+  if (window.opener) {
+    window.opener.postMessage(data, '*');
+  }
+  window.close();
+})();
+</script>
+<p>Authentication complete. This window will close...</p>
+</body>
+</html>`;
+    
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
   } catch (error: any) {
     console.error('Google OAuth callback error:', error);
     res.redirect(`${env.FRONTEND_URL}/auth/google/callback?error=${encodeURIComponent(error.message || 'Google authentication failed')}`);
@@ -292,9 +314,31 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     // Authenticate with the ID token
     const result = await authService.authenticateWithGoogle(idToken);
     
-    // Redirect to frontend with token
-    const userJson = encodeURIComponent(JSON.stringify(result.user));
-    res.redirect(`${env.FRONTEND_URL}/auth/google/callback?token=${result.access_token}&user=${userJson}`);
+    // Return HTML that immediately sends postMessage and closes
+    const userJson = JSON.stringify(result.user);
+    const html = `<!DOCTYPE html>
+<html>
+<head><title>Authenticating...</title></head>
+<body>
+<script>
+(function() {
+  var data = {
+    type: 'GOOGLE_AUTH_SUCCESS',
+    token: '${result.access_token}',
+    user: ${userJson}
+  };
+  if (window.opener) {
+    window.opener.postMessage(data, '*');
+  }
+  window.close();
+})();
+</script>
+<p>Authentication complete. This window will close...</p>
+</body>
+</html>`;
+    
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
   } catch (error: any) {
     console.error('Google OAuth callback error:', error);
     res.redirect(`${env.FRONTEND_URL}/auth/google/callback?error=${encodeURIComponent(error.message || 'Google authentication failed')}`);
