@@ -170,8 +170,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const error = localStorage.getItem('google_auth_error');
         const timestamp = localStorage.getItem('google_auth_timestamp');
         
-        // Only process if timestamp is recent (within last 5 seconds)
-        const isRecent = timestamp && (Date.now() - parseInt(timestamp)) < 5000;
+        // Only process if timestamp is recent (within last 60 seconds)
+        const isRecent = timestamp && (Date.now() - parseInt(timestamp)) < 60000;
         
         if (isRecent) {
           if (token && userJson) {
