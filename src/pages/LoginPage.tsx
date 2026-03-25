@@ -48,6 +48,8 @@ const LoginPage = () => {
     setIsGoogleLoading(true);
     try {
       await loginWithGoogle();
+      toast({ title: "Welcome back!", description: "You have successfully logged in with Google." });
+      navigate("/");
     } catch (error) {
       toast({ title: "Google login failed", description: "Unable to sign in with Google.", variant: "destructive" });
     } finally {
