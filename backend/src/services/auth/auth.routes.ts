@@ -197,11 +197,11 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     });
 
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json();
+      const errorData = await tokenResponse.json() as { error_description?: string };
       throw new Error(errorData.error_description || 'Failed to exchange code for tokens');
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as { id_token?: string };
     const idToken = tokenData.id_token;
 
     if (!idToken) {
