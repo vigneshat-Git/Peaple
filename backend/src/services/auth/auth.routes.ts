@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { authService } from './auth.service.js';
-import { verifyToken, generateAccessToken, AuthRequest } from '../../middleware/auth.js';
+import { verifyToken, generateAccessToken, generateRefreshToken, AuthRequest } from '../../middleware/auth.js';
 import { sendSuccess, sendError, AppError } from '../../utils/response.js';
 import { validate, validationSchemas } from '../../utils/validation.js';
+import { env } from '../../config/env.js';
+import { OAuth2Client } from 'google-auth-library';
 
 const router = Router();
 
@@ -137,7 +139,88 @@ router.get('/:userId', async (req: Request, res: Response) => {
   }
 });
 
-// Google OAuth
+// Google OAuth - Initiate OAuth flow
+router.get('/google', async (req: Request, res: Response) => {
+  try {
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      return sendError(res, 'Google OAuth not configured', 500);
+    }
+
+    const redirectUri = env.GOOGLE_REDIRECT_URI || `${env.API_BASE_URL}/api/auth/google/callback`;
+    const scope = 'openid email profile';
+    
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${env.GOOGLE_CLIENT_ID}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=code&` +
+      `scope=${encodeURIComponent(scope)}&` +
+      `access_type=offline&` +
+      `prompt=consent`;
+    
+    res.redirect(authUrl);
+  } catch (error: any) {
+    console.error('Google OAuth init error:', error);
+    sendError(res, error.message || 'Failed to initiate Google OAuth', 500);
+  }
+});
+
+// Google OAuth - Handle callback
+router.get('/google/callback', async (req: Request, res: Response) => {
+  try {
+    const { code, error } = req.query;
+    
+    if (error) {
+      return res.redirect(`${env.FRONTEND_URL}/auth/google/callback?error=${encodeURIComponent(String(error))}`);
+    }
+    
+    if (!code || typeof code !== 'string') {
+      return res.redirect(`${env.FRONTEND_URL}/auth/google/callback?error=No authorization code received`);
+    }
+
+    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+      return res.redirect(`${env.FRONTEND_URL}/auth/google/callback?error=Google OAuth not configured`);
+    }
+
+    const redirectUri = env.GOOGLE_REDIRECT_URI || `${env.API_BASE_URL}/api/auth/google/callback`;
+    
+    // Exchange code for tokens
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json();
+      throw new Error(errorData.error_description || 'Failed to exchange code for tokens');
+    }
+
+    const tokenData = await tokenResponse.json();
+    const idToken = tokenData.id_token;
+
+    if (!idToken) {
+      throw new Error('No ID token received from Google');
+    }
+
+    // Authenticate with the ID token
+    const result = await authService.authenticateWithGoogle(idToken);
+    
+    // Redirect to frontend with token
+    const userJson = encodeURIComponent(JSON.stringify(result.user));
+    res.redirect(`${env.FRONTEND_URL}/auth/google/callback?token=${result.access_token}&user=${userJson}`);
+  } catch (error: any) {
+    console.error('Google OAuth callback error:', error);
+    res.redirect(`${env.FRONTEND_URL}/auth/google/callback?error=${encodeURIComponent(error.message || 'Google authentication failed')}`);
+  }
+});
+
+// Google OAuth (legacy - for frontend token verification)
 router.post('/google', async (req: Request, res: Response) => {
   try {
     const { token } = req.body;
