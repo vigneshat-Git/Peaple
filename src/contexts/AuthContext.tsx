@@ -71,9 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log("Login backend response:", data);
     
     const newToken =
-      data?.data?.token ||
-      data?.token ||
-      data?.accessToken ||
+      data?.data?.access_token ||
+      data?.access_token ||
       null;
     
     const newUser =
@@ -110,9 +109,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log("Register backend response:", data);
     
     const newToken =
-      data?.data?.token ||
-      data?.token ||
-      data?.accessToken ||
+      data?.data?.access_token ||
+      data?.access_token ||
       null;
     
     const newUser =
