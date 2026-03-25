@@ -18,7 +18,7 @@ const UserAvatar = ({ name, image, size = "md" }: UserAvatarProps) => {
   return (
     <Avatar className={sizeClasses[size]}>
       {image && <AvatarImage src={image} alt={name} />}
-      <AvatarFallback className="bg-primary-light text-primary-dark font-semibold">
+      <AvatarFallback className="bg-secondary text-foreground font-semibold">
         {initials}
       </AvatarFallback>
     </Avatar>

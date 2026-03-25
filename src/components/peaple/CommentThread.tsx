@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import VoteButtons from "./VoteButtons";
-import UserAvatar from "./UserAvatar";
 
 export interface CommentData {
   id: string;
@@ -17,15 +16,17 @@ const Comment = ({ comment, depth = 0 }: { comment: CommentData; depth?: number 
   const [showReply, setShowReply] = useState(false);
 
   return (
-    <div className={`${depth > 0 ? "ml-6 pl-4 border-l-2 border-border" : ""}`}>
-      <div className="py-3">
-        <div className="flex items-center gap-2 mb-1.5">
-          <UserAvatar name={comment.author} size="sm" />
-          <span className="text-sm font-medium text-foreground">{comment.author}</span>
-          <span className="text-xs text-muted-foreground">{comment.timeAgo}</span>
+    <div className={`${depth > 0 ? "ml-4 pl-4 border-l-2 border-border" : ""}`}>
+      <div className="py-2">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs font-semibold text-foreground">{comment.author}</span>
+          <span className="text-xs text-muted-foreground">· {comment.timeAgo}</span>
           {comment.replies && comment.replies.length > 0 && (
-            <button onClick={() => setCollapsed(!collapsed)} className="text-muted-foreground hover:text-foreground">
-              {collapsed ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
+            <button 
+              onClick={() => setCollapsed(!collapsed)} 
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
+            >
+              [{collapsed ? "+" : "−"}]
             </button>
           )}
         </div>
@@ -36,21 +37,27 @@ const Comment = ({ comment, depth = 0 }: { comment: CommentData; depth?: number 
               <VoteButtons initialVotes={comment.votes} direction="horizontal" />
               <button
                 onClick={() => setShowReply(!showReply)}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-1 text-xs text-muted-foreground font-medium hover:text-foreground transition-colors duration-150"
               >
                 <MessageSquare className="h-3.5 w-3.5" />
                 Reply
               </button>
             </div>
             {showReply && (
-              <div className="mt-3">
+              <div className="mt-2">
                 <textarea
                   placeholder="Write a reply..."
-                  className="w-full p-2.5 text-sm border rounded-lg bg-card resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full p-2 text-sm border rounded-md bg-card text-foreground resize-none focus:outline-none focus:border-primary transition-colors duration-150"
                   rows={2}
                 />
-                <div className="flex justify-end mt-2">
-                  <button className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary-dark transition-colors">
+                <div className="flex justify-end gap-2 mt-1.5">
+                  <button 
+                    onClick={() => setShowReply(false)}
+                    className="px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground rounded-md transition-colors duration-150"
+                  >
+                    Cancel
+                  </button>
+                  <button className="px-3 py-1 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity duration-150">
                     Reply
                   </button>
                 </div>
