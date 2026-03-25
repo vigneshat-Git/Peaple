@@ -155,27 +155,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw new Error('Popup blocked. Please allow popups for this site.');
     }
     
-    // Listen for messages from popup
+    // Poll for localStorage changes from popup
     return new Promise<void>((resolve, reject) => {
-      console.log('[AuthContext] Starting OAuth flow, waiting for message...');
+      console.log('[AuthContext] Starting OAuth flow, polling localStorage...');
       
-      const messageListener = (event: MessageEvent) => {
-        console.log('[AuthContext] Received message:', event.data?.type);
+      let attempts = 0;
+      const maxAttempts = 600; // 2 minutes (200ms * 600)
+      
+      const checkStorage = () => {
+        attempts++;
         
-        if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
-          console.log('[AuthContext] Success message received');
-          window.removeEventListener('message', messageListener);
-          popup.close();
-          handleGoogleSignIn(event.data.token, event.data.user).then(resolve).catch(reject);
-        } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
-          console.log('[AuthContext] Error message received:', event.data.error);
-          window.removeEventListener('message', messageListener);
-          popup.close();
-          reject(new Error(event.data.error || 'Google authentication failed'));
+        const token = localStorage.getItem('google_auth_token');
+        const userJson = localStorage.getItem('google_auth_user');
+        const error = localStorage.getItem('google_auth_error');
+        const timestamp = localStorage.getItem('google_auth_timestamp');
+        
+        // Only process if timestamp is recent (within last 5 seconds)
+        const isRecent = timestamp && (Date.now() - parseInt(timestamp)) < 5000;
+        
+        if (isRecent) {
+          if (token && userJson) {
+            console.log('[AuthContext] Token found in localStorage');
+            // Clear the storage keys
+            localStorage.removeItem('google_auth_token');
+            localStorage.removeItem('google_auth_user');
+            localStorage.removeItem('google_auth_timestamp');
+            localStorage.removeItem('google_auth_error');
+            
+            const user = JSON.parse(userJson);
+            handleGoogleSignIn(token, user).then(resolve).catch(reject);
+            return;
+          }
+          
+          if (error) {
+            console.log('[AuthContext] Error found in localStorage:', error);
+            localStorage.removeItem('google_auth_token');
+            localStorage.removeItem('google_auth_user');
+            localStorage.removeItem('google_auth_timestamp');
+            localStorage.removeItem('google_auth_error');
+            reject(new Error(error));
+            return;
+          }
+        }
+        
+        if (attempts < maxAttempts) {
+          setTimeout(checkStorage, 200);
+        } else {
+          console.log('[AuthContext] Timeout waiting for auth');
+          reject(new Error('Authentication timeout'));
         }
       };
       
-      window.addEventListener('message', messageListener);
+      // Start polling
+      setTimeout(checkStorage, 200);
     });
   };
 

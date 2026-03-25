@@ -14,43 +14,29 @@ const GoogleCallback = () => {
       console.log('[GoogleCallback] opener exists:', !!window.opener);
 
       if (error) {
-        console.log('[GoogleCallback] Sending error message');
-        window.opener?.postMessage({
-          type: 'GOOGLE_AUTH_ERROR',
-          error: error
-        }, '*');
-        setTimeout(() => window.close(), 100);
+        console.log('[GoogleCallback] Saving error to localStorage');
+        localStorage.setItem('google_auth_error', error);
+        window.close();
         return;
       }
 
       if (token && userJson) {
         try {
           const user = JSON.parse(decodeURIComponent(userJson));
-          console.log('[GoogleCallback] Sending success message with token');
-          // Send success message to parent window
-          window.opener?.postMessage({
-            type: 'GOOGLE_AUTH_SUCCESS',
-            token: token,
-            user: user
-          }, '*');
-          // Delay close to ensure message is delivered
-          setTimeout(() => window.close(), 100);
+          console.log('[GoogleCallback] Saving success to localStorage');
+          localStorage.setItem('google_auth_token', token);
+          localStorage.setItem('google_auth_user', JSON.stringify(user));
+          localStorage.setItem('google_auth_timestamp', Date.now().toString());
+          window.close();
         } catch (e) {
           console.log('[GoogleCallback] Parse error:', e);
-          window.opener?.postMessage({
-            type: 'GOOGLE_AUTH_ERROR',
-            error: 'Failed to parse user data'
-          }, '*');
-          setTimeout(() => window.close(), 100);
+          localStorage.setItem('google_auth_error', 'Failed to parse user data');
+          window.close();
         }
       } else {
         console.log('[GoogleCallback] No token found');
-        // No token found
-        window.opener?.postMessage({
-          type: 'GOOGLE_AUTH_ERROR',
-          error: 'No authentication token received'
-        }, '*');
-        setTimeout(() => window.close(), 100);
+        localStorage.setItem('google_auth_error', 'No authentication token received');
+        window.close();
       }
     };
 
