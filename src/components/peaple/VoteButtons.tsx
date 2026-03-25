@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
-import { motion } from "framer-motion";
 import { apiService } from "@/lib/api";
 
 interface VoteButtonsProps {
@@ -32,28 +31,17 @@ const VoteButtons = ({
     try {
       const value = type === "up" ? 1 : -1;
       
-      // If user is clicking the same vote, remove it
       if (userVote === type) {
-        await apiService.post('/votes', {
-          postId,
-          commentId,
-          value
-        });
-        // This will toggle off the vote (backend handles this logic)
+        await apiService.post('/votes', { postId, commentId, value });
         setVotes(prev => userVote === "up" ? prev - 1 : prev + 1);
         setUserVote(null);
         onVoteChange?.(votes - (type === "up" ? 1 : -1), null);
       } else {
-        // If changing vote or adding new vote
         let voteChange = value;
-        if (userVote === "up") voteChange = -2; // Changing from up to down
-        else if (userVote === "down") voteChange = 2; // Changing from down to up
+        if (userVote === "up") voteChange = -2;
+        else if (userVote === "down") voteChange = 2;
         
-        await apiService.post('/votes', {
-          postId,
-          commentId,
-          value
-        });
+        await apiService.post('/votes', { postId, commentId, value });
         
         setVotes(prev => prev + voteChange);
         setUserVote(type);
@@ -61,7 +49,6 @@ const VoteButtons = ({
       }
     } catch (error) {
       console.error('Vote failed:', error);
-      // Revert on error
       setVotes(initialVotes);
       setUserVote(initialUserVote);
     } finally {
@@ -72,34 +59,32 @@ const VoteButtons = ({
   const isVertical = direction === "vertical";
 
   return (
-    <div className={`flex ${isVertical ? "flex-col" : "flex-row"} items-center gap-0.5`}>
-      <motion.button
-        whileTap={{ scale: 0.85 }}
+    <div className={`flex ${isVertical ? "flex-col" : "flex-row"} items-center gap-0`}>
+      <button
         onClick={() => handleVote("up")}
         disabled={isLoading}
-        className={`p-1 rounded-md transition-colors ${
+        className={`p-0.5 rounded-sm transition-colors duration-150 ${
           userVote === "up"
-            ? "text-primary bg-primary-light"
-            : "text-muted-foreground hover:text-primary hover:bg-primary-light"
+            ? "text-primary"
+            : "text-muted-foreground hover:text-primary"
         } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <ChevronUp className="h-5 w-5" />
-      </motion.button>
-      <span className={`text-sm font-semibold ${userVote === "up" ? "text-primary" : userVote === "down" ? "text-destructive" : "text-foreground"}`}>
+      </button>
+      <span className={`text-xs font-bold ${userVote === "up" ? "text-primary" : userVote === "down" ? "text-destructive" : "text-foreground"}`}>
         {votes}
       </span>
-      <motion.button
-        whileTap={{ scale: 0.85 }}
+      <button
         onClick={() => handleVote("down")}
         disabled={isLoading}
-        className={`p-1 rounded-md transition-colors ${
+        className={`p-0.5 rounded-sm transition-colors duration-150 ${
           userVote === "down"
-            ? "text-destructive bg-destructive/10"
-            : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            ? "text-destructive"
+            : "text-muted-foreground hover:text-destructive"
         } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <ChevronDown className="h-5 w-5" />
-      </motion.button>
+      </button>
     </div>
   );
 };

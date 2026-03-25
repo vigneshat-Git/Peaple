@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Users, Shield, Loader2, AlertCircle } from "lucide-react";
+import { Users, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PostCard, { PostData } from "@/components/peaple/PostCard";
 import { apiService, ApiError } from "@/lib/api";
@@ -32,160 +32,71 @@ const CommunityPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!communityName) return;
-      
       try {
         setLoading(true);
         setError(null);
-
-        // Find community by name
         const communitiesResponse = await apiService.getCommunities(1, 100);
         const communitiesData = (communitiesResponse as any).data || (communitiesResponse as any) || [];
         const foundCommunity = communitiesData.find((c: any) => c.name === communityName);
-
-        if (!foundCommunity) {
-          setError('Community not found');
-          return;
-        }
-
+        if (!foundCommunity) { setError('Community not found'); return; }
         setCommunity(foundCommunity);
-
-        // Get community posts
         const postsResponse = await apiService.getCommunityPosts(foundCommunity.id);
-        const postsData = (postsResponse as any).data || (postsResponse as any) || [];
-        setPosts(postsData);
-
-        // Check if user is member (we'll need to implement this endpoint)
+        setPosts((postsResponse as any).data || (postsResponse as any) || []);
         if (user) {
           try {
             const userCommunitiesResponse = await apiService.getUserCommunities();
             const userCommunities = (userCommunitiesResponse as any).data || (userCommunitiesResponse as any) || [];
             setIsJoined(userCommunities.some((c: any) => c.id === foundCommunity.id));
-          } catch (err) {
-            // User might not be authenticated or endpoint not implemented
-            setIsJoined(false);
-          }
+          } catch { setIsJoined(false); }
         }
       } catch (err) {
-        if (err instanceof ApiError) {
-          setError(err.message);
-        } else {
-          setError('Failed to load community');
-        }
+        setError(err instanceof ApiError ? err.message : 'Failed to load community');
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [communityName, user]);
 
   const handleJoinCommunity = async () => {
     if (!community || !user) return;
-
     try {
       setJoining(true);
-      if (isJoined) {
-        await apiService.leaveCommunity(community.id);
-        setIsJoined(false);
-        toast({
-          title: "Left community",
-          description: `You have left c/${community.name}`,
-        });
-      } else {
-        await apiService.joinCommunity(community.id);
-        setIsJoined(true);
-        toast({
-          title: "Joined community",
-          description: `You have joined c/${community.name}`,
-        });
-      }
-      
-      // Update member count
-      setCommunity(prev => prev ? {
-        ...prev,
-        member_count: isJoined ? prev.member_count - 1 : prev.member_count + 1
-      } : null);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to join/leave community",
-        variant: "destructive",
-      });
-    } finally {
-      setJoining(false);
-    }
+      if (isJoined) { await apiService.leaveCommunity(community.id); setIsJoined(false); toast({ title: `Left c/${community.name}` }); }
+      else { await apiService.joinCommunity(community.id); setIsJoined(true); toast({ title: `Joined c/${community.name}` }); }
+      setCommunity(prev => prev ? { ...prev, member_count: isJoined ? prev.member_count - 1 : prev.member_count + 1 } : null);
+    } catch { toast({ title: "Error", description: "Failed to join/leave", variant: "destructive" }); }
+    finally { setJoining(false); }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin" />
-        <span className="ml-2 text-muted-foreground">Loading community...</span>
-      </div>
-    );
-  }
-
-  if (error || !community) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <AlertCircle className="h-8 w-8 text-destructive mb-2" />
-        <p className="text-destructive mb-4">{error || 'Community not found'}</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span className="ml-2 text-sm text-muted-foreground">Loading...</span></div>;
+  if (error || !community) return <div className="flex flex-col items-center py-12"><AlertCircle className="h-6 w-6 text-destructive mb-2" /><p className="text-sm text-destructive">{error || 'Not found'}</p></div>;
 
   return (
     <div>
-      {/* Banner */}
-      <div className="bg-gradient-to-r from-primary to-primary-dark rounded-lg p-6 mb-4">
+      <div className="bg-card rounded-md border p-4 mb-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-primary-foreground">c/{community.name}</h1>
-            <p className="text-primary-foreground/80 text-sm mt-1">
-              {community.description}
-            </p>
-            <div className="flex items-center gap-4 mt-3 text-primary-foreground/80 text-sm">
-              <span className="flex items-center gap-1">
-                <Users className="h-4 w-4" /> {community.member_count.toLocaleString()} members
-              </span>
+            <h1 className="text-xl font-bold text-foreground">c/{community.name}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{community.description}</p>
+            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{community.member_count.toLocaleString()} members</span>
               <span>Created {new Date(community.created_at).toLocaleDateString()}</span>
             </div>
           </div>
           {user && (
-            <Button 
-              onClick={handleJoinCommunity}
-              disabled={joining}
-              className="bg-card text-foreground hover:bg-secondary font-medium"
-            >
-              {joining ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {isJoined ? 'Leaving...' : 'Joining...'}
-                </>
-              ) : (
-                <>
-                  {isJoined ? 'Leave Community' : 'Join Community'}
-                </>
-              )}
+            <Button variant={isJoined ? "outline" : "default"} size="sm" onClick={handleJoinCommunity} disabled={joining}>
+              {joining ? <Loader2 className="h-4 w-4 animate-spin" /> : isJoined ? "Joined" : "Join"}
             </Button>
           )}
         </div>
       </div>
 
-      {/* Posts */}
-      <div className="space-y-3">
-        {posts.length > 0 ? (
-          posts.map(post => (
-            <PostCard key={post.id} post={post} />
-          ))
-        ) : (
+      <div className="space-y-2">
+        {posts.length > 0 ? posts.map(post => <PostCard key={post.id} post={post} />) : (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No posts in this community yet.</p>
-            {user && (
-              <Button className="mt-4" asChild>
-                <a href={`/create-post?community=${community.name}`}>Create First Post</a>
-              </Button>
-            )}
+            <p className="text-sm text-muted-foreground">No posts yet.</p>
+            {user && <Button size="sm" className="mt-3" asChild><a href={`/create-post?community=${community.name}`}>Create Post</a></Button>}
           </div>
         )}
       </div>

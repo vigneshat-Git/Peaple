@@ -26,22 +26,21 @@ const ProfilePage = () => {
 
   return (
     <div className="max-w-3xl">
-      {/* Header */}
-      <div className="bg-card rounded-lg border p-6 mb-4">
+      <div className="bg-card rounded-md border p-4 mb-3">
         <div className="flex items-start gap-4">
-          <UserAvatar name="John Doe" size="lg" />
+          <UserAvatar name={username || "User"} size="lg" />
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">{username}</h1>
+            <h1 className="text-lg font-bold text-foreground">u/{username}</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Full-stack developer passionate about React, TypeScript, and building great user experiences.
             </p>
-            <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Star className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-foreground">4,250</span> reputation
+                <Star className="h-3.5 w-3.5 text-primary" />
+                <span className="font-semibold text-foreground">4,250</span> karma
               </span>
               <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-3.5 w-3.5" />
                 Joined March 2024
               </span>
             </div>
@@ -49,15 +48,14 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 mb-4 border-b">
+      <div className="flex items-center gap-0 mb-3 border-b border-border">
         {tabs.map((tab, i) => (
           <button
             key={tab}
             onClick={() => setActiveTab(i)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`px-4 py-2 text-sm font-medium transition-colors duration-150 border-b-2 -mb-px ${
               activeTab === i
-                ? "border-primary text-primary"
+                ? "border-primary text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -66,7 +64,7 @@ const ProfilePage = () => {
         ))}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {mockPosts.map(post => (
           <PostCard key={post.id} post={post} />
         ))}
