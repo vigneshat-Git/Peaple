@@ -31,41 +31,63 @@ const AppSidebar = () => {
   ];
 
   return (
-    <aside className="w-56 shrink-0 hidden lg:block sticky top-12 h-[calc(100vh-3rem)] overflow-y-auto py-4 pr-2">
-      <nav className="space-y-0.5 mb-6">
+    <div className="h-full overflow-y-auto py-2 pr-2 space-y-6">
+      {/* Navigation Card */}
+      <nav className="bg-card rounded-lg border shadow-sm p-2 space-y-1">
         {navItems.map(item => {
           const active = location.pathname === item.path;
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors duration-150 ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-150 ${
                 active
-                  ? "bg-secondary text-foreground font-medium"
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className={`h-4 w-4 ${active ? "text-primary" : ""}`} />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t pt-4">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
+      {/* Top Communities Card */}
+      <div className="bg-card rounded-lg border shadow-sm p-3">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-3 flex items-center gap-2">
+          <Users className="h-3.5 w-3.5" />
           Top Communities
         </h4>
-        {uniqueCommunities.map((community, index) => (
-          <CommunityCard 
-            key={`${community.id}-${index}`} 
-            id={community.id} 
-            name={community.name} 
-            members={community.members} 
-          />
-        ))}
+        <div className="space-y-1">
+          {uniqueCommunities.map((community, index) => (
+            <CommunityCard 
+              key={`${community.id}-${index}`} 
+              id={community.id} 
+              name={community.name} 
+              members={community.members} 
+            />
+          ))}
+        </div>
+        <Link 
+          to="/communities" 
+          className="block text-center text-xs text-primary hover:underline mt-3 pt-2 border-t"
+        >
+          View All Communities
+        </Link>
       </div>
-    </aside>
+
+      {/* Footer Links */}
+      <div className="px-2 text-xs text-muted-foreground space-y-2">
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
+          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+          <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+          <Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+        </div>
+        <p className="text-[10px]">© 2026 Peaple. All rights reserved.</p>
+      </div>
+    </div>
   );
 };
 

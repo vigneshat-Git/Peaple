@@ -8,12 +8,27 @@ const AppLayout = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-[1200px] mx-auto px-4 flex gap-6">
-        <AppSidebar />
-        <main className="flex-1 min-w-0 py-4 pb-20 lg:pb-4">
-          <Outlet />
-        </main>
-        <DiscoverPanel />
+      <div className="flex justify-center">
+        <div className="w-full max-w-[1600px] flex gap-4 px-4">
+          {/* Left Sidebar - Fixed width, sticky */}
+          <div className="w-60 shrink-0 hidden lg:block">
+            <div className="sticky top-14 h-[calc(100vh-3.5rem)]">
+              <AppSidebar />
+            </div>
+          </div>
+          
+          {/* Main Content - Flexible width */}
+          <main className="flex-1 min-w-0 py-4 pb-20 lg:pb-4 max-w-2xl mx-auto lg:mx-0">
+            <Outlet />
+          </main>
+          
+          {/* Right Sidebar - Fixed width, sticky */}
+          <div className="w-80 shrink-0 hidden xl:block">
+            <div className="sticky top-14 h-[calc(100vh-3.5rem)]">
+              <DiscoverPanel />
+            </div>
+          </div>
+        </div>
       </div>
       <MobileNav />
     </div>

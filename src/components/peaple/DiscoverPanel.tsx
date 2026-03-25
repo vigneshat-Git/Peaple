@@ -58,16 +58,18 @@ const DiscoverPanel = () => {
 
   if (loading) {
     return (
-      <aside className="w-72 shrink-0 hidden xl:block sticky top-12 h-[calc(100vh-3rem)] overflow-y-auto py-4 pl-2 space-y-4">
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      <div className="h-full overflow-y-auto py-2 pl-2 space-y-6">
+        <div className="bg-card rounded-lg border shadow-sm p-4">
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
         </div>
-      </aside>
+      </div>
     );
   }
 
   return (
-    <aside className="w-72 shrink-0 hidden xl:block sticky top-12 h-[calc(100vh-3rem)] overflow-y-auto py-4 pl-2 space-y-4">
+    <div className="h-full overflow-y-auto py-2 pl-2 space-y-6">
       {/* Trending */}
       <div className="bg-card rounded-md border p-4">
         <div className="flex items-center gap-2 mb-3">
@@ -133,7 +135,7 @@ const DiscoverPanel = () => {
       <div className="px-2 text-xs text-muted-foreground space-y-1">
         <p>Peaple © 2026. All rights reserved.</p>
       </div>
-    </aside>
+    </div>
   );
 };
 
