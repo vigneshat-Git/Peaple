@@ -160,17 +160,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let checkClosed: ReturnType<typeof setInterval> | null = null;
       let messageReceived = false;
       
+      console.log('[AuthContext] Starting OAuth flow, waiting for message...');
+      
       const messageListener = (event: MessageEvent) => {
-        // Accept messages from any origin during OAuth flow
-        // The token validation happens on the backend
+        console.log('[AuthContext] Received message:', event.data?.type, event.origin);
         
         if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+          console.log('[AuthContext] Success message received');
           messageReceived = true;
           if (checkClosed) clearInterval(checkClosed);
           window.removeEventListener('message', messageListener);
           popup.close();
           handleGoogleSignIn(event.data.token, event.data.user).then(resolve).catch(reject);
         } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
+          console.log('[AuthContext] Error message received:', event.data.error);
           messageReceived = true;
           if (checkClosed) clearInterval(checkClosed);
           window.removeEventListener('message', messageListener);
@@ -181,14 +184,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       window.addEventListener('message', messageListener);
       
-      // Check if popup was closed manually (only if no message received)
-      checkClosed = setInterval(() => {
-        if (!messageReceived && popup.closed) {
-          if (checkClosed) clearInterval(checkClosed);
-          window.removeEventListener('message', messageListener);
-          reject(new Error('Authentication cancelled'));
-        }
-      }, 500);
+      // Wait a bit before starting closed check (give time for redirects)
+      setTimeout(() => {
+        checkClosed = setInterval(() => {
+          if (!messageReceived && popup.closed) {
+            console.log('[AuthContext] Popup closed without message - cancelling');
+            if (checkClosed) clearInterval(checkClosed);
+            window.removeEventListener('message', messageListener);
+            reject(new Error('Authentication cancelled'));
+          }
+        }, 500);
+      }, 3000);
     });
   };
 
