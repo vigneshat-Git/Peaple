@@ -21,7 +21,6 @@ const AppSidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  // Deduplicate communities by ID
   const uniqueCommunities = Array.from(
     new Map(topCommunities.map(c => [c.id, c])).values()
   );
@@ -32,17 +31,17 @@ const AppSidebar = () => {
   ];
 
   return (
-    <aside className="w-60 shrink-0 hidden lg:block sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto py-4 pr-2">
-      <nav className="space-y-1 mb-6">
+    <aside className="w-56 shrink-0 hidden lg:block sticky top-12 h-[calc(100vh-3rem)] overflow-y-auto py-4 pr-2">
+      <nav className="space-y-0.5 mb-6">
         {navItems.map(item => {
           const active = location.pathname === item.path;
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors duration-150 ${
                 active
-                  ? "nav-item-active"
+                  ? "bg-secondary text-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
               }`}
             >
@@ -53,7 +52,7 @@ const AppSidebar = () => {
         })}
       </nav>
 
-      <div>
+      <div className="border-t pt-4">
         <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
           Top Communities
         </h4>
@@ -71,4 +70,3 @@ const AppSidebar = () => {
 };
 
 export default AppSidebar;
-

@@ -1,9 +1,6 @@
-import { MessageSquare, Bookmark } from "lucide-react";
+import { MessageSquare, Bookmark, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import VoteButtons from "./VoteButtons";
-import UserAvatar from "./UserAvatar";
-import { Badge } from "@/components/ui/badge";
 
 export interface PostData {
   id: string;
@@ -11,9 +8,9 @@ export interface PostData {
   content: string;
   author: string | { id: string; username: string };
   community: string | { id: string; name: string };
-  votes?: number; // for backward compatibility
-  upvotes?: number; // from API
-  score?: string; // from API
+  votes?: number;
+  upvotes?: number;
+  score?: string;
   comments: number;
   tags?: string[];
   timeAgo: string;
@@ -23,7 +20,6 @@ const PostCard = ({ post, onVoteChange }: {
   post: PostData; 
   onVoteChange?: (newVotes: number, userVote: "up" | "down" | null) => void;
 }) => {
-  // Handle both string and object formats for backward compatibility
   const communityName = typeof post.community === 'string' 
     ? post.community 
     : post.community?.name || 'unknown';
@@ -32,62 +28,53 @@ const PostCard = ({ post, onVoteChange }: {
     ? post.author 
     : post.author?.username || 'unknown';
 
-  // Use upvotes from API, fallback to votes for backward compatibility
   const voteCount = post.upvotes ?? post.votes ?? 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-card rounded-lg border p-4 card-hover"
-    >
-      <div className="flex gap-3">
-        <VoteButtons 
-          initialVotes={voteCount} 
-          postId={post.id}
-          onVoteChange={(newVotes, userVote) => {
-            // Update parent component
-            onVoteChange?.(newVotes, userVote);
-          }}
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <Link to={`/c/${communityName}`} className="font-semibold text-foreground hover:text-primary transition-colors">
+    <div className="bg-card rounded-md border hover:border-muted-foreground/30 transition-colors duration-150">
+      <div className="flex">
+        <div className="flex-shrink-0 w-10 bg-secondary/50 rounded-l-md flex items-start justify-center pt-3">
+          <VoteButtons 
+            initialVotes={voteCount} 
+            postId={post.id}
+            onVoteChange={(newVotes, userVote) => onVoteChange?.(newVotes, userVote)}
+          />
+        </div>
+        <div className="flex-1 min-w-0 p-2 pl-3">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+            <Link to={`/c/${communityName}`} className="font-semibold text-foreground hover:underline">
               c/{communityName}
             </Link>
-            <span>•</span>
-            <span>Posted by {authorName}</span>
-            <span>•</span>
+            <span>·</span>
+            <span>Posted by u/{authorName}</span>
+            <span>·</span>
             <span>{post.timeAgo}</span>
           </div>
           <Link to={`/post/${post.id}`}>
-            <h3 className="text-base font-semibold text-foreground hover:text-primary transition-colors mb-1.5 leading-snug">
+            <h3 className="text-base font-semibold text-foreground hover:underline leading-snug mb-1">
               {post.title}
             </h3>
           </Link>
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
             {post.content}
           </p>
-          <div className="flex items-center gap-2 flex-wrap mb-3">
-            {post.tags?.map(tag => (
-              <Badge key={tag} variant="secondary" className="text-xs font-normal bg-primary-light text-primary-dark border-0">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-          <div className="flex items-center gap-4 text-muted-foreground">
-            <Link to={`/post/${post.id}`} className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors">
+          <div className="flex items-center gap-3 text-muted-foreground">
+            <Link to={`/post/${post.id}`} className="flex items-center gap-1.5 text-xs font-medium hover:bg-secondary px-2 py-1 rounded-sm transition-colors duration-150">
               <MessageSquare className="h-4 w-4" />
               {post.comments} Comments
             </Link>
-            <button className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors">
+            <button className="flex items-center gap-1.5 text-xs font-medium hover:bg-secondary px-2 py-1 rounded-sm transition-colors duration-150">
+              <Share2 className="h-4 w-4" />
+              Share
+            </button>
+            <button className="flex items-center gap-1.5 text-xs font-medium hover:bg-secondary px-2 py-1 rounded-sm transition-colors duration-150">
               <Bookmark className="h-4 w-4" />
               Save
             </button>
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

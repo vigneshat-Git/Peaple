@@ -8,7 +8,7 @@ const AppLayout = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="max-w-[1400px] mx-auto px-4 flex gap-6">
+      <div className="max-w-[1200px] mx-auto px-4 flex gap-6">
         <AppSidebar />
         <main className="flex-1 min-w-0 py-4 pb-20 lg:pb-4">
           <Outlet />

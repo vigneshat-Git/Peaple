@@ -12,13 +12,13 @@ const CommunityCard = ({ id, name, members, description }: CommunityCardProps) =
   return (
     <Link
       to={`/c/${name}`}
-      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-secondary transition-colors group"
+      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-secondary transition-colors duration-150 group"
     >
-      <div className="h-9 w-9 rounded-lg bg-primary-light flex items-center justify-center text-primary-dark font-bold text-sm">
+      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs">
         {name[0].toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
+        <p className="text-sm font-medium text-foreground group-hover:underline truncate">
           c/{name}
         </p>
         <p className="text-xs text-muted-foreground flex items-center gap-1">
