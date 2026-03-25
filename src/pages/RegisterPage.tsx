@@ -75,7 +75,7 @@ const RegisterPage = () => {
         title: "Account created!",
         description: "Welcome to Peaple. Let's get started!",
       });
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       toast({
         title: "Registration failed",
@@ -95,7 +95,7 @@ const RegisterPage = () => {
         title: "Welcome to Peaple!",
         description: "Your account has been created successfully with Google.",
       });
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       toast({
         title: "Google signup failed",

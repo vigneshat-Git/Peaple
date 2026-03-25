@@ -51,7 +51,7 @@ const LoginPage = () => {
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       toast({
         title: "Login failed",
@@ -71,7 +71,7 @@ const LoginPage = () => {
         title: "Welcome back!",
         description: "You have successfully logged in with Google.",
       });
-      navigate("/dashboard");
+      navigate("/");
     } catch (error) {
       toast({
         title: "Google login failed",
