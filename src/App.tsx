@@ -13,6 +13,7 @@ import PostPage from "@/pages/PostPage";
 import CreatePostPage from "@/pages/CreatePostPage";
 import CreateCommunityPage from "@/pages/CreateCommunityPage";
 import ProfilePage from "@/pages/ProfilePage";
+import SettingsPage from "@/pages/SettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import GoogleCallback from "@/pages/GoogleCallback";
@@ -58,6 +59,7 @@ const App = () => (
                 }
               />
               <Route path="/user/:username" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
