@@ -1,4 +1,4 @@
-import { Home, TrendingUp, Users, PlusCircle, Bookmark, User } from "lucide-react";
+import { Home, TrendingUp, Users, PlusCircle, Bookmark, User, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import CommunityCard from "./CommunityCard";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,11 +27,14 @@ const AppSidebar = () => {
 
   const navItems = [
     ...baseNavItems,
-    ...(user ? [{ label: "Profile", icon: User, path: `/user/${user.username}` }] : []),
+    ...(user ? [
+      { label: "Profile", icon: User, path: `/user/${user.username}` },
+      { label: "Settings", icon: Settings, path: "/settings" },
+    ] : []),
   ];
 
   return (
-    <aside className="w-56 shrink-0 hidden lg:block sticky top-12 h-[calc(100vh-3rem)] overflow-y-auto py-4 pr-2">
+    <aside className="hidden lg:block sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto py-4">
       <nav className="space-y-0.5 mb-6">
         {navItems.map(item => {
           const active = location.pathname === item.path;

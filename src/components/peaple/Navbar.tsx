@@ -3,14 +3,13 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import UserDropdown from "./UserDropdown";
-import ThemeToggle from "./ThemeToggle";
 
 const Navbar = () => {
   const { user, isAuthenticated } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 bg-card border-b">
-      <div className="flex items-center justify-between h-12 px-4 max-w-[1400px] mx-auto">
+    <header className="sticky top-0 z-50 bg-card border-b h-14">
+      <div className="flex items-center justify-between h-full px-4 lg:px-6 max-w-[1400px] mx-auto">
         <div className="flex items-center gap-4 flex-1">
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
@@ -45,8 +44,6 @@ const Navbar = () => {
             <Compass className="h-4 w-4" />
             <span className="hidden lg:inline">Explore</span>
           </Link>
-
-          <ThemeToggle />
 
           {isAuthenticated ? (
             <>
