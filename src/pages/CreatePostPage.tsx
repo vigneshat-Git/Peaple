@@ -84,23 +84,42 @@ const CreatePostPage = () => {
     try {
       setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: true, error: undefined } : f));
 
-      const { uploadUrl, publicUrl } = await apiService.generateUploadUrl({
+      console.log('Requesting upload URL for file:', mediaFile.file.name, 'type:', mediaFile.file.type);
+      
+      const { uploadUrl, fileUrl } = await apiService.generateUploadUrl({
         fileType: mediaFile.file.type,
         fileName: mediaFile.file.name,
       });
 
-      await fetch(uploadUrl, {
+      console.log('Upload URL received:', uploadUrl);
+      console.log('File URL (public):', fileUrl);
+      
+      // Validate uploadUrl before using
+      if (!uploadUrl || uploadUrl === 'undefined') {
+        throw new Error('Upload URL is missing or invalid');
+      }
+
+      console.log('Uploading file to:', uploadUrl);
+      
+      const uploadResponse = await fetch(uploadUrl, {
         method: 'PUT',
         body: mediaFile.file,
         headers: {
           'Content-Type': mediaFile.file.type,
         },
       });
+      
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+      }
+      
+      console.log('File uploaded successfully to R2');
 
-      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, uploaded: true, url: publicUrl } : f));
+      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, uploaded: true, url: fileUrl } : f));
     } catch (err) {
       console.error('Upload failed:', err);
-      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, error: 'Upload failed' } : f));
+      const errorMessage = err instanceof Error ? err.message : 'Upload failed';
+      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, error: errorMessage } : f));
     }
   };
 

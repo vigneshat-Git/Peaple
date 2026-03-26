@@ -66,10 +66,18 @@ router.post('/upload-url', verifyToken, async (req: AuthRequest, res: Response) 
     
     const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
     
+    // Validate signed URL was generated
+    if (!signedUrl) {
+      console.error('Failed to generate signed URL - result was empty');
+      return res.status(500).json({ error: 'Failed to generate upload URL' });
+    }
+    
     // Construct public URL
     const publicUrl = `${env.R2_ENDPOINT}/${env.R2_BUCKET_NAME}/${key}`;
     
     console.log('Generated signed URL for key:', key);
+    console.log('Sending uploadUrl:', signedUrl);
+    console.log('Sending fileUrl:', publicUrl);
     
     sendSuccess(res, {
       uploadUrl: signedUrl,

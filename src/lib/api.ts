@@ -140,11 +140,31 @@ class ApiService {
     });
   }
 
-  async generateUploadUrl(data: { fileType: string; fileName?: string }) {
-    return this.request('/posts/upload-url', {
+  async generateUploadUrl(data: { fileType: string; fileName?: string }): Promise<{ uploadUrl: string; fileUrl: string; key: string; maxSize?: number }> {
+    const response = await this.request('/posts/upload-url', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    
+    // Handle both wrapped (success/data) and unwrapped responses
+    const resultData = response.data || response;
+    
+    console.log('Upload URL API response:', response);
+    console.log('Extracted data:', resultData);
+    
+    // Validate uploadUrl exists
+    if (!resultData || !resultData.uploadUrl) {
+      console.error('Upload URL is missing in response:', resultData);
+      throw new ApiError('Upload URL is missing from server response', 500);
+    }
+    
+    // Return with both publicUrl (for frontend compatibility) and fileUrl
+    return {
+      uploadUrl: resultData.uploadUrl,
+      fileUrl: resultData.fileUrl || resultData.publicUrl,
+      key: resultData.key,
+      maxSize: resultData.maxSize,
+    };
   }
 
   async deletePost(id: string) {
