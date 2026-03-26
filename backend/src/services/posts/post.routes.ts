@@ -5,7 +5,7 @@ import { commentService } from '../comments/comment.service.js';
 import { verifyToken, optionalAuth, AuthRequest } from '../../middleware/auth.js';
 import { sendSuccess, sendError, sendPaginationResponse } from '../../utils/response.js';
 import { validate, validationSchemas } from '../../utils/validation.js';
-import { uploadToR2, deleteFromR2 } from '../../config/storage.js';
+import { uploadToR2, deleteFromR2, getSignedUploadUrl } from '../../config/storage.js';
 
 const router = Router();
 
@@ -14,6 +14,72 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB max
+  }
+});
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'video/mp4'];
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+
+// Test route
+router.get('/test', (req: Request, res: Response) => {
+  console.log('Posts route working');
+  res.send('Posts route working');
+});
+
+// Generate signed upload URL for direct R2 upload
+router.post('/upload-url', verifyToken, async (req: AuthRequest, res: Response) => {
+  console.log('Upload URL route hit');
+  
+  try {
+    const { fileType } = req.body;
+    
+    // Validate fileType
+    if (!fileType) {
+      return sendError(res, 'fileType is required', 400);
+    }
+    
+    if (!ALLOWED_TYPES.includes(fileType)) {
+      return sendError(res, 'Invalid file type. Allowed: image/jpeg, image/png, video/mp4', 400);
+    }
+    
+    // Generate unique file key
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 15);
+    const extension = fileType.split('/')[1];
+    const key = `posts/${timestamp}-${random}.${extension}`;
+    
+    // Determine max size
+    const isVideo = fileType === 'video/mp4';
+    const maxSize = isVideo ? MAX_VIDEO_SIZE : undefined;
+    
+    // Generate signed PUT URL
+    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+    const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+    const { s3Client } = await import('../../config/storage.js');
+    const { env } = await import('../../config/env.js');
+    
+    const command = new PutObjectCommand({
+      Bucket: env.R2_BUCKET_NAME,
+      Key: key,
+      ContentType: fileType,
+    });
+    
+    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    
+    // Construct public URL
+    const publicUrl = `${env.R2_ENDPOINT}/${env.R2_BUCKET_NAME}/${key}`;
+    
+    console.log('Generated signed URL for key:', key);
+    
+    sendSuccess(res, {
+      uploadUrl: signedUrl,
+      fileUrl: publicUrl,
+      key,
+      maxSize,
+    }, 'Upload URL generated');
+  } catch (error: any) {
+    console.error('Failed to generate upload URL:', error);
+    sendError(res, error.message || 'Failed to generate upload URL', 500);
   }
 });
 
