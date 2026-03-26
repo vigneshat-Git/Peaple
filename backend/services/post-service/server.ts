@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 4003;
 
 app.use(bodyParser.json());
-app.use('/posts', postRoutes);
+app.use('/', postRoutes);
 app.get('/', (req, res) => res.send('Post service running'));
 
 app.listen(PORT, () => console.log(`Post service listening on ${PORT}`));

@@ -8,9 +8,18 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'video/mp4'];
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 
 export const generateUploadUrl = async (req: Request, res: Response) => {
+  console.log("Upload URL route hit");
+  console.log("Request body:", req.body);
+
   const { fileType, fileName } = req.body;
 
-  if (!fileType || !ALLOWED_TYPES.includes(fileType)) {
+  if (!fileType) {
+    console.log("Missing fileType");
+    return res.status(400).json({ message: 'fileType is required' });
+  }
+
+  if (!ALLOWED_TYPES.includes(fileType)) {
+    console.log("Invalid fileType:", fileType);
     return res.status(400).json({ message: 'Invalid file type' });
   }
 
@@ -19,16 +28,18 @@ export const generateUploadUrl = async (req: Request, res: Response) => {
 
   try {
     const key = `uploads/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileType.split('/')[1]}`;
+    console.log("Generating signed URL for key:", key);
     const { signedUrl, publicUrl } = await generateSignedUploadUrl(key, fileType, maxSize);
 
+    console.log("Signed URL generated successfully");
     res.json({
       uploadUrl: signedUrl,
-      publicUrl,
+      fileUrl: publicUrl, // Changed to fileUrl as per user request
       key,
       maxSize,
     });
   } catch (err) {
-    console.error(err);
+    console.error('Failed to generate upload URL:', err);
     res.status(500).json({ message: 'Failed to generate upload URL' });
   }
 };
