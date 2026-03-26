@@ -41,30 +41,7 @@ export async function uploadToR2(
   }
 }
 
-export async function generateSignedUploadUrl(
-  contentType: string,
-  fileName?: string,
-  maxSize?: number
-): Promise<{ signedUrl: string; publicUrl: string }> {
-  try {
-    const key = `uploads/${Date.now()}-${uuidv4()}${fileName ? `-${fileName}` : ''}.${contentType.split('/')[1]}`;
-
-    const command = new PutObjectCommand({
-      Bucket: env.R2_BUCKET_NAME,
-      Key: key,
-      ContentType: contentType,
-      ...(maxSize && { ContentLength: maxSize }),
-    });
-
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
-    const publicUrl = `${env.R2_ENDPOINT}/${env.R2_BUCKET_NAME}/${key}`;
-
-    return { signedUrl, publicUrl };
-  } catch (error) {
-    console.error('Error generating signed URL:', error);
-    throw new Error('Failed to generate upload URL');
-  }
-}
+export async function deleteFromR2(url: string): Promise<void> {
   try {
     const key = url.split(`${env.R2_BUCKET_NAME}/`)[1];
     if (!key) {

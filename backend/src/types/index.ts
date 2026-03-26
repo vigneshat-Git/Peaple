@@ -32,6 +32,7 @@ export interface Post {
   content: string;
   author_id: string;
   community_id: string;
+  media_url?: string;
   score: number;
   upvotes: number;
   downvotes: number;
@@ -47,13 +48,6 @@ export interface Post {
     id: string;
     name: string;
   };
-  media?: Array<{
-    id: string;
-    url: string;
-    type: string;
-    file_name?: string;
-  }>;
-}
 }
 
 export interface Comment {
@@ -128,7 +122,7 @@ export interface CreatePostRequest {
   title: string;
   content: string;
   community_id: string;
-  media?: Array<{ url: string; type: string; fileName?: string }>;
+  media_url?: string;
 }
 
 export interface CreateCommentRequest {

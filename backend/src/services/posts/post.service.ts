@@ -9,50 +9,31 @@ export class PostService {
     content: string,
     authorId: string,
     communityId: string,
-    media?: Array<{ url: string; type: string; fileName?: string }>
+    mediaUrl?: string
   ): Promise<Post> {
-    const client = await transaction();
-
     try {
       const postId = generateId();
 
-      const result = await client.query(
-        `INSERT INTO posts (id, title, content, author_id, community_id)
-         VALUES ($1, $2, $3, $4, $5)
+      const result = await query(
+        `INSERT INTO posts (id, title, content, author_id, community_id, media_url)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [postId, title, content, authorId, communityId]
+        [postId, title, content, authorId, communityId, mediaUrl]
       );
-
-      const post = result.rows[0];
-
-      if (media && media.length > 0) {
-        for (const item of media) {
-          await client.query(
-            `INSERT INTO media (post_id, url, type, file_name)
-             VALUES ($1, $2, $3, $4)`,
-            [postId, item.url, item.type, item.fileName || null]
-          );
-        }
-      }
-
-      await client.query('COMMIT');
 
       // Invalidate cache
       await invalidateCache('feed:*');
       await invalidateCache(`community:${communityId}:posts:*`);
 
-      return post;
+      return result.rows[0];
     } catch (error) {
-      await client.query('ROLLBACK');
       throw error;
-    } finally {
-      client.release();
     }
   }
 
   async getPostById(postId: string): Promise<Post | null> {
     try {
-      const postResult = await query(
+      const result = await query(
         `SELECT 
           posts.*,
           users.username AS author_username,
@@ -66,22 +47,7 @@ export class PostService {
         [postId]
       );
 
-      if (!postResult.rows[0]) return null;
-
-      const post = postResult.rows[0];
-
-      const mediaResult = await query(
-        'SELECT * FROM media WHERE post_id = $1 ORDER BY created_at',
-        [postId]
-      );
-
-      post.media = mediaResult.rows;
-
-      return post;
-    } catch (error) {
-      throw error;
-    }
-  }
+      if (!result.rows[0]) return null;
 
       const post = result.rows[0];
       return {
