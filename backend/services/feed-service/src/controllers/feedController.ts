@@ -11,9 +11,18 @@ function score(post: any) {
 
 export const getFeed = async (req: Request, res: Response) => {
   try {
-    const result = await pool.query('SELECT * FROM posts');
+    const result = await pool.query(`
+      SELECT p.*, 
+             json_agg(m.*) FILTER (WHERE m.id IS NOT NULL) as media
+      FROM posts p
+      LEFT JOIN media m ON p.id = m.post_id
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+    `);
     const posts = result.rows;
-    // Note: Votes not joined, placeholder
+    posts.forEach((post: any) => {
+      post.media = post.media.filter((m: any) => m.id !== null);
+    });
     posts.sort((a: any, b: any) => score(b) - score(a));
     res.json(posts);
   } catch (err) {
@@ -27,8 +36,19 @@ export const getTrending = getFeed; // simple alias for now
 export const getCommunityFeed = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const result = await pool.query('SELECT * FROM posts WHERE community_id=$1', [id]);
+    const result = await pool.query(`
+      SELECT p.*, 
+             json_agg(m.*) FILTER (WHERE m.id IS NOT NULL) as media
+      FROM posts p
+      LEFT JOIN media m ON p.id = m.post_id
+      WHERE p.community_id = $1
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+    `, [id]);
     const posts = result.rows;
+    posts.forEach((post: any) => {
+      post.media = post.media.filter((m: any) => m.id !== null);
+    });
     posts.sort((a: any, b: any) => score(b) - score(a));
     res.json(posts);
   } catch (err) {

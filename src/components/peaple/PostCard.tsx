@@ -14,6 +14,7 @@ export interface PostData {
   comments: number;
   tags?: string[];
   timeAgo: string;
+  media?: Array<{ id: string; url: string; type: string; file_name?: string }>;
 }
 
 const PostCard = ({ post, onVoteChange }: { 
@@ -55,6 +56,15 @@ const PostCard = ({ post, onVoteChange }: {
               {post.title}
             </h3>
           </Link>
+          {post.media && post.media.length > 0 && (
+            <div className="mb-2">
+              {post.media[0].type === 'image' ? (
+                <img src={post.media[0].url} alt="Media" className="w-16 h-16 object-cover rounded border float-left mr-3" />
+              ) : (
+                <video src={post.media[0].url} className="w-16 h-16 object-cover rounded border float-left mr-3" preload="metadata" />
+              )}
+            </div>
+          )}
           <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
             {post.content}
           </p>

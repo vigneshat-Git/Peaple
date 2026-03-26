@@ -10,7 +10,7 @@ interface Post {
   content: string;
   author_id: string;
   community_id: string;
-  media_url?: string;
+  media?: Array<{ id: string; url: string; type: string; file_name?: string }>;
   score: string;
   upvotes: number;
   downvotes: number;
@@ -165,6 +165,31 @@ const PostPage = () => {
               <span>{formatTime(post.created_at)}</span>
             </div>
             <h1 className="text-lg font-bold text-foreground mb-3">{post.title}</h1>
+            {post.media && post.media.length > 0 && (
+              <div className="mb-4">
+                {post.media.length === 1 ? (
+                  <div className="max-w-md">
+                    {post.media[0].type === 'image' ? (
+                      <img src={post.media[0].url} alt={post.media[0].file_name || 'Image'} className="w-full rounded border" />
+                    ) : (
+                      <video src={post.media[0].url} controls preload="metadata" className="w-full rounded border" />
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2 max-w-md">
+                    {post.media.map((media) => (
+                      <div key={media.id}>
+                        {media.type === 'image' ? (
+                          <img src={media.url} alt={media.file_name || 'Image'} className="w-full h-24 object-cover rounded border" />
+                        ) : (
+                          <video src={media.url} controls preload="metadata" className="w-full h-24 object-cover rounded border" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="text-sm text-foreground mb-4 leading-relaxed">
               <div dangerouslySetInnerHTML={{ __html: post.content }} />
             </div>

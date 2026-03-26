@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Upload, X, Image, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,18 +10,29 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 interface Community { id: string; name: string; description: string; member_count: number; }
+interface MediaFile {
+  file: File;
+  preview: string;
+  type: 'image' | 'video';
+  uploading: boolean;
+  uploaded: boolean;
+  url?: string;
+  error?: string;
+}
 
 const CreatePostPage = () => {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [selectedCommunity, setSelectedCommunity] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchCommunities = async () => {
@@ -39,13 +50,99 @@ const CreatePostPage = () => {
     fetchCommunities();
   }, [searchParams]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles: MediaFile[] = [];
+
+    for (const file of files) {
+      if (file.size > 100 * 1024 * 1024) { // 100MB
+        toast({ title: "File too large", description: `${file.name} exceeds 100MB limit`, variant: "destructive" });
+        continue;
+      }
+
+      const type = file.type.startsWith('image/') ? 'image' : file.type === 'video/mp4' ? 'video' : null;
+      if (!type) {
+        toast({ title: "Invalid file type", description: `${file.name} is not supported`, variant: "destructive" });
+        continue;
+      }
+
+      const preview = URL.createObjectURL(file);
+      validFiles.push({
+        file,
+        preview,
+        type,
+        uploading: false,
+        uploaded: false,
+      });
+    }
+
+    setMediaFiles(prev => [...prev, ...validFiles]);
+    e.target.value = ''; // Reset input
+  };
+
+  const uploadFile = async (mediaFile: MediaFile, index: number) => {
+    try {
+      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: true, error: undefined } : f));
+
+      const { uploadUrl, publicUrl } = await apiService.generateUploadUrl({
+        fileType: mediaFile.file.type,
+        fileName: mediaFile.file.name,
+      });
+
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        body: mediaFile.file,
+        headers: {
+          'Content-Type': mediaFile.file.type,
+        },
+      });
+
+      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, uploaded: true, url: publicUrl } : f));
+    } catch (err) {
+      console.error('Upload failed:', err);
+      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, error: 'Upload failed' } : f));
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setMediaFiles(prev => {
+      const newFiles = [...prev];
+      URL.revokeObjectURL(newFiles[index].preview);
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { toast({ title: "Auth required", description: "Please log in", variant: "destructive" }); return; }
-    if (!selectedCommunity || !title.trim() || !content.trim()) { setError("Fill in all fields"); return; }
+    if (!selectedCommunity || !title.trim()) { setError("Fill in all fields"); return; }
+
     try {
       setLoading(true); setError(null);
-      await apiService.createPost({ title: title.trim(), content: content.trim(), community_id: selectedCommunity });
+
+      // Upload all files
+      const uploadPromises = mediaFiles.map((file, index) => uploadFile(file, index));
+      await Promise.all(uploadPromises);
+
+      // Check if all uploads succeeded
+      const failedUploads = mediaFiles.filter(f => f.error);
+      if (failedUploads.length > 0) {
+        setError("Some files failed to upload");
+        return;
+      }
+
+      const uploadedMedia = mediaFiles
+        .filter(f => f.uploaded && f.url)
+        .map(f => ({ url: f.url!, type: f.type, fileName: f.file.name }));
+
+      await apiService.createPost({
+        title: title.trim(),
+        content: content.trim(),
+        community_id: selectedCommunity,
+        media: uploadedMedia.length > 0 ? uploadedMedia : undefined,
+      });
+
       const community = communities.find(c => c.id === selectedCommunity);
       toast({ title: "Post created" });
       navigate(`/c/${community?.name}`);
@@ -72,8 +169,62 @@ const CreatePostPage = () => {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="content" className="text-sm">Content</Label>
-          <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Share your thoughts..." rows={6} required />
+          <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Share your thoughts..." rows={6} />
         </div>
+
+        {/* Media Upload Section */}
+        <div className="space-y-1.5">
+          <Label className="text-sm">Media (optional)</Label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,video/mp4"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Add Images/Videos
+          </Button>
+          <p className="text-xs text-muted-foreground">Supported: JPEG, PNG images and MP4 videos (max 100MB)</p>
+        </div>
+
+        {/* Media Preview Grid */}
+        {mediaFiles.length > 0 && (
+          <div className="grid grid-cols-2 gap-2">
+            {mediaFiles.map((file, index) => (
+              <div key={index} className="relative group">
+                {file.type === 'image' ? (
+                  <img src={file.preview} alt="Preview" className="w-full h-24 object-cover rounded border" />
+                ) : (
+                  <video src={file.preview} className="w-full h-24 object-cover rounded border" preload="metadata" />
+                )}
+                <div className="absolute top-1 right-1 flex gap-1">
+                  {file.uploading && <Loader2 className="h-4 w-4 animate-spin bg-black/50 text-white rounded p-0.5" />}
+                  {file.uploaded && <div className="h-4 w-4 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">✓</div>}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => removeFile(index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                {file.error && <p className="text-xs text-destructive mt-1">{file.error}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
         {error && <div className="flex items-center gap-2 text-destructive text-xs"><AlertCircle className="h-3.5 w-3.5" />{error}</div>}
         <div className="flex gap-3">
           <Button type="submit" disabled={loading} className="flex-1" size="sm">

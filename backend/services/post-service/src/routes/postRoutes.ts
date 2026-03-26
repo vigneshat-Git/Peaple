@@ -4,11 +4,13 @@ import {
   listPosts,
   getPost,
   deletePost,
+  generateUploadUrl,
 } from '../controllers/postController';
 import { authenticate } from '../../../shared/middleware/auth';
 
 const router = Router();
 
+router.post('/upload-url', authenticate, generateUploadUrl);
 router.post('/', authenticate, createPost);
 router.get('/', listPosts);
 router.get('/:id', getPost);

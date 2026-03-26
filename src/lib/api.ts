@@ -132,9 +132,16 @@ class ApiService {
     title: string;
     content: string;
     community_id: string;
-    media_url?: string;
+    media?: Array<{ url: string; type: string; fileName?: string }>;
   }) {
     return this.request('/posts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async generateUploadUrl(data: { fileType: string; fileName?: string }) {
+    return this.request('/posts/upload-url', {
       method: 'POST',
       body: JSON.stringify(data),
     });

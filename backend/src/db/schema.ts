@@ -34,13 +34,23 @@ CREATE TABLE IF NOT EXISTS posts (
   content TEXT NOT NULL,
   author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   community_id UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
-  media_url VARCHAR(500),
   score NUMERIC(10, 3) DEFAULT 0,
   upvotes INTEGER DEFAULT 0,
   downvotes INTEGER DEFAULT 0,
   comment_count INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Media table
+CREATE TABLE IF NOT EXISTS media (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
+  url VARCHAR(500) NOT NULL,
+  type VARCHAR(50) NOT NULL, -- 'image' or 'video'
+  file_name VARCHAR(255),
+  file_size INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Comments table
@@ -80,6 +90,8 @@ CREATE INDEX IF NOT EXISTS idx_posts_author_id ON posts(author_id);
 CREATE INDEX IF NOT EXISTS idx_posts_community_id ON posts(community_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_score ON posts(score DESC);
+
+CREATE INDEX IF NOT EXISTS idx_media_post_id ON media(post_id);
 
 CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_comments_author_id ON comments(author_id);
