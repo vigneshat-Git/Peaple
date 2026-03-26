@@ -5,7 +5,7 @@ import { commentService } from '../comments/comment.service.js';
 import { verifyToken, optionalAuth, AuthRequest } from '../../middleware/auth.js';
 import { sendSuccess, sendError, sendPaginationResponse } from '../../utils/response.js';
 import { validate, validationSchemas } from '../../utils/validation.js';
-import { uploadToR2, deleteFromR2 } from '../../config/storage.js';
+import { uploadToR2, deleteFromR2, generateSignedUploadUrl } from '../../config/storage.js';
 
 const router = Router();
 
@@ -24,17 +24,18 @@ router.post('/', verifyToken, async (req: AuthRequest, res: Response) => {
       return sendError(res, 'Unauthorized', 401);
     }
 
-    const { title, content, community_id, media_url } = validate(
-      req.body,
-      validationSchemas.createPost
-    );
+    const { title, content, community_id, media } = req.body;
+
+    if (!title || !community_id) {
+      return sendError(res, 'Title and community_id are required', 400);
+    }
 
     const post = await postService.createPost(
       title,
-      content,
+      content || '',
       req.user.userId,
       community_id,
-      media_url
+      media
     );
 
     sendSuccess(res, post, 'Post created', 201);
@@ -265,6 +266,33 @@ router.post('/media/upload', verifyToken, upload.single('file'), async (req: Aut
   } catch (error: any) {
     console.error('Upload media error:', error);
     sendError(res, error.message || 'File upload failed', 500);
+  }
+});
+
+// Generate signed upload URL
+router.post('/upload-url', verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return sendError(res, 'Unauthorized', 401);
+    }
+
+    const { fileType, fileName } = req.body;
+
+    if (!fileType || !['image/jpeg', 'image/png', 'video/mp4'].includes(fileType)) {
+      return sendError(res, 'Invalid file type', 400);
+    }
+
+    const maxSize = fileType === 'video/mp4' ? 100 * 1024 * 1024 : undefined;
+    const { signedUrl, publicUrl } = await generateSignedUploadUrl(fileType, fileName, maxSize);
+
+    sendSuccess(res, {
+      uploadUrl: signedUrl,
+      fileUrl: publicUrl,
+      maxSize,
+    }, 'Upload URL generated', 200);
+  } catch (error: any) {
+    console.error('Generate upload URL error:', error);
+    sendError(res, error.message || 'Failed to generate upload URL', 500);
   }
 });
 
