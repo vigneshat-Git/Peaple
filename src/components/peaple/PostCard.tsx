@@ -60,7 +60,7 @@ const PostCard = ({ post, onVoteChange }: {
               {post.title}
             </h3>
           </Link>
-<<<<<<< HEAD
+
           {post.media && post.media.length > 0 && (
             <div className="mb-2">
               {post.media[0].type === 'image' ? (
@@ -71,9 +71,7 @@ const PostCard = ({ post, onVoteChange }: {
             </div>
           )}
           <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-=======
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
->>>>>>> 4b39facdcc12e53e5679ec2ef30412238f3117f8
+
             {post.content}
           </p>
           <div className="flex items-center gap-3 text-muted-foreground">
