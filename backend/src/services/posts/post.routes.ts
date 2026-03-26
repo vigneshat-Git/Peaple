@@ -98,17 +98,23 @@ router.post('/', verifyToken, async (req: AuthRequest, res: Response) => {
       return sendError(res, 'Unauthorized', 401);
     }
 
-    const { title, content, community_id, media_url } = validate(
+    console.log('Incoming media:', req.body.media);
+    console.log('Incoming body:', req.body);
+
+    const { title, content, community_id, media_url, media } = validate(
       req.body,
       validationSchemas.createPost
     );
+
+    console.log('Validated media:', media);
 
     const post = await postService.createPost(
       title,
       content,
       req.user.userId,
       community_id,
-      media_url
+      media_url,
+      media
     );
 
     sendSuccess(res, post, 'Post created', 201);

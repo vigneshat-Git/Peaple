@@ -19,6 +19,13 @@ export const validationSchemas = {
     content: Joi.string().min(10).required(),
     community_id: Joi.string().uuid().required(),
     media_url: Joi.string().uri().optional(),
+    media: Joi.array().items(
+      Joi.object({
+        type: Joi.string().valid('image', 'video').required(),
+        url: Joi.string().uri().required(),
+        fileName: Joi.string().optional(),
+      })
+    ).optional(),
   }),
 
   updatePost: Joi.object({

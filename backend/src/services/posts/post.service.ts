@@ -9,23 +9,46 @@ export class PostService {
     content: string,
     authorId: string,
     communityId: string,
-    mediaUrl?: string
+    mediaUrl?: string,
+    media?: Array<{ type: string; url: string; fileName?: string }>
   ): Promise<Post> {
     try {
       const postId = generateId();
 
+      console.log('Creating post with media:', media);
+
+      // If media array provided, store first item's URL as media_url and rest as JSON
+      const primaryMediaUrl = media && media.length > 0 ? media[0].url : mediaUrl;
+      
       const result = await query(
         `INSERT INTO posts (id, title, content, author_id, community_id, media_url)
          VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [postId, title, content, authorId, communityId, mediaUrl]
+        [postId, title, content, authorId, communityId, primaryMediaUrl]
       );
+
+      const post = result.rows[0];
+
+      // If media array provided, insert records into media table
+      if (media && media.length > 0) {
+        console.log('Inserting media records:', media);
+        for (const item of media) {
+          await query(
+            `INSERT INTO media (post_id, url, type, file_name)
+             VALUES ($1, $2, $3, $4)`,
+            [postId, item.url, item.type, item.fileName || null]
+          );
+        }
+        post.media = media;
+      }
 
       // Invalidate cache
       await invalidateCache('feed:*');
       await invalidateCache(`community:${communityId}:posts:*`);
 
-      return result.rows[0];
+      console.log('Post created with media:', post);
+
+      return post;
     } catch (error) {
       throw error;
     }
@@ -50,6 +73,14 @@ export class PostService {
       if (!result.rows[0]) return null;
 
       const post = result.rows[0];
+
+      // Fetch media for this post
+      const mediaResult = await query(
+        `SELECT url, type, file_name as fileName FROM media WHERE post_id = $1 ORDER BY created_at`,
+        [postId]
+      );
+      post.media = mediaResult.rows;
+
       return {
         ...post,
         author: {

@@ -155,12 +155,26 @@ const CreatePostPage = () => {
         .filter(f => f.uploaded && f.url)
         .map(f => ({ url: f.url!, type: f.type, fileName: f.file.name }));
 
-      await apiService.createPost({
+      console.log('Upload complete. Uploaded media:', uploadedMedia);
+      console.log('Media count:', uploadedMedia.length);
+
+      if (mediaFiles.length > 0 && uploadedMedia.length === 0) {
+        setError("Media upload failed. Please try again.");
+        return;
+      }
+
+      const postData = {
         title: title.trim(),
         content: content.trim(),
         community_id: selectedCommunity,
         media: uploadedMedia.length > 0 ? uploadedMedia : undefined,
-      });
+      };
+
+      console.log('Creating post with data:', postData);
+
+      await apiService.createPost(postData);
+
+      console.log('Post created successfully');
 
       const community = communities.find(c => c.id === selectedCommunity);
       toast({ title: "Post created" });
