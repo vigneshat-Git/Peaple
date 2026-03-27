@@ -1,6 +1,6 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { Redis } from 'ioredis';
-import { env } from '../config/env.js';
+import { env } from '../config/env';
 
 // Redis connection for BullMQ
 const redisConnection = new Redis(env.REDIS_URL || 'redis://localhost:6379', {
@@ -61,7 +61,7 @@ export async function getJobStatus(jobId: string): Promise<{ status: string; pro
   if (!job) return null;
   
   const state = await job.getState();
-  const progress = job.progress;
+  const progress = typeof job.progress === 'number' ? job.progress : 0;
   
   return { status: state, progress };
 }

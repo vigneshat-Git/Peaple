@@ -1,7 +1,7 @@
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 import fs from 'fs/promises';
-import { uploadToR2, deleteFromR2 } from './storage.js';
+import { uploadToR2, deleteFromR2 } from '../../config/storage';
 
 export interface VideoProcessingResult {
   url: string;
