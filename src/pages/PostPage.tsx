@@ -289,7 +289,9 @@ const PostPage = () => {
                     {post.media[0].type === 'image' ? (
                       <img src={post.media[0].url} alt={post.media[0].file_name || 'Image'} className="w-full rounded border" />
                     ) : (
-                      <video src={post.media[0].url} controls preload="metadata" className="w-full rounded border" />
+                      <video controls preload="metadata" className="w-full rounded border">
+                        <source src={post.media[0].url} type="video/mp4" />
+                      </video>
                     )}
                   </div>
                 ) : (
@@ -299,7 +301,9 @@ const PostPage = () => {
                         {media.type === 'image' ? (
                           <img src={media.url} alt={media.file_name || 'Image'} className="w-full h-24 object-cover rounded border" />
                         ) : (
-                          <video src={media.url} controls preload="metadata" className="w-full h-24 object-cover rounded border" />
+                          <video controls preload="metadata" className="w-full h-24 object-cover rounded border">
+                            <source src={media.url} type="video/mp4" />
+                          </video>
                         )}
                       </div>
                     ))}
