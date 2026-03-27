@@ -62,11 +62,47 @@ const PostCard = ({ post, onVoteChange }: {
           </Link>
 
           {post.media && post.media.length > 0 && (
-            <div className="mb-2">
-              {post.media[0].type === 'image' ? (
-                <img src={post.media[0].url} alt="Media" className="w-16 h-16 object-cover rounded border float-left mr-3" />
+            <div className="mt-3 mb-3">
+              {post.media.length === 1 ? (
+                <div className="max-w-md">
+                  {post.media[0].type === 'image' ? (
+                    <img
+                      src={post.media[0].url}
+                      alt={post.media[0].file_name || 'Image'}
+                      className="w-full max-h-[500px] object-cover rounded-md"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <video
+                      src={post.media[0].url}
+                      controls
+                      preload="metadata"
+                      className="w-full max-h-[500px] rounded-md"
+                    />
+                  )}
+                </div>
               ) : (
-                <video src={post.media[0].url} className="w-16 h-16 object-cover rounded border float-left mr-3" preload="metadata" />
+                <div className="grid grid-cols-2 gap-2 max-w-md">
+                  {post.media.map((item, index) => (
+                    <div key={item.id || index}>
+                      {item.type === 'image' ? (
+                        <img
+                          src={item.url}
+                          alt={item.file_name || 'Image'}
+                          className="w-full h-40 object-cover rounded-md"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <video
+                          src={item.url}
+                          controls
+                          preload="metadata"
+                          className="w-full h-40 object-cover rounded-md"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
