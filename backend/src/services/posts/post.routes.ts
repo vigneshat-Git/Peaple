@@ -72,8 +72,10 @@ router.post('/upload-url', verifyToken, async (req: AuthRequest, res: Response) 
       return res.status(500).json({ error: 'Failed to generate upload URL' });
     }
     
-    // Construct public URL
-    const publicUrl = `${env.R2_ENDPOINT}/${env.R2_BUCKET_NAME}/${key}`;
+    // Construct public URL using R2_PUBLIC_URL
+    const publicUrl = `${env.R2_PUBLIC_URL}/${key}`;
+    
+    console.log('Returning public URL:', publicUrl);
     
     console.log('Generated signed URL for key:', key);
     console.log('Sending uploadUrl:', signedUrl);
