@@ -17,7 +17,7 @@ const upload = multer({
   }
 });
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'video/mp4'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/heic', 'image/heif', 'video/mp4'];
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 
 // Test route
@@ -39,7 +39,7 @@ router.post('/upload-url', verifyToken, async (req: AuthRequest, res: Response) 
     }
     
     if (!ALLOWED_TYPES.includes(fileType)) {
-      return sendError(res, 'Invalid file type. Allowed: image/jpeg, image/png, video/mp4', 400);
+      return sendError(res, 'Invalid file type. Allowed: image/jpeg, image/jpg, image/png, image/webp, image/heic, image/heif, video/mp4', 400);
     }
     
     // Generate unique file key

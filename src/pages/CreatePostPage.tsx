@@ -215,7 +215,7 @@ const CreatePostPage = () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,video/mp4"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,video/mp4"
             multiple
             onChange={handleFileSelect}
             className="hidden"
@@ -230,7 +230,7 @@ const CreatePostPage = () => {
             <Upload className="h-4 w-4 mr-2" />
             Add Images/Videos
           </Button>
-          <p className="text-xs text-muted-foreground">Supported: JPEG, PNG images and MP4 videos (max 100MB)</p>
+          <p className="text-xs text-muted-foreground">Supported: JPEG, JPG, PNG, WebP, HEIC, HEIF images and MP4 videos (max 100MB)</p>
         </div>
 
         {/* Media Preview Grid */}

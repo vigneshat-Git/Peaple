@@ -4,7 +4,7 @@ import { generateSignedUploadUrl } from '../../../shared/utils/r2';
 
 // TODO: Upload to Cloudflare R2; we'll require credentials via env
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'video/mp4'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/heic', 'image/heif', 'video/mp4'];
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 
 export const generateUploadUrl = async (req: Request, res: Response) => {

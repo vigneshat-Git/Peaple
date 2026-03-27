@@ -45,45 +45,75 @@ const formatTime = (dateString: string) => {
 const CommentItem = ({ comment, depth = 0, onReply }: { comment: Comment; depth?: number; onReply: (parentId: string, content: string) => void }) => {
   const [replyText, setReplyText] = useState("");
   const [showReply, setShowReply] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const maxDepth = 5;
   const votes = comment.votes_count || comment.score || 0;
+  const hasChildren = comment.children && comment.children.length > 0;
 
   const handleReplySubmit = () => {
     if (replyText.trim()) { onReply(comment.id, replyText.trim()); setReplyText(""); setShowReply(false); }
   };
 
+  // Responsive indentation classes - mobile: 12px per level, desktop: 20px per level
+  const indentClass = depth === 0 ? '' : 
+    depth === 1 ? 'ml-3 sm:ml-5' : 
+    depth === 2 ? 'ml-6 sm:ml-10' : 
+    depth === 3 ? 'ml-8 sm:ml-14' : 
+    'ml-10 sm:ml-16';
+
+  const paddingClass = depth === 0 ? '' : 'pl-2 sm:pl-3';
+
   return (
-    <div className={`${depth > 0 ? 'ml-4 border-l-2 border-border pl-3' : ''} mb-2`}>
-      <div className="py-2">
+    <div className={`${indentClass} ${paddingClass} ${depth > 0 ? 'border-l-2 border-border/60' : ''} mb-1`}>
+      <div className="py-2 hover:bg-accent/30 rounded-sm px-2 -mx-2 transition-colors">
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
           <span className="font-semibold text-foreground">
             {comment.author?.username || `User ${comment.author_id?.substring(0, 8)}`}
           </span>
           <span>·</span>
           <span>{formatTime(comment.created_at)}</span>
+          {hasChildren && (
+            <button 
+              onClick={() => setCollapsed(!collapsed)}
+              className="text-xs text-muted-foreground hover:text-foreground font-medium ml-1"
+            >
+              [{collapsed ? `+${comment.children?.length}` : '−'}]
+            </button>
+          )}
         </div>
-        <p className="text-sm text-foreground mb-2 leading-relaxed">{comment.content}</p>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <VoteButtons initialVotes={votes} commentId={comment.id} direction="horizontal" />
-          <button onClick={() => setShowReply(!showReply)} className="font-medium hover:text-foreground transition-colors duration-150">
-            Reply
-          </button>
-        </div>
-        {showReply && depth < maxDepth && (
-          <div className="mt-2">
-            <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Write a reply..."
-              className="w-full p-2 text-sm rounded-md bg-card text-foreground border focus:outline-none focus:border-primary transition-colors duration-150 resize-none" rows={2} />
-            <div className="flex gap-2 mt-1.5 justify-end">
-              <button onClick={() => { setShowReply(false); setReplyText(""); }}
-                className="px-3 py-1 text-xs text-muted-foreground hover:text-foreground rounded-md transition-colors duration-150">Cancel</button>
-              <button onClick={handleReplySubmit}
-                className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity duration-150">Reply</button>
+        {!collapsed && (
+          <>
+            <p className="text-sm text-foreground mb-2 leading-relaxed">{comment.content}</p>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <VoteButtons initialVotes={votes} commentId={comment.id} direction="horizontal" />
+              {depth < maxDepth && (
+                <button onClick={() => setShowReply(!showReply)} className="font-medium hover:text-foreground transition-colors duration-150">
+                  Reply
+                </button>
+              )}
             </div>
-          </div>
+            {showReply && depth < maxDepth && (
+              <div className="mt-2">
+                <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Write a reply..."
+                  className="w-full p-2 text-sm rounded-md bg-card text-foreground border focus:outline-none focus:border-primary transition-colors duration-150 resize-none" rows={2} />
+                <div className="flex gap-2 mt-1.5 justify-end">
+                  <button onClick={() => { setShowReply(false); setReplyText(""); }}
+                    className="px-3 py-1 text-xs text-muted-foreground hover:text-foreground rounded-md transition-colors duration-150">Cancel</button>
+                  <button onClick={handleReplySubmit}
+                    className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity duration-150">Reply</button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
-      {comment.children && comment.children.length > 0 && depth < maxDepth && (
-        <div>{comment.children.map(child => <CommentItem key={child.id} comment={child} depth={depth + 1} onReply={onReply} />)}</div>
+      {!collapsed && hasChildren && depth < maxDepth && (
+        <div className="mt-1">{comment.children?.map(child => <CommentItem key={child.id} comment={child} depth={depth + 1} onReply={onReply} />)}</div>
+      )}
+      {!collapsed && hasChildren && depth >= maxDepth && (
+        <div className="mt-1 text-xs text-muted-foreground italic">
+          <a href={`#comment-${comment.children?.[0].id}`} className="hover:text-foreground">Continue thread →</a>
+        </div>
       )}
     </div>
   );
