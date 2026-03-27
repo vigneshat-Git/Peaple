@@ -3,6 +3,7 @@ import { env } from './config/env.js';
 import { setupMiddleware, setupRateLimiting, errorHandler, notFoundHandler } from './middleware/setup.js';
 import { connectRedis, closeRedis } from './config/redis.js';
 import { closePool } from './config/database.js';
+import { closeVideoQueue } from './config/videoQueue.js';
 import { initializeDatabase } from './db/migrations.js';
 
 // Import route handlers
@@ -14,6 +15,8 @@ import voteRoutes from './services/votes/vote.routes.js';
 import feedRoutes from './services/feed/feed.routes.js';
 import uploadRoutes from './services/upload/upload.routes.js';
 import userRoutes from './services/user/user.routes.js';
+import videoRoutes from './services/video/video.routes.js';
+import { createVideoWorker } from './services/video/videoWorker.js';
 
 const app: Express = express();
 
@@ -30,6 +33,7 @@ app.use('/api/votes', voteRoutes);
 app.use('/api/feed', feedRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/videos', videoRoutes);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
@@ -77,6 +81,10 @@ async function startServer() {
     await initializeDatabase();
     console.log('Database initialized');
 
+    // Start video processing worker
+    const videoWorker = createVideoWorker();
+    console.log('Video processing worker started');
+
     // Start server
     app.listen(env.PORT, () => {
       console.log(`[✓] Peaple API server running on port ${env.PORT}`);
@@ -94,6 +102,7 @@ process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
   await closeRedis();
   await closePool();
+  await closeVideoQueue();
   process.exit(0);
 });
 
@@ -101,6 +110,7 @@ process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
   await closeRedis();
   await closePool();
+  await closeVideoQueue();
   process.exit(0);
 });
 

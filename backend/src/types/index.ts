@@ -39,6 +39,7 @@ export interface Post {
   comment_count: number;
   created_at: Date;
   updated_at: Date;
+  video_status?: 'processing' | 'ready' | 'failed';
   // Nested objects for API responses
   author?: {
     id: string;

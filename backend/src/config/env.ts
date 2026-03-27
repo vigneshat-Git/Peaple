@@ -46,6 +46,9 @@ export const env = {
 
   // Logging
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+
+  // Video Processing
+  TEMP_DIR: process.env.TEMP_DIR || './temp',
 };
 
 export const isDev = env.NODE_ENV === 'development';
