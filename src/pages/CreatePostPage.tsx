@@ -80,7 +80,7 @@ const CreatePostPage = () => {
     e.target.value = ''; // Reset input
   };
 
-  const uploadFile = async (mediaFile: MediaFile, index: number) => {
+  const uploadFile = async (mediaFile: MediaFile, index: number): Promise<string | null> => {
     try {
       setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: true, error: undefined } : f));
 
@@ -116,10 +116,13 @@ const CreatePostPage = () => {
       console.log('File uploaded successfully to R2');
 
       setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, uploaded: true, url: fileUrl } : f));
+      
+      return fileUrl;
     } catch (err) {
       console.error('Upload failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Upload failed';
       setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, error: errorMessage } : f));
+      return null;
     }
   };
 
@@ -140,28 +143,29 @@ const CreatePostPage = () => {
     try {
       setLoading(true); setError(null);
 
-      // Upload all files
-      const uploadPromises = mediaFiles.map((file, index) => uploadFile(file, index));
-      await Promise.all(uploadPromises);
+      // Local array to collect uploaded media URLs
+      const uploadedMedia: Array<{ url: string; type: 'image' | 'video'; fileName: string }> = [];
 
-      // Check if all uploads succeeded
-      const failedUploads = mediaFiles.filter(f => f.error);
-      if (failedUploads.length > 0) {
-        setError("Some files failed to upload");
-        return;
+      // Upload all files and collect URLs in local variable
+      for (let i = 0; i < mediaFiles.length; i++) {
+        const fileUrl = await uploadFile(mediaFiles[i], i);
+        
+        if (fileUrl) {
+          uploadedMedia.push({
+            url: fileUrl,
+            type: mediaFiles[i].type,
+            fileName: mediaFiles[i].file.name,
+          });
+        } else {
+          // Upload failed for this file
+          setError(`Failed to upload: ${mediaFiles[i].file.name}`);
+          setLoading(false);
+          return;
+        }
       }
-
-      const uploadedMedia = mediaFiles
-        .filter(f => f.uploaded && f.url)
-        .map(f => ({ url: f.url!, type: f.type, fileName: f.file.name }));
 
       console.log('Upload complete. Uploaded media:', uploadedMedia);
       console.log('Media count:', uploadedMedia.length);
-
-      if (mediaFiles.length > 0 && uploadedMedia.length === 0) {
-        setError("Media upload failed. Please try again.");
-        return;
-      }
 
       const postData = {
         title: title.trim(),
