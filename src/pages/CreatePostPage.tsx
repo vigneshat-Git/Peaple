@@ -17,6 +17,9 @@ interface MediaFile {
   uploading: boolean;
   uploaded: boolean;
   url?: string;
+  jobId?: string;
+  status?: 'pending' | 'processing' | 'ready' | 'failed';
+  progress?: number;
   error?: string;
 }
 
@@ -80,50 +83,76 @@ const CreatePostPage = () => {
     e.target.value = ''; // Reset input
   };
 
-  const uploadFile = async (mediaFile: MediaFile, index: number): Promise<string | null> => {
+  const uploadFile = async (mediaFile: MediaFile, index: number): Promise<{ url?: string; jobId?: string; status: string } | null> => {
     try {
-      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: true, error: undefined } : f));
+      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: true, error: undefined, status: 'pending' } : f));
 
-      console.log('Requesting upload URL for file:', mediaFile.file.name, 'type:', mediaFile.file.type);
-      
-      const { uploadUrl, fileUrl } = await apiService.generateUploadUrl({
-        fileType: mediaFile.file.type,
-        fileName: mediaFile.file.name,
-      });
+      // Use new media upload endpoint for both images and videos
+      const result = await apiService.uploadMedia(mediaFile.file);
 
-      console.log('Upload URL received:', uploadUrl);
-      console.log('File URL (public):', fileUrl);
-      
-      // Validate uploadUrl before using
-      if (!uploadUrl || uploadUrl === 'undefined') {
-        throw new Error('Upload URL is missing or invalid');
+      if (result.status === 'processing') {
+        // Video is being processed in background
+        setMediaFiles(prev => prev.map((f, i) => i === index ? { 
+          ...f, 
+          uploading: false, 
+          uploaded: true, 
+          jobId: result.jobId,
+          status: 'processing'
+        } : f));
+        
+        // Start polling for status
+        pollVideoStatus(result.jobId!, index);
+        
+        return { jobId: result.jobId, status: 'processing' };
+      } else {
+        // Image uploaded immediately
+        setMediaFiles(prev => prev.map((f, i) => i === index ? { 
+          ...f, 
+          uploading: false, 
+          uploaded: true, 
+          url: result.url,
+          status: 'ready'
+        } : f));
+        
+        return { url: result.url, status: 'ready' };
       }
-
-      console.log('Uploading file to:', uploadUrl);
-      
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: mediaFile.file,
-        headers: {
-          'Content-Type': mediaFile.file.type,
-        },
-      });
-      
-      if (!uploadResponse.ok) {
-        throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
-      }
-      
-      console.log('File uploaded successfully to R2');
-
-      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, uploaded: true, url: fileUrl } : f));
-      
-      return fileUrl;
     } catch (err) {
       console.error('Upload failed:', err);
       const errorMessage = err instanceof Error ? err.message : 'Upload failed';
-      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, error: errorMessage } : f));
+      setMediaFiles(prev => prev.map((f, i) => i === index ? { ...f, uploading: false, error: errorMessage, status: 'failed' } : f));
       return null;
     }
+  };
+
+  const pollVideoStatus = async (jobId: string, index: number) => {
+    const checkStatus = async () => {
+      try {
+        const status = await apiService.getVideoStatus(jobId);
+        
+        setMediaFiles(prev => prev.map((f, i) => {
+          if (i !== index) return f;
+          
+          if (status.status === 'completed') {
+            return { ...f, status: 'ready', progress: 100 };
+          } else if (status.status === 'failed') {
+            return { ...f, status: 'failed', error: 'Video processing failed' };
+          } else {
+            // Still processing
+            return { ...f, status: 'processing', progress: status.progress };
+          }
+        }));
+
+        // Continue polling if still processing
+        if (status.status === 'active' || status.status === 'waiting') {
+          setTimeout(checkStatus, 3000);
+        }
+      } catch (err) {
+        console.error('Failed to check video status:', err);
+      }
+    };
+
+    // Start polling
+    setTimeout(checkStatus, 2000);
   };
 
   const removeFile = (index: number) => {
@@ -148,20 +177,28 @@ const CreatePostPage = () => {
 
       // Upload all files and collect URLs in local variable
       for (let i = 0; i < mediaFiles.length; i++) {
-        const fileUrl = await uploadFile(mediaFiles[i], i);
+        const result = await uploadFile(mediaFiles[i], i);
         
-        if (fileUrl) {
+        if (result && result.url) {
           uploadedMedia.push({
-            url: fileUrl,
+            url: result.url,
             type: mediaFiles[i].type,
             fileName: mediaFiles[i].file.name,
           });
-        } else {
+        } else if (!result || result.status === 'failed') {
           // Upload failed for this file
           setError(`Failed to upload: ${mediaFiles[i].file.name}`);
           setLoading(false);
           return;
         }
+      }
+
+      // Check if any videos are still processing
+      const processingVideos = mediaFiles.filter(f => f.type === 'video' && f.status === 'processing');
+      if (processingVideos.length > 0) {
+        setError(`Please wait for videos to finish processing: ${processingVideos.map(f => f.file.name).join(', ')}`);
+        setLoading(false);
+        return;
       }
 
       console.log('Upload complete. Uploaded media:', uploadedMedia);
@@ -245,7 +282,12 @@ const CreatePostPage = () => {
                 )}
                 <div className="absolute top-1 right-1 flex gap-1">
                   {file.uploading && <Loader2 className="h-4 w-4 animate-spin bg-black/50 text-white rounded p-0.5" />}
-                  {file.uploaded && <div className="h-4 w-4 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">✓</div>}
+                  {file.status === 'ready' && <div className="h-4 w-4 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">✓</div>}
+                  {file.status === 'processing' && (
+                    <div className="h-4 w-4 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs animate-pulse">
+                      ⏳
+                    </div>
+                  )}
                   <Button
                     type="button"
                     variant="destructive"
@@ -256,6 +298,11 @@ const CreatePostPage = () => {
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
+                {file.status === 'processing' && (
+                  <div className="absolute bottom-1 left-1 right-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+                    Processing video... {file.progress ? `${Math.round(file.progress)}%` : ''}
+                  </div>
+                )}
                 {file.error && <p className="text-xs text-destructive mt-1">{file.error}</p>}
               </div>
             ))}

@@ -13,7 +13,11 @@ import commentRoutes from './services/comments/comment.routes.js';
 import voteRoutes from './services/votes/vote.routes.js';
 import feedRoutes from './services/feed/feed.routes.js';
 import uploadRoutes from './services/upload/upload.routes.js';
+import videoUploadRoutes from './services/upload/video-upload.routes.js';
 import userRoutes from './services/user/user.routes.js';
+
+// Import video worker
+import { createVideoWorker } from './services/video/video-worker.js';
 
 const app: Express = express();
 
@@ -29,6 +33,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/votes', voteRoutes);
 app.use('/api/feed', feedRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/media', videoUploadRoutes);
 app.use('/api/user', userRoutes);
 
 // Health check
@@ -76,6 +81,10 @@ async function startServer() {
     // Initialize database
     await initializeDatabase();
     console.log('Database initialized');
+
+    // Start video processing worker
+    createVideoWorker();
+    console.log('Video processing worker started');
 
     // Start server
     app.listen(env.PORT, () => {

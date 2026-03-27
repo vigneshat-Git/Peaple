@@ -1,0 +1,17 @@
+# Railway Nixpacks Configuration for Peaple Backend
+# This installs FFmpeg alongside Node.js
+
+[phases.build]
+cmds = [
+  "npm install",
+]
+
+[phases.setup]
+nixPkgs = [
+  "nodejs",
+  "npm",
+  "ffmpeg"
+]
+
+[start]
+cmd = "npm start"
