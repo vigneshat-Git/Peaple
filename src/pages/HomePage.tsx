@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PostCard, { PostData } from "@/components/peaple/PostCard";
+import PostSkeleton from "@/components/peaple/PostSkeleton";
 import { apiService, ApiError } from "@/lib/api";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,9 +58,15 @@ const HomePage = () => {
 
   if (loading && posts.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+      <div className="space-y-2">
+        <div className="bg-card rounded-md border p-2 mb-3 flex items-center gap-1 h-10">
+          <div className="h-6 bg-muted rounded w-16 mx-1"></div>
+          <div className="h-6 bg-muted rounded w-16 mx-1"></div>
+          <div className="h-6 bg-muted rounded w-16 mx-1"></div>
+        </div>
+        {[...Array(5)].map((_, i) => (
+          <PostSkeleton key={i} />
+        ))}
       </div>
     );
   }
@@ -106,7 +113,12 @@ const HomePage = () => {
           {hasMore && (
             <div className="flex justify-center mt-4">
               <Button variant="outline" size="sm" onClick={handleLoadMore} disabled={loading}>
-                {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Loading...</> : "Load More"}
+                {loading ? (
+                  <>
+                    <div className="h-4 w-4 mr-2 animate-pulse bg-muted rounded-full"></div>
+                    Loading...
+                  </>
+                ) : "Load More"}
               </Button>
             </div>
           )}

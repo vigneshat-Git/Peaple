@@ -1,7 +1,8 @@
-import { useParams } from "react-router-dom";
+import { MessageSquare, Share2, Bookmark } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import VoteButtons from "@/components/peaple/VoteButtons";
-import { Bookmark, Share2, MessageSquare } from "lucide-react";
+import CommentSkeleton from "@/components/peaple/CommentSkeleton";
 import { apiService } from "@/lib/api";
 
 interface Post {
@@ -130,6 +131,66 @@ const CommentItem = ({ comment, depth = 0, onReply }: { comment: Comment; depth?
   );
 };
 
+const PostPageSkeleton = () => (
+  <div className="max-w-3xl animate-pulse">
+    {/* Post Skeleton */}
+    <div className="bg-card rounded-md border p-4 mb-3">
+      <div className="flex gap-3">
+        {/* Vote buttons */}
+        <div className="flex-shrink-0 w-10 flex flex-col items-center gap-1">
+          <div className="w-6 h-6 bg-muted rounded"></div>
+          <div className="h-4 bg-muted rounded w-6"></div>
+          <div className="w-6 h-6 bg-muted rounded"></div>
+        </div>
+        <div className="flex-1 space-y-3">
+          {/* Header: Community, Author, Time */}
+          <div className="flex items-center gap-1.5">
+            <div className="h-3 bg-muted rounded w-16"></div>
+            <div className="h-3 bg-muted rounded w-1"></div>
+            <div className="h-3 bg-muted rounded w-20"></div>
+            <div className="h-3 bg-muted rounded w-1"></div>
+            <div className="h-3 bg-muted rounded w-12"></div>
+          </div>
+          {/* Title */}
+          <div className="h-6 bg-muted rounded w-3/4"></div>
+          {/* Content */}
+          <div className="space-y-2">
+            <div className="h-3 bg-muted rounded w-full"></div>
+            <div className="h-3 bg-muted rounded w-5/6"></div>
+            <div className="h-3 bg-muted rounded w-4/5"></div>
+          </div>
+          {/* Media placeholder */}
+          <div className="w-full h-48 bg-muted rounded-md max-w-md"></div>
+          {/* Footer */}
+          <div className="flex items-center gap-3">
+            <div className="h-4 bg-muted rounded w-20"></div>
+            <div className="h-4 bg-muted rounded w-12"></div>
+            <div className="h-4 bg-muted rounded w-12"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Comment input skeleton */}
+    <div className="bg-card rounded-md border p-4 mb-3">
+      <div className="h-20 bg-muted rounded-md mb-2"></div>
+      <div className="flex justify-end">
+        <div className="h-8 bg-muted rounded w-20"></div>
+      </div>
+    </div>
+
+    {/* Comments section skeleton */}
+    <div className="bg-card rounded-md border p-4">
+      <div className="h-4 bg-muted rounded w-24 mb-3"></div>
+      <div className="space-y-2">
+        {[...Array(3)].map((_, i) => (
+          <CommentSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const PostPage = () => {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<Post | null>(null);
@@ -176,7 +237,7 @@ const PostPage = () => {
     loadData();
   }, [id]);
 
-  if (isLoading) return <div className="max-w-3xl py-6 text-sm text-muted-foreground">Loading...</div>;
+  if (isLoading) return <PostPageSkeleton />;
   if (error || !post) return <div className="max-w-3xl py-6 text-sm text-destructive">{error || 'Post not found'}</div>;
 
   const buildCommentTree = (flatComments: Comment[]): Comment[] => {
