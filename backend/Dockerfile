@@ -1,23 +1,26 @@
-# Use Node 20 Alpine for smaller image size
+# Use Node 20
 FROM node:20-alpine
+
+# Install ffmpeg (for video processing)
+RUN apk add --no-cache ffmpeg
 
 # Set working directory
 WORKDIR /app
 
-# Install FFmpeg for video processing
-RUN apk add --no-cache ffmpeg
-
-# Copy package files
+# Copy package files first
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install
 
-# Copy built application
-COPY dist ./dist
+# Copy all source code
+COPY . .
+
+# Build TypeScript
+RUN npm run build
 
 # Expose port
 EXPOSE 5000
 
-# Start the application
-CMD ["npm", "start"]
+# Start app
+CMD ["node", "dist/index.js"]
