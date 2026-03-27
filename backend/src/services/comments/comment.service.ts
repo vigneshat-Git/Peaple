@@ -65,15 +65,31 @@ export class CommentService {
       const total = parseInt(totalResult.rows[0].count, 10);
 
       const result = await query(
-        `SELECT * FROM comments
-         WHERE post_id = $1
-         ORDER BY created_at ASC
+        `SELECT 
+          c.*,
+          u.id as user_id,
+          u.username,
+          u.profile_image as avatar
+         FROM comments c
+         LEFT JOIN users u ON c.author_id = u.id
+         WHERE c.post_id = $1
+         ORDER BY c.created_at ASC
          LIMIT $2 OFFSET $3`,
         [postId, limit, offset]
       );
 
+      // Transform to include author object
+      const comments = result.rows.map(row => ({
+        ...row,
+        author: row.user_id ? {
+          id: row.user_id,
+          username: row.username,
+          avatar: row.avatar
+        } : null
+      }));
+
       return {
-        comments: result.rows,
+        comments,
         total,
         page,
         limit,

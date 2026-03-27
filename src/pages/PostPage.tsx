@@ -25,7 +25,11 @@ interface Comment {
   id: string;
   content: string;
   author_id: string;
-  author?: { id: string; username: string; avatar_url?: string };
+  author?: {
+    id: string;
+    username: string;
+    avatar?: string;
+  };
   parent_comment_id?: string | null;
   created_at: string;
   votes_count?: number;
@@ -66,9 +70,16 @@ const CommentItem = ({ comment, depth = 0, onReply }: { comment: Comment; depth?
   return (
     <div className={`${indentClass} ${paddingClass} ${depth > 0 ? 'border-l-2 border-border/60' : ''} mb-1`}>
       <div className="py-2 hover:bg-accent/30 rounded-sm px-2 -mx-2 transition-colors">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-          <span className="font-semibold text-foreground">
-            {comment.author?.username || `User ${comment.author_id?.substring(0, 8)}`}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+          {comment.author?.avatar ? (
+            <img src={comment.author.avatar} alt={comment.author.username} className="w-5 h-5 rounded-full" />
+          ) : (
+            <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+              {(comment.author?.username || 'U')[0].toUpperCase()}
+            </div>
+          )}
+          <span className="font-semibold text-foreground hover:underline cursor-pointer">
+            {comment.author?.username || `unknown_user`}
           </span>
           <span>·</span>
           <span>{formatTime(comment.created_at)}</span>
