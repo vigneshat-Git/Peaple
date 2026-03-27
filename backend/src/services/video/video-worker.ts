@@ -28,19 +28,12 @@ async function processVideoJob(job: Job): Promise<{
     // Update job progress
     await job.updateProgress(10);
     
-    // Check FFmpeg availability first
-    const ffmpegAvailable = await videoProcessingService.isFFmpegAvailable();
-    if (!ffmpegAvailable) {
-      console.warn(`[VideoWorker] FFmpeg not available for job ${job.id}, uploading as-is`);
-    }
-    
-    // Process video (with fallback if FFmpeg unavailable)
-    const result = await videoProcessingService.processVideoSafe(
+    // Process video with FFmpeg
+    const result = await videoProcessingService.processVideo(
       inputPath,
       outputPath,
-      originalName,
       {
-        generateThumbnail: ffmpegAvailable, // Only generate thumbnail if FFmpeg available
+        generateThumbnail: true,
         thumbnailPath: outputPath.replace('.mp4', '-thumb.jpg'),
         maxHeight: 720, // Limit to 720p
       }

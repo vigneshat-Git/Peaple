@@ -1,11 +1,7 @@
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 import fs from 'fs/promises';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { uploadToR2, deleteFromR2 } from '../../config/storage.js';
-
-const execAsync = promisify(exec);
+import { uploadToR2, deleteFromR2 } from './storage.js';
 
 export interface VideoProcessingResult {
   url: string;
@@ -17,63 +13,6 @@ export interface VideoProcessingResult {
 }
 
 export class VideoProcessingService {
-  private ffmpegAvailable: boolean | null = null;
-
-  /**
-   * Check if FFmpeg is installed and available
-   */
-  async isFFmpegAvailable(): Promise<boolean> {
-    if (this.ffmpegAvailable !== null) {
-      return this.ffmpegAvailable;
-    }
-
-    try {
-      await execAsync('ffmpeg -version');
-      this.ffmpegAvailable = true;
-      console.log('[FFmpeg] ✓ FFmpeg is available');
-      return true;
-    } catch {
-      this.ffmpegAvailable = false;
-      console.warn('[FFmpeg] ✗ FFmpeg is NOT available - video processing will be skipped');
-      return false;
-    }
-  }
-
-  /**
-   * Process video only if FFmpeg is available, otherwise upload as-is
-   */
-  async processVideoSafe(
-    inputPath: string,
-    outputPath: string,
-    originalName: string,
-    options: {
-      generateThumbnail?: boolean;
-      thumbnailPath?: string;
-      maxHeight?: number;
-    } = {}
-  ): Promise<VideoProcessingResult> {
-    const ffmpegAvailable = await this.isFFmpegAvailable();
-
-    if (!ffmpegAvailable) {
-      // Fallback: upload video as-is without processing
-      console.log('[VideoProcessing] FFmpeg not available, uploading original video');
-      const videoBuffer = await fs.readFile(inputPath);
-      const ext = path.extname(originalName) || '.mp4';
-      const videoUrl = await uploadToR2(
-        videoBuffer,
-        `original-${Date.now()}${ext}`,
-        { contentType: 'video/mp4' }
-      );
-
-      return {
-        url: videoUrl,
-        format: ext.replace('.', ''),
-      };
-    }
-
-    // FFmpeg is available, process normally
-    return this.processVideo(inputPath, outputPath, options);
-  }
   /**
    * Convert video to MP4/H.264/AAC format optimized for web
    */
