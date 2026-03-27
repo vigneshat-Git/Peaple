@@ -14,13 +14,13 @@ const Navbar = () => {
           <Link to="/" className="flex items-center gap-2 shrink-0">
             {/* Mobile logo - shown on small screens */}
             <img 
-              src="/src/resource/mobile-logo.svg" 
+              src="/public/mobile-logo.svg" 
               alt="Peaple" 
               className="h-8 w-auto sm:hidden"
             />
             {/* Desktop logo - hidden on small screens */}
             <img 
-              src="/src/resource/header-logo.svg" 
+              src="/public/header-logo.svg" 
               alt="Peaple" 
               className="h-8 w-auto hidden sm:block"
             />
