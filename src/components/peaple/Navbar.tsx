@@ -12,10 +12,18 @@ const Navbar = () => {
       <div className="flex items-center justify-between h-full px-4 lg:px-6 max-w-[1400px] mx-auto">
         <div className="flex items-center gap-4 flex-1">
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">P</span>
-            </div>
-            <span className="text-lg font-bold text-foreground hidden sm:block">Peaple</span>
+            {/* Mobile logo - shown on small screens */}
+            <img 
+              src="/src/resource/mobile-logo.svg" 
+              alt="Peaple" 
+              className="h-8 w-auto sm:hidden"
+            />
+            {/* Desktop logo - hidden on small screens */}
+            <img 
+              src="/src/resource/header-logo.svg" 
+              alt="Peaple" 
+              className="h-8 w-auto hidden sm:block"
+            />
           </Link>
 
           <div className="relative max-w-md w-full hidden md:block">
