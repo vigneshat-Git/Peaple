@@ -23,7 +23,7 @@ export const generateSignedUploadUrl = async (key: string, contentType: string, 
   });
 
   const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
-  const publicUrl = `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${key}`;
+  const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
 
   return { signedUrl, publicUrl };
 };
