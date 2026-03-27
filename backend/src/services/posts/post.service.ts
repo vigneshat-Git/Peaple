@@ -128,16 +128,25 @@ export class PostService {
         [limit, offset]
       );
 
-      const posts = result.rows.map(post => ({
-        ...post,
-        author: {
-          id: post.author_user_id,
-          username: post.author_username
-        },
-        community: {
-          id: post.community_id_ref,
-          name: post.community_name
-        }
+      const posts = await Promise.all(result.rows.map(async (post) => {
+        // Fetch media for this post
+        const mediaResult = await query(
+          `SELECT id, url, type, file_name as file_name FROM media WHERE post_id = $1 ORDER BY created_at`,
+          [post.id]
+        );
+        
+        return {
+          ...post,
+          media: mediaResult.rows,
+          author: {
+            id: post.author_user_id,
+            username: post.author_username
+          },
+          community: {
+            id: post.community_id_ref,
+            name: post.community_name
+          }
+        };
       }));
 
       return {
@@ -383,16 +392,25 @@ export class PostService {
         [limit, offset]
       );
 
-      const posts = result.rows.map(post => ({
-        ...post,
-        author: {
-          id: post.author_user_id,
-          username: post.author_username
-        },
-        community: {
-          id: post.community_id_ref,
-          name: post.community_name
-        }
+      const posts = await Promise.all(result.rows.map(async (post) => {
+        // Fetch media for this post
+        const mediaResult = await query(
+          `SELECT id, url, type, file_name as file_name FROM media WHERE post_id = $1 ORDER BY created_at`,
+          [post.id]
+        );
+        
+        return {
+          ...post,
+          media: mediaResult.rows,
+          author: {
+            id: post.author_user_id,
+            username: post.author_username
+          },
+          community: {
+            id: post.community_id_ref,
+            name: post.community_name
+          }
+        };
       }));
 
       return {
