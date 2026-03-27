@@ -16,13 +16,13 @@ const Navbar = () => {
             <img 
               src="/mobile-logo.svg" 
               alt="Peaple" 
-              className="h-10 w-auto sm:hidden"
+              className="h-20 w-auto sm:hidden"
             />
             {/* Desktop logo - hidden on small screens */}
             <img 
               src="/header-logo.svg" 
               alt="Peaple" 
-              className="h-10 w-auto hidden sm:block"
+              className="h-20 w-auto hidden sm:block"
             />
           </Link>
 
