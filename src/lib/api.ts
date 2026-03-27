@@ -257,56 +257,6 @@ class ApiService {
     });
   }
 
-  // Upload
-  async generateUploadUrl(data: { fileType: string; fileName: string }) {
-    return this.request('/posts/upload-url', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async uploadVideo(file: File): Promise<{ jobId: string; status: string; message: string }> {
-    const formData = new FormData();
-    formData.append('video', file);
-
-    const response = await fetch(`${this.baseUrl}/media/video`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.getToken()}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Video upload failed');
-    }
-
-    return response.json();
-  }
-
-  async getVideoStatus(jobId: string): Promise<{ status: string; progress?: number }> {
-    return this.request(`/media/video/status/${jobId}`);
-  }
-
-  async uploadMedia(file: File): Promise<{ url?: string; jobId?: string; type: string; status: string }> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch(`${this.baseUrl}/media`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.getToken()}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Media upload failed');
-    }
-
-    return response.json();
-  }
-
   // Users
   async getUserById(id: string) {
     return this.request(`/auth/${id}`);

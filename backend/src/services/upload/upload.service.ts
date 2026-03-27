@@ -1,10 +1,5 @@
 import { uploadToR2, deleteFromR2 } from '../../config/storage.js';
 import { sendSuccess, sendError } from '../../utils/response.js';
-import ffmpeg from 'fluent-ffmpeg';
-import path from 'path';
-import os from 'os';
-import fs from 'fs/promises';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface UploadResponse {
   url: string;
@@ -40,9 +35,9 @@ export class UploadService {
   async uploadVideo(file: Buffer, fileName: string, contentType: string): Promise<UploadResponse> {
     try {
       // Validate file type
-      const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
+      const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg'];
       if (!allowedTypes.includes(contentType)) {
-        throw new Error('Invalid file type. Only MP4, WebM, OGG, MOV, and AVI are allowed.');
+        throw new Error('Invalid file type. Only MP4, WebM, and OGG are allowed.');
       }
 
       // Validate file size (max 100MB)
@@ -51,51 +46,11 @@ export class UploadService {
         throw new Error('File size too large. Maximum size is 100MB.');
       }
 
-      // Convert video to H.264/AAC for universal compatibility
-      const tempDir = os.tmpdir();
-      const inputPath = path.join(tempDir, `input-${uuidv4()}-${fileName}`);
-      const outputPath = path.join(tempDir, `converted-${uuidv4()}.mp4`);
-
-      // Write input file
-      await fs.writeFile(inputPath, file);
-
-      // Convert video using FFmpeg
-      await new Promise<void>((resolve, reject) => {
-        ffmpeg(inputPath)
-          .videoCodec('libx264')
-          .audioCodec('aac')
-          .outputOptions([
-            '-preset fast',
-            '-crf 23',
-            '-movflags +faststart',
-            '-pix_fmt yuv420p',
-            '-vf scale=-2:720', // Max 720p for compatibility
-          ])
-          .on('start', (cmd) => {
-            console.log('[FFmpeg] Converting video:', cmd);
-          })
-          .on('end', () => {
-            console.log('[FFmpeg] Conversion complete');
-            resolve();
-          })
-          .on('error', (err) => {
-            console.error('[FFmpeg] Conversion error:', err);
-            reject(err);
-          })
-          .save(outputPath);
-      });
-
-      // Read converted file and upload to R2
-      const convertedBuffer = await fs.readFile(outputPath);
-      const url = await uploadToR2(convertedBuffer, `${uuidv4()}-converted.mp4`, { contentType: 'video/mp4' });
-
-      // Cleanup temp files
-      await fs.unlink(inputPath).catch(() => {});
-      await fs.unlink(outputPath).catch(() => {});
+      const url = await uploadToR2(file, fileName, { contentType });
 
       return {
         url,
-        message: 'Video uploaded and converted successfully',
+        message: 'Video uploaded successfully',
       };
     } catch (error) {
       throw error;

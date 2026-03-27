@@ -74,13 +74,11 @@ const PostCard = ({ post, onVoteChange }: {
                     />
                   ) : (
                     <video
+                      src={post.media[0].url}
                       controls
                       preload="metadata"
                       className="w-full max-h-[500px] rounded-md"
-                    >
-                      <source src={post.media[0].url} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
+                    />
                   )}
                 </div>
               ) : (
@@ -96,12 +94,11 @@ const PostCard = ({ post, onVoteChange }: {
                         />
                       ) : (
                         <video
+                          src={item.url}
                           controls
                           preload="metadata"
                           className="w-full h-40 object-cover rounded-md"
-                        >
-                          <source src={item.url} type="video/mp4" />
-                        </video>
+                        />
                       )}
                     </div>
                   ))}
