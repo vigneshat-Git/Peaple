@@ -219,7 +219,11 @@ class ApiService {
   }) {
     return this.request('/comments', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        postId: data.postId,
+        content: data.content,
+        parentId: data.parentCommentId, // Backend expects parentId
+      }),
     });
   }
 
