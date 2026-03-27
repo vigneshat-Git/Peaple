@@ -141,7 +141,11 @@ const PostPage = () => {
     if (!id) return;
     try {
       const response: any = await apiService.getPostComments(id);
-      const commentsData = response?.data?.data || response?.data?.value || response?.data || [];
+      console.log('Raw comments response:', response);
+      // API returns { success: true, data: [...], pagination: {...} }
+      const commentsData = response?.data || [];
+      console.log('Extracted comments:', commentsData);
+      console.log('Sample comment:', commentsData[0]);
       setComments(commentsData);
     } catch (err) { console.error('Error fetching comments:', err); }
   };
@@ -165,14 +169,25 @@ const PostPage = () => {
   if (error || !post) return <div className="max-w-3xl py-6 text-sm text-destructive">{error || 'Post not found'}</div>;
 
   const buildCommentTree = (flatComments: Comment[]): Comment[] => {
+    console.log('Building tree from:', flatComments.length, 'comments');
     const map: { [key: string]: Comment } = {};
     const roots: Comment[] = [];
-    flatComments.forEach(c => { map[c.id] = { ...c, children: [] }; });
+    flatComments.forEach(c => { 
+      map[c.id] = { ...c, children: [] }; 
+      console.log('Comment:', c.id, 'parent:', c.parent_comment_id);
+    });
     flatComments.forEach(c => {
       const node = map[c.id];
-      if (c.parent_comment_id && map[c.parent_comment_id]) { map[c.parent_comment_id].children!.push(node); }
-      else { roots.push(node); }
+      if (c.parent_comment_id && map[c.parent_comment_id]) { 
+        console.log('Adding child', c.id, 'to parent', c.parent_comment_id);
+        map[c.parent_comment_id].children!.push(node); 
+      }
+      else { 
+        console.log('Root comment:', c.id);
+        roots.push(node); 
+      }
     });
+    console.log('Tree roots:', roots.length);
     return roots;
   };
 
