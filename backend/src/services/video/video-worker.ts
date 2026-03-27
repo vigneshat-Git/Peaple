@@ -2,9 +2,9 @@ import { Worker, Job } from 'bullmq';
 import path from 'path';
 import fs from 'fs/promises';
 import os from 'os';
-import { redisConnection } from '../../config/video-queue';
-import { videoProcessingService } from './video-processing.service';
-import { query } from '../../config/database';
+import { redisConnection } from '../../config/video-queue.js';
+import { videoProcessingService } from './video-processing.service.js';
+import { query } from '../../config/database.js';
 
 // Temporary directory for processing
 const TEMP_DIR = os.tmpdir();

@@ -1,6 +1,6 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { Redis } from 'ioredis';
-import { env } from '../config/env';
+import { env } from '../config/env.js';
 
 // Redis connection for BullMQ
 const redisConnection = new Redis(env.REDIS_URL || 'redis://localhost:6379', {
