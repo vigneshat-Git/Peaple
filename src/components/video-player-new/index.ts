@@ -1,3 +1,4 @@
+export { VideoPlayerNew } from './components/VideoPlayer';
 export { DesktopFullscreenView } from './components/DesktopFullscreenView';
 export { VideoFeed } from './components/VideoFeed';
 export { DesktopPlayer } from './components/DesktopPlayer';
