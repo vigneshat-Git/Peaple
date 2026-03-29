@@ -17,6 +17,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import GoogleCallback from "@/pages/GoogleCallback";
+import VideoDemoPage from "@/pages/VideoDemoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/google/callback" element={<GoogleCallback />} />
+            <Route path="/video-demo" element={<VideoDemoPage />} />
 
             {/* App routes with shared layout */}
             <Route element={<AppLayout />}>
