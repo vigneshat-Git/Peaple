@@ -2,7 +2,7 @@ import { MessageSquare, Bookmark, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import VoteButtons from "./VoteButtons";
 import PostCardMenu from "./PostCardMenu";
-import { VideoPlayer } from "@/components/video-player";
+import { VideoPlayerNew } from "@/components/video-player-new";
 
 export interface PostData {
   id: string;
@@ -74,7 +74,7 @@ const PostCard = ({ post, onVoteChange }: {
                       loading="lazy"
                     />
                   ) : (
-                    <VideoPlayer
+                    <VideoPlayerNew
                       video={{
                         id: post.id,
                         src: post.media[0].url,
@@ -110,7 +110,7 @@ const PostCard = ({ post, onVoteChange }: {
                           loading="lazy"
                         />
                       ) : (
-                        <VideoPlayer
+                        <VideoPlayerNew
                           video={{
                             id: `${post.id}-${index}`,
                             src: item.url,

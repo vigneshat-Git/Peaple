@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import VoteButtons from "@/components/peaple/VoteButtons";
 import CommentSkeleton from "@/components/peaple/CommentSkeleton";
-import { VideoPlayer } from "@/components/video-player";
+import { VideoPlayerNew } from "@/components/video-player-new";
 import { apiService } from "@/lib/api";
 
 interface Post {
@@ -290,7 +290,7 @@ const PostPage = () => {
                     {post.media[0].type === 'image' ? (
                       <img src={post.media[0].url} alt={post.media[0].file_name || 'Image'} className="w-full rounded border" />
                     ) : (
-                      <VideoPlayer
+                      <VideoPlayerNew
                         video={{
                           id: post.id,
                           src: post.media[0].url,
@@ -323,7 +323,7 @@ const PostPage = () => {
                         {media.type === 'image' ? (
                           <img src={media.url} alt={media.file_name || 'Image'} className="w-full h-24 object-cover rounded border" />
                         ) : (
-                          <VideoPlayer
+                          <VideoPlayerNew
                             video={{
                               id: `${post.id}-${media.id}`,
                               src: media.url,
