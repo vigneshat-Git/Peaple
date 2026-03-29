@@ -19,6 +19,7 @@ export const useVideoPlayer = ({
 }: UseVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const hlsSrc = externalHlsSrc && externalHlsSrc.endsWith('.m3u8') ? externalHlsSrc : null;
 
   const [state, setState] = useState<VideoPlayerState>({
@@ -35,7 +36,10 @@ export const useVideoPlayer = ({
     error: null,
   });
 
-  // Initialize HLS
+  // Track video element changes
+  useEffect(() => {
+    setVideoElement(videoRef.current);
+  }, [videoRef.current]);
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -82,7 +86,7 @@ export const useVideoPlayer = ({
       video.removeEventListener('loadstart', onLoadStart);
       video.removeEventListener('loadeddata', onLoadedData);
     };
-  }, [hlsSrc, src, autoPlay]);
+  }, [hlsSrc, src, autoPlay, videoElement]);
 
   // Video events
   useEffect(() => {
