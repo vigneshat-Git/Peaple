@@ -57,10 +57,12 @@ const Navbar = () => {
 
             {isAuthenticated ? (
               <>
-                <Link to="/create-post">
-                  <Button size="sm" className="text-xs font-medium h-8 px-2 sm:px-3 sm:gap-1.5">
-                    <PlusSquare className="h-5 w-5 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Create</span>
+                <Link to="/create-post" className="flex items-center">
+                  {/* Mobile: just icon, Desktop: button with text */}
+                  <PlusSquare className="h-6 w-6 sm:hidden text-foreground hover:text-primary transition-colors" />
+                  <Button size="sm" className="hidden sm:flex text-xs font-medium h-8 px-3 gap-1.5">
+                    <PlusSquare className="h-4 w-4" />
+                    <span>Create</span>
                   </Button>
                 </Link>
                 <button className="relative p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors duration-150">
