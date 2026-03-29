@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useVideoPlayer } from '../hooks/useVideoPlayer';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useVideoInView } from '../hooks/useVideoInView';
 import { DesktopPlayer } from './DesktopPlayer';
 import { MobileInlinePlayer } from './MobileInlinePlayer';
 import { MobileFullscreenView } from './MobileFullscreenView';
@@ -46,9 +47,12 @@ export const VideoPlayerNew = ({
     formatTime,
   } = useVideoPlayer({
     src: video.src,
-    autoPlay: isActive,
+    autoPlay: false, // Disable autoplay - useIntersectionObserver will handle it
     loop: true,
   });
+
+  // Handle autoplay based on visibility
+  useVideoInView(videoRef, 0.6);
 
   const handleLike = useCallback(() => {
     setIsLiked(prev => !prev);

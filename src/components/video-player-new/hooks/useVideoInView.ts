@@ -1,0 +1,56 @@
+import { useEffect, useRef, useState, useCallback } from 'react';
+
+export const useVideoInView = (videoRef: React.RefObject<HTMLVideoElement>, threshold = 0.6) => {
+  const [isInView, setIsInView] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const wasPlayingRef = useRef(false);
+
+  const handleVisibilityChange = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (document.hidden) {
+      wasPlayingRef.current = !video.paused;
+      video.pause();
+    } else if (wasPlayingRef.current && isInView) {
+      video.play().catch(() => {});
+    }
+  }, [isInView, videoRef]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        const visible = entry.isIntersecting && entry.intersectionRatio >= threshold;
+        setIsInView(visible);
+
+        if (visible && !document.hidden) {
+          // Video is visible - try to play (muted autoplay should work)
+          video.play().catch(() => {});
+        } else {
+          // Video is not visible - pause
+          video.pause();
+        }
+      },
+      {
+        threshold: [0, threshold, 1],
+        rootMargin: '0px',
+      }
+    );
+
+    observerRef.current.observe(video);
+
+    // Handle tab visibility
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      observerRef.current?.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [videoRef, threshold, handleVisibilityChange]);
+
+  return { isInView };
+};
