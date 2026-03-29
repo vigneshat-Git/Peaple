@@ -190,6 +190,8 @@ export const DesktopFullscreenView = ({
 
         <video
           ref={videoRef}
+          src={video.src}
+          poster={video.poster}
           className="w-full h-full object-contain"
           playsInline
           loop
