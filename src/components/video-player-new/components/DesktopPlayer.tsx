@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Settings, Subtitles } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Settings, Subtitles, Expand } from 'lucide-react';
 import { VideoData, VideoPlayerState, VideoQuality } from '../types';
+import { DesktopFullscreenView } from './DesktopFullscreenView';
 
 interface DesktopPlayerProps {
   video: VideoData;
+  videos?: VideoData[];
+  currentIndex?: number;
   videoRef: React.RefObject<HTMLVideoElement>;
   state: VideoPlayerState;
   togglePlay: () => void;
@@ -20,6 +23,8 @@ interface DesktopPlayerProps {
 
 export const DesktopPlayer = ({
   video,
+  videos = [],
+  currentIndex = 0,
   videoRef,
   state,
   togglePlay,
@@ -34,8 +39,13 @@ export const DesktopPlayer = ({
 }: DesktopPlayerProps) => {
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showAppFullscreen, setShowAppFullscreen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [hoverVolume, setHoverVolume] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isDisliked, setIsDisliked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,8 +95,58 @@ export const DesktopPlayer = ({
     seek(pct * state.duration);
   };
 
+  const handleLike = () => {
+    setIsLiked(prev => !prev);
+    if (isDisliked) setIsDisliked(false);
+  };
+
+  const handleDislike = () => {
+    setIsDisliked(prev => !prev);
+    if (isLiked) setIsLiked(false);
+  };
+
+  const handleSave = () => setIsSaved(prev => !prev);
+  const handleFollow = () => setIsFollowing(prev => !prev);
+
+  const handleNavigate = (index: number) => {
+    // Navigation logic would go here
+    console.log('Navigate to video', index);
+  };
+
   const progressPct = state.duration ? (state.currentTime / state.duration) * 100 : 0;
   const bufferedPct = state.duration ? (state.buffered / state.duration) * 100 : 0;
+
+  // Show app fullscreen view
+  if (showAppFullscreen) {
+    return (
+      <DesktopFullscreenView
+        video={video}
+        videos={videos}
+        currentIndex={currentIndex}
+        videoRef={videoRef}
+        state={state}
+        togglePlay={togglePlay}
+        toggleMute={toggleMute}
+        seek={seek}
+        toggleSubtitles={toggleSubtitles}
+        onClose={() => setShowAppFullscreen(false)}
+        onNavigate={handleNavigate}
+        formatTime={formatTime}
+        isLiked={isLiked}
+        isDisliked={isDisliked}
+        isSaved={isSaved}
+        isFollowing={isFollowing}
+        onLike={handleLike}
+        onDislike={handleDislike}
+        onSave={handleSave}
+        onShare={() => console.log('Share')}
+        onReport={() => console.log('Report')}
+        onBlock={() => console.log('Block')}
+        onHide={() => console.log('Hide')}
+        onFollow={handleFollow}
+      />
+    );
+  }
 
   return (
     <div 
@@ -102,7 +162,7 @@ export const DesktopPlayer = ({
         playsInline
         loop
         muted={state.isMuted}
-        onClick={togglePlay}
+        onClick={() => setShowAppFullscreen(true)}
       />
 
       {/* Error Display */}
@@ -232,6 +292,15 @@ export const DesktopPlayer = ({
                 </div>
 
                 <div className="flex items-center gap-1">
+                  {/* App Fullscreen */}
+                  <button
+                    onClick={() => setShowAppFullscreen(true)}
+                    className="p-2 text-white hover:bg-white/20 rounded-full transition-colors"
+                    title="Enter immersive mode"
+                  >
+                    <Expand className="w-5 h-5" />
+                  </button>
+
                   {/* Settings */}
                   <div className="relative">
                     <button

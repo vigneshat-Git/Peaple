@@ -68,6 +68,8 @@ export const VideoPlayerNew = ({
     return (
       <DesktopPlayer
         video={video}
+        videos={videos}
+        currentIndex={currentIndex}
         videoRef={videoRef}
         state={state}
         togglePlay={togglePlay}
