@@ -2,6 +2,7 @@ import { MessageSquare, Bookmark, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import VoteButtons from "./VoteButtons";
 import PostCardMenu from "./PostCardMenu";
+import { VideoPlayer } from "@/components/video-player";
 
 export interface PostData {
   id: string;
@@ -73,10 +74,26 @@ const PostCard = ({ post, onVoteChange }: {
                       loading="lazy"
                     />
                   ) : (
-                    <video
-                      src={post.media[0].url}
-                      controls
-                      preload="metadata"
+                    <VideoPlayer
+                      video={{
+                        id: post.id,
+                        src: post.media[0].url,
+                        title: post.title,
+                        description: post.content,
+                        author: typeof post.author === 'string' 
+                          ? { id: 'unknown', username: post.author }
+                          : post.author || { id: 'unknown', username: 'unknown' },
+                        community: typeof post.community === 'string'
+                          ? { id: 'unknown', name: post.community }
+                          : post.community || { id: 'unknown', name: 'unknown' },
+                        likes: post.upvotes || 0,
+                        dislikes: 0,
+                        comments: [],
+                        saves: 0,
+                        shares: 0,
+                        createdAt: new Date().toISOString(),
+                      }}
+                      isActive={true}
                       className="w-full max-h-[500px] rounded-md"
                     />
                   )}
@@ -93,11 +110,27 @@ const PostCard = ({ post, onVoteChange }: {
                           loading="lazy"
                         />
                       ) : (
-                        <video
-                          src={item.url}
-                          controls
-                          preload="metadata"
-                          className="w-full h-40 object-cover rounded-md"
+                        <VideoPlayer
+                          video={{
+                            id: `${post.id}-${index}`,
+                            src: item.url,
+                            title: post.title,
+                            description: post.content,
+                            author: typeof post.author === 'string' 
+                              ? { id: 'unknown', username: post.author }
+                              : post.author || { id: 'unknown', username: 'unknown' },
+                            community: typeof post.community === 'string'
+                              ? { id: 'unknown', name: post.community }
+                              : post.community || { id: 'unknown', name: 'unknown' },
+                            likes: post.upvotes || 0,
+                            dislikes: 0,
+                            comments: [],
+                            saves: 0,
+                            shares: 0,
+                            createdAt: new Date().toISOString(),
+                          }}
+                          isActive={true}
+                          className="w-full h-40 rounded-md"
                         />
                       )}
                     </div>

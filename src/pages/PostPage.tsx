@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import VoteButtons from "@/components/peaple/VoteButtons";
 import CommentSkeleton from "@/components/peaple/CommentSkeleton";
+import { VideoPlayer } from "@/components/video-player";
 import { apiService } from "@/lib/api";
 
 interface Post {
@@ -289,7 +290,30 @@ const PostPage = () => {
                     {post.media[0].type === 'image' ? (
                       <img src={post.media[0].url} alt={post.media[0].file_name || 'Image'} className="w-full rounded border" />
                     ) : (
-                      <video src={post.media[0].url} controls preload="metadata" className="w-full rounded border" />
+                      <VideoPlayer
+                        video={{
+                          id: post.id,
+                          src: post.media[0].url,
+                          title: post.title,
+                          description: post.content,
+                          author: post.author || { id: post.author_id, username: 'unknown' },
+                          community: post.community || { id: post.community_id, name: 'unknown' },
+                          likes: post.upvotes || 0,
+                          dislikes: post.downvotes || 0,
+                          comments: comments.map(c => ({
+                            id: c.id,
+                            content: c.content,
+                            author: c.author || { id: c.author_id, username: 'unknown' },
+                            createdAt: c.created_at,
+                            likes: c.votes_count || 0,
+                          })),
+                          saves: 0,
+                          shares: 0,
+                          createdAt: post.created_at,
+                        }}
+                        isActive={true}
+                        className="w-full rounded-md"
+                      />
                     )}
                   </div>
                 ) : (
@@ -299,7 +323,24 @@ const PostPage = () => {
                         {media.type === 'image' ? (
                           <img src={media.url} alt={media.file_name || 'Image'} className="w-full h-24 object-cover rounded border" />
                         ) : (
-                          <video src={media.url} controls preload="metadata" className="w-full h-24 object-cover rounded border" />
+                          <VideoPlayer
+                            video={{
+                              id: `${post.id}-${media.id}`,
+                              src: media.url,
+                              title: post.title,
+                              description: post.content,
+                              author: post.author || { id: post.author_id, username: 'unknown' },
+                              community: post.community || { id: post.community_id, name: 'unknown' },
+                              likes: post.upvotes || 0,
+                              dislikes: post.downvotes || 0,
+                              comments: [],
+                              saves: 0,
+                              shares: 0,
+                              createdAt: post.created_at,
+                            }}
+                            isActive={true}
+                            className="w-full h-24 rounded-md"
+                          />
                         )}
                       </div>
                     ))}
