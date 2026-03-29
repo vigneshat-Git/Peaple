@@ -79,6 +79,16 @@ export const DesktopPlayer = ({
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
 
+  // Resume video when exiting app fullscreen
+  useEffect(() => {
+    if (!showAppFullscreen && videoRef.current) {
+      // Small delay to ensure video element is remounted
+      setTimeout(() => {
+        videoRef.current?.play().catch(() => {});
+      }, 100);
+    }
+  }, [showAppFullscreen, videoRef]);
+
   const handleToggleFullscreen = async () => {
     if (!containerRef.current) return;
     if (!isFullscreen) {

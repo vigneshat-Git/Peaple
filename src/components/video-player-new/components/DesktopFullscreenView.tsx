@@ -78,6 +78,17 @@ export const DesktopFullscreenView = ({
     return () => clearTimeout(timer);
   }, []);
 
+  // Auto-play when entering fullscreen
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    // Ensure video is playing when entering fullscreen
+    if (video.paused) {
+      video.play().catch(() => {});
+    }
+  }, [videoRef]);
+
   // Show controls temporarily
   const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
