@@ -55,7 +55,7 @@ export const VideoPlayerNew = ({
   });
 
   // Handle autoplay based on visibility - only one video active at a time
-  useVideoInView(videoRef, 0.6, videoId);
+  useVideoInView(videoRef, 0.75, videoId);
 
   const handleLike = useCallback(() => {
     setIsLiked(prev => !prev);

@@ -93,18 +93,51 @@ export const useVideoPlayer = ({
     };
   }, [hlsSrc, src, autoPlay, videoElement]);
 
-  // Video events
+  // Smooth timeline using requestAnimationFrame
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const onTimeUpdate = () => {
+    let rafId: number;
+    
+    const updateTime = () => {
       setState(prev => ({
         ...prev,
         currentTime: video.currentTime,
         buffered: video.buffered.length > 0 ? video.buffered.end(video.buffered.length - 1) : 0,
       }));
+      rafId = requestAnimationFrame(updateTime);
     };
+
+    // Start RAF when playing
+    const onPlay = () => {
+      rafId = requestAnimationFrame(updateTime);
+    };
+
+    // Stop RAF when paused
+    const onPause = () => {
+      cancelAnimationFrame(rafId);
+    };
+
+    video.addEventListener('play', onPlay);
+    video.addEventListener('pause', onPause);
+    
+    // Start if already playing
+    if (!video.paused) {
+      rafId = requestAnimationFrame(updateTime);
+    }
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      video.removeEventListener('play', onPlay);
+      video.removeEventListener('pause', onPause);
+    };
+  }, [videoElement]);
+
+  // Video events (metadata, buffering, etc.)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
 
     const onLoadedMetadata = () => {
       setState(prev => ({ ...prev, duration: video.duration, isLoading: false }));
@@ -115,7 +148,6 @@ export const useVideoPlayer = ({
     const onPlay = () => setState(prev => ({ ...prev, isPlaying: true }));
     const onPause = () => setState(prev => ({ ...prev, isPlaying: false }));
 
-    video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('loadedmetadata', onLoadedMetadata);
     video.addEventListener('waiting', onWaiting);
     video.addEventListener('canplay', onCanPlay);
@@ -128,7 +160,6 @@ export const useVideoPlayer = ({
     video.addEventListener('error', onError);
 
     return () => {
-      video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('loadedmetadata', onLoadedMetadata);
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('canplay', onCanPlay);
