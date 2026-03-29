@@ -131,7 +131,20 @@ export const useVideoPlayer = ({
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.paused ? video.play() : video.pause();
+    
+    if (video.paused) {
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          // Ignore AbortError - this happens when play() is interrupted
+          if (err.name !== 'AbortError') {
+            console.error('[VideoPlayer] Play error:', err);
+          }
+        });
+      }
+    } else {
+      video.pause();
+    }
   }, []);
 
   const toggleMute = useCallback(() => {
