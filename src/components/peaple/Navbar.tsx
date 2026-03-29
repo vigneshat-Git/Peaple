@@ -58,7 +58,7 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <Link to="/create-post">
-                  <Button size="sm" className="gap-1.5 text-xs font-medium h-8 px-2 sm:px-3">
+                  <Button size="sm" className="text-xs font-medium h-8 px-2 sm:px-3 sm:gap-1.5">
                     <PlusSquare className="h-5 w-5 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Create</span>
                   </Button>

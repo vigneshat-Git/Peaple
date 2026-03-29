@@ -60,8 +60,9 @@ const CreatePostPage = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Validation: either title or media required
-  const canSubmit = selectedCommunity && (title.trim() || mediaFiles.length > 0);
+  // Validation: either title or uploaded media required
+  const uploadedMediaCount = mediaFiles.filter(f => f.uploaded).length;
+  const canSubmit = selectedCommunity && (title.trim() || uploadedMediaCount > 0);
 
   useEffect(() => {
     const fetchCommunities = async () => {
@@ -168,7 +169,7 @@ const CreatePostPage = () => {
     e.preventDefault();
     if (!user) { toast({ title: "Auth required", description: "Please log in", variant: "destructive" }); return; }
     if (!selectedCommunity) { setError("Please select a community"); return; }
-    if (!title.trim() && mediaFiles.length === 0) { setError("Please add a title or upload media"); return; }
+    if (!title.trim() && uploadedMediaCount === 0) { setError("Please add a title or upload media"); return; }
 
     try {
       setLoading(true); setError(null);
