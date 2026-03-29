@@ -19,10 +19,7 @@ export const useVideoPlayer = ({
 }: UseVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
-  // Add cache-busting to prevent ERR_CACHE_OPERATION_NOT_SUPPORTED
-  const videoSrcWithCache = src.includes('?') ? `${src}&_cb=${Date.now()}` : `${src}?_cb=${Date.now()}`;
   const hlsSrc = externalHlsSrc && externalHlsSrc.endsWith('.m3u8') ? externalHlsSrc : null;
-  const hlsSrcWithCache = hlsSrc ? (hlsSrc.includes('?') ? `${hlsSrc}&_cb=${Date.now()}` : `${hlsSrc}?_cb=${Date.now()}`) : null;
 
   const [state, setState] = useState<VideoPlayerState>({
     isPlaying: false,
@@ -59,12 +56,12 @@ export const useVideoPlayer = ({
     video.addEventListener('loadeddata', onLoadedData);
 
     if (hlsSrc && Hls.isSupported()) {
-      console.log('[VideoPlayer] Using HLS:', hlsSrcWithCache);
+      console.log('[VideoPlayer] Using HLS:', hlsSrc);
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
       });
-      hls.loadSource(hlsSrcWithCache || hlsSrc);
+      hls.loadSource(hlsSrc);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setState(prev => ({ ...prev, isLoading: false }));
@@ -75,8 +72,8 @@ export const useVideoPlayer = ({
       });
       hlsRef.current = hls;
     } else {
-      console.log('[VideoPlayer] Using native video:', videoSrcWithCache);
-      video.src = videoSrcWithCache;
+      console.log('[VideoPlayer] Using native video:', src);
+      video.src = hlsSrc || src;
     }
 
     return () => {
@@ -85,7 +82,7 @@ export const useVideoPlayer = ({
       video.removeEventListener('loadstart', onLoadStart);
       video.removeEventListener('loadeddata', onLoadedData);
     };
-  }, [hlsSrc, hlsSrcWithCache, videoSrcWithCache, src, autoPlay]);
+  }, [hlsSrc, src, autoPlay]);
 
   // Video events
   useEffect(() => {
