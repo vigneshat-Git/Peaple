@@ -36,6 +36,9 @@ export const useVideoInView = (
         if (visible) {
           // This video is now in view - make it the active video
           setActiveVideoId(videoId);
+        } else if (activeVideoId === videoId) {
+          // This video scrolled out and was the active one - clear active video
+          setActiveVideoId(null);
         }
       },
       {
@@ -53,13 +56,22 @@ export const useVideoInView = (
       observerRef.current?.disconnect();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [videoRef, threshold, videoId, setActiveVideoId, handleVisibilityChange]);
+  }, [videoRef, threshold, videoId, setActiveVideoId, handleVisibilityChange, activeVideoId]);
 
   // Control play/pause based on active video state
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !isInView) return;
+    if (!video) return;
 
+    // If not in view, always pause
+    if (!isInView) {
+      if (!video.paused) {
+        video.pause();
+      }
+      return;
+    }
+
+    // In view - check if this should be the active video
     if (activeVideoId === videoId) {
       // This is the active video - play it
       if (video.paused && !document.hidden) {
