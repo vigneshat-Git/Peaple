@@ -60,9 +60,11 @@ const CreatePostPage = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Validation: either title or uploaded media required
-  const uploadedMediaCount = mediaFiles.filter(f => f.uploaded).length;
-  const canSubmit = selectedCommunity && (title.trim() || uploadedMediaCount > 0);
+  // Validation: either title OR media is required; description is optional
+  const hasSelectedFiles = mediaFiles.length > 0;
+  const hasUploadedFiles = mediaFiles.filter(f => f.uploaded).length > 0;
+  const hasTitle = title.trim().length > 0;
+  const canSubmit = selectedCommunity && (hasTitle || hasSelectedFiles);
 
   useEffect(() => {
     const fetchCommunities = async () => {
@@ -169,7 +171,11 @@ const CreatePostPage = () => {
     e.preventDefault();
     if (!user) { toast({ title: "Auth required", description: "Please log in", variant: "destructive" }); return; }
     if (!selectedCommunity) { setError("Please select a community"); return; }
-    if (!title.trim() && uploadedMediaCount === 0) { setError("Please add a title or upload media"); return; }
+    // Validation: either title OR media is required; description is optional
+    if (!title.trim() && mediaFiles.length === 0) { 
+      setError("Please add a title or upload media"); 
+      return; 
+    }
 
     try {
       setLoading(true); setError(null);
@@ -206,6 +212,13 @@ const CreatePostPage = () => {
       };
 
       console.log('Creating post with data:', postData);
+
+      console.log('Submitting post with:', { 
+        hasTitle: !!title.trim(), 
+        hasContent: !!content.trim(), 
+        mediaCount: uploadedMedia.length,
+        postData 
+      });
 
       await apiService.createPost(postData);
 
