@@ -136,7 +136,7 @@ export const useVideoPlayer = ({
       video.removeEventListener('pause', onPause);
       video.removeEventListener('error', onError);
     };
-  }, []);
+  }, [videoElement]);
 
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
