@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Hls from 'hls.js';
+import { useVideoContext } from '@/contexts/VideoContext';
 import { VideoPlayerState, VideoQuality } from '../types';
 
 interface UseVideoPlayerProps {
@@ -16,15 +17,19 @@ export const useVideoPlayer = ({
   autoPlay = false,
   loop = true,
   qualities,
-}: UseVideoPlayerProps) => {
+  videoId,
+}: UseVideoPlayerProps & { videoId: string }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const hlsSrc = externalHlsSrc && externalHlsSrc.endsWith('.m3u8') ? externalHlsSrc : null;
+  
+  // Use global mute state
+  const { isMuted: globalIsMuted, toggleMute: globalToggleMute, activeVideoId, setActiveVideoId } = useVideoContext();
 
   const [state, setState] = useState<VideoPlayerState>({
     isPlaying: false,
-    isMuted: true, // Start muted for autoplay
+    isMuted: globalIsMuted, // Use global mute state
     volume: 1,
     currentTime: 0,
     duration: 0,
@@ -153,11 +158,17 @@ export const useVideoPlayer = ({
   }, []);
 
   const toggleMute = useCallback(() => {
+    // Use global toggle - affects all videos
+    globalToggleMute();
+  }, [globalToggleMute]);
+
+  // Sync video muted state with global mute state
+  useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !video.muted;
-    setState(prev => ({ ...prev, isMuted: video.muted }));
-  }, []);
+    video.muted = globalIsMuted;
+    setState(prev => ({ ...prev, isMuted: globalIsMuted }));
+  }, [globalIsMuted]);
 
   const setVolume = useCallback((vol: number) => {
     const video = videoRef.current;

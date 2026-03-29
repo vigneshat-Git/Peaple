@@ -10,7 +10,8 @@ import { VideoData } from '../types';
 
 interface VideoPlayerProps {
   video: VideoData;
-  videos?: VideoData[]; // For navigation
+  videoId: string; // Unique identifier for active video tracking
+  videos?: VideoData[];
   currentIndex?: number;
   isActive?: boolean;
   forceMobile?: boolean;
@@ -20,6 +21,7 @@ interface VideoPlayerProps {
 
 export const VideoPlayerNew = ({
   video,
+  videoId,
   videos = [],
   currentIndex = 0,
   isActive = true,
@@ -47,12 +49,13 @@ export const VideoPlayerNew = ({
     formatTime,
   } = useVideoPlayer({
     src: video.src,
-    autoPlay: false, // Disable autoplay - useIntersectionObserver will handle it
+    videoId,
+    autoPlay: false,
     loop: true,
   });
 
-  // Handle autoplay based on visibility
-  useVideoInView(videoRef, 0.6);
+  // Handle autoplay based on visibility - only one video active at a time
+  useVideoInView(videoRef, 0.6, videoId);
 
   const handleLike = useCallback(() => {
     setIsLiked(prev => !prev);

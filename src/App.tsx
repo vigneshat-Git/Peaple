@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { VideoProvider } from "@/contexts/VideoContext";
 import AppLayout from "@/components/peaple/AppLayout";
 import ProtectedRoute from "@/components/peaple/ProtectedRoute";
 import HomePage from "@/pages/HomePage";
@@ -30,6 +31,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <VideoProvider>
           <Routes>
             {/* Public auth routes */}
             <Route path="/login" element={<LoginPage />} />
@@ -66,6 +68,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+            </VideoProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

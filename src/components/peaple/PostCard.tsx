@@ -93,6 +93,7 @@ const PostCard = ({ post, onVoteChange }: {
                         shares: 0,
                         createdAt: new Date().toISOString(),
                       }}
+                      videoId={post.id}
                       isActive={true}
                       className="w-full max-h-[500px] rounded-md"
                     />
@@ -129,6 +130,7 @@ const PostCard = ({ post, onVoteChange }: {
                             shares: 0,
                             createdAt: new Date().toISOString(),
                           }}
+                          videoId={`${post.id}-${index}`}
                           isActive={true}
                           className="w-full h-40 rounded-md"
                         />
