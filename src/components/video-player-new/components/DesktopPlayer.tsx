@@ -105,6 +105,22 @@ export const DesktopPlayer = ({
         onClick={togglePlay}
       />
 
+      {/* Error Display */}
+      {state.error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-50">
+          <div className="text-center p-4">
+            <p className="text-red-400 font-medium mb-2">Failed to load video</p>
+            <p className="text-white/70 text-sm">{state.error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-3 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/80"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Loading */}
       {(state.isLoading || state.isBuffering) && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

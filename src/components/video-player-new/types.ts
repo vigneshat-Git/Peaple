@@ -57,4 +57,5 @@ export interface VideoPlayerState {
   showSubtitles: boolean;
   isLoading: boolean;
   isBuffering: boolean;
+  error: string | null;
 }

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useVideoPlayer } from '../hooks/useVideoPlayer';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { DesktopPlayer } from './DesktopPlayer';
 import { MobileInlinePlayer } from './MobileInlinePlayer';
 import { MobileFullscreenView } from './MobileFullscreenView';
@@ -11,7 +12,7 @@ interface VideoPlayerProps {
   videos?: VideoData[]; // For navigation
   currentIndex?: number;
   isActive?: boolean;
-  isMobile?: boolean;
+  forceMobile?: boolean;
   onNavigate?: (index: number) => void;
   className?: string;
 }
@@ -21,10 +22,12 @@ export const VideoPlayerNew = ({
   videos = [],
   currentIndex = 0,
   isActive = true,
-  isMobile = false,
+  forceMobile,
   onNavigate,
   className = '',
 }: VideoPlayerProps) => {
+  const detectedMobile = useIsMobile();
+  const isMobile = forceMobile !== undefined ? forceMobile : detectedMobile;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);

@@ -31,6 +31,7 @@ export const useVideoPlayer = ({
     showSubtitles: false,
     isLoading: true,
     isBuffering: false,
+    error: null,
   });
 
   // Initialize HLS
@@ -38,7 +39,23 @@ export const useVideoPlayer = ({
     const video = videoRef.current;
     if (!video) return;
 
+    console.log('[VideoPlayer] Loading video:', src);
+    
+    const onError = (e: Event) => {
+      console.error('[VideoPlayer] Video error:', e, video.error);
+      const errorMsg = video.error?.message || 'Failed to load video';
+      setState(prev => ({ ...prev, isLoading: false, isBuffering: false, error: errorMsg }));
+    };
+
+    const onLoadStart = () => console.log('[VideoPlayer] Load started');
+    const onLoadedData = () => console.log('[VideoPlayer] Data loaded');
+
+    video.addEventListener('error', onError);
+    video.addEventListener('loadstart', onLoadStart);
+    video.addEventListener('loadeddata', onLoadedData);
+
     if (hlsSrc && Hls.isSupported()) {
+      console.log('[VideoPlayer] Using HLS:', hlsSrc);
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
@@ -49,13 +66,20 @@ export const useVideoPlayer = ({
         setState(prev => ({ ...prev, isLoading: false }));
         if (autoPlay) video.play().catch(() => {});
       });
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        console.error('[VideoPlayer] HLS error:', event, data);
+      });
       hlsRef.current = hls;
     } else {
+      console.log('[VideoPlayer] Using native video:', src);
       video.src = hlsSrc || src;
     }
 
     return () => {
       hlsRef.current?.destroy();
+      video.removeEventListener('error', onError);
+      video.removeEventListener('loadstart', onLoadStart);
+      video.removeEventListener('loadeddata', onLoadedData);
     };
   }, [hlsSrc, src, autoPlay]);
 
@@ -88,6 +112,11 @@ export const useVideoPlayer = ({
     video.addEventListener('play', onPlay);
     video.addEventListener('pause', onPause);
 
+    const onError = (e: Event) => {
+      console.error('[VideoPlayer] Event error:', e);
+    };
+    video.addEventListener('error', onError);
+
     return () => {
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('loadedmetadata', onLoadedMetadata);
@@ -95,6 +124,7 @@ export const useVideoPlayer = ({
       video.removeEventListener('canplay', onCanPlay);
       video.removeEventListener('play', onPlay);
       video.removeEventListener('pause', onPause);
+      video.removeEventListener('error', onError);
     };
   }, []);
 
