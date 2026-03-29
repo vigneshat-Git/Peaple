@@ -1,6 +1,17 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, AlertCircle, Upload, X, Image, Video } from "lucide-react";
+import { 
+  Loader2, 
+  AlertCircle, 
+  Upload, 
+  X, 
+  Image as ImageIcon, 
+  Video,
+  ChevronDown,
+  Users,
+  Type,
+  FileText
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +19,20 @@ import { Label } from "@/components/ui/label";
 import { apiService, ApiError } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface Community { id: string; name: string; description: string; member_count: number; }
 interface MediaFile {
@@ -22,7 +47,8 @@ interface MediaFile {
 
 const CreatePostPage = () => {
   const [communities, setCommunities] = useState<Community[]>([]);
-  const [selectedCommunity, setSelectedCommunity] = useState("");
+  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
+  const [communityOpen, setCommunityOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
@@ -34,6 +60,9 @@ const CreatePostPage = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Validation: either title or media required
+  const canSubmit = selectedCommunity && (title.trim() || mediaFiles.length > 0);
+
   useEffect(() => {
     const fetchCommunities = async () => {
       try {
@@ -43,14 +72,14 @@ const CreatePostPage = () => {
         const communityName = searchParams.get('community');
         if (communityName) {
           const c = data.find((c: any) => c.name === communityName);
-          if (c) setSelectedCommunity(c.id);
+          if (c) setSelectedCommunity(c);
         }
       } catch (err) { console.error('Failed to fetch communities:', err); }
     };
     fetchCommunities();
   }, [searchParams]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const validFiles: MediaFile[] = [];
 
@@ -77,8 +106,8 @@ const CreatePostPage = () => {
     }
 
     setMediaFiles(prev => [...prev, ...validFiles]);
-    e.target.value = ''; // Reset input
-  };
+    e.target.value = '';
+  }, [toast]);
 
   const uploadFile = async (mediaFile: MediaFile, index: number): Promise<string | null> => {
     try {
@@ -126,19 +155,20 @@ const CreatePostPage = () => {
     }
   };
 
-  const removeFile = (index: number) => {
+  const removeFile = useCallback((index: number) => {
     setMediaFiles(prev => {
       const newFiles = [...prev];
       URL.revokeObjectURL(newFiles[index].preview);
       newFiles.splice(index, 1);
       return newFiles;
     });
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) { toast({ title: "Auth required", description: "Please log in", variant: "destructive" }); return; }
-    if (!selectedCommunity || !title.trim()) { setError("Fill in all fields"); return; }
+    if (!selectedCommunity) { setError("Please select a community"); return; }
+    if (!title.trim() && mediaFiles.length === 0) { setError("Please add a title or upload media"); return; }
 
     try {
       setLoading(true); setError(null);
@@ -168,9 +198,9 @@ const CreatePostPage = () => {
       console.log('Media count:', uploadedMedia.length);
 
       const postData = {
-        title: title.trim(),
-        content: content.trim(),
-        community_id: selectedCommunity,
+        title: title.trim() || undefined,
+        content: content.trim() || undefined,
+        community_id: selectedCommunity.id,
         media: uploadedMedia.length > 0 ? uploadedMedia : undefined,
       };
 
@@ -178,40 +208,133 @@ const CreatePostPage = () => {
 
       await apiService.createPost(postData);
 
-      console.log('Post created successfully');
-
-      const community = communities.find(c => c.id === selectedCommunity);
       toast({ title: "Post created" });
-      navigate(`/c/${community?.name}`);
+      navigate(`/c/${selectedCommunity.name}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to create post");
     } finally { setLoading(false); }
   };
 
   return (
-    <div className="max-w-xl mx-auto">
-      <h1 className="text-lg font-bold text-foreground mb-4">Create a Post</h1>
-      <form onSubmit={handleSubmit} className="bg-card rounded-md border p-5 space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="community" className="text-sm">Community</Label>
-          <select id="community" value={selectedCommunity} onChange={(e) => setSelectedCommunity(e.target.value)}
-            className="w-full h-9 px-3 rounded-md border bg-background text-sm text-foreground focus:outline-none focus:border-primary transition-colors duration-150" required>
-            <option value="">Select a community</option>
-            {communities.map(c => <option key={c.id} value={c.id}>c/{c.name}</option>)}
-          </select>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <FileText className="h-5 w-5 text-primary" />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="title" className="text-sm">Title</Label>
-          <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="An interesting title..." required />
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Create a Post</h1>
+          <p className="text-sm text-muted-foreground">Share your thoughts with the community</p>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="content" className="text-sm">Content</Label>
-          <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Share your thoughts..." rows={6} />
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Community Selector */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            Community <span className="text-destructive">*</span>
+          </Label>
+          <Popover open={communityOpen} onOpenChange={setCommunityOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={communityOpen}
+                className="w-full justify-between h-11 bg-card hover:bg-accent"
+              >
+                {selectedCommunity ? (
+                  <span className="flex items-center gap-2">
+                    <span className="text-muted-foreground">c/</span>
+                    <span className="font-medium">{selectedCommunity.name}</span>
+                    <span className="text-muted-foreground text-xs">
+                      ({selectedCommunity.member_count?.toLocaleString()} members)
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">Search and select a community...</span>
+                )}
+                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search communities..." className="h-11" />
+                <CommandList>
+                  <CommandEmpty>No communities found.</CommandEmpty>
+                  <CommandGroup>
+                    {communities.map((community) => (
+                      <CommandItem
+                        key={community.id}
+                        value={community.name}
+                        onSelect={() => {
+                          setSelectedCommunity(community);
+                          setCommunityOpen(false);
+                        }}
+                        className="flex items-center justify-between py-2.5"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">c/</span>
+                          <span className="font-medium">{community.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground">
+                            {community.member_count?.toLocaleString()} members
+                          </span>
+                          {selectedCommunity?.id === community.id && (
+                            <div className="h-2 w-2 rounded-full bg-primary" />
+                          )}
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Title Input */}
+        <div className="space-y-2">
+          <Label htmlFor="title" className="text-sm font-medium flex items-center gap-2">
+            <Type className="h-4 w-4 text-muted-foreground" />
+            Title
+            <span className="text-xs text-muted-foreground font-normal">(or add media below)</span>
+          </Label>
+          <Input 
+            id="title" 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
+            placeholder="What's on your mind?" 
+            className="h-11 text-base"
+          />
+        </div>
+
+        {/* Content Textarea */}
+        <div className="space-y-2">
+          <Label htmlFor="content" className="text-sm font-medium flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            Description
+            <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          <Textarea 
+            id="content" 
+            value={content} 
+            onChange={(e) => setContent(e.target.value)} 
+            placeholder="Add more details, context, or links..."
+            rows={4}
+            className="resize-none"
+          />
         </div>
 
         {/* Media Upload Section */}
-        <div className="space-y-1.5">
-          <Label className="text-sm">Media (optional)</Label>
+        <div className="space-y-3">
+          <Label className="text-sm font-medium flex items-center gap-2">
+            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+            Media
+            <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+          </Label>
+          
           <input
             ref={fileInputRef}
             type="file"
@@ -220,54 +343,121 @@ const CreatePostPage = () => {
             onChange={handleFileSelect}
             className="hidden"
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Add Images/Videos
-          </Button>
-          <p className="text-xs text-muted-foreground">Supported: JPEG, JPG, PNG, WebP, HEIC, HEIF images and MP4 videos (max 100MB)</p>
+          
+          {/* Media Preview Grid */}
+          {mediaFiles.length > 0 && (
+            <div className="grid grid-cols-3 gap-3">
+              {mediaFiles.map((file, index) => (
+                <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border bg-muted">
+                  {file.type === 'image' ? (
+                    <img src={file.preview} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <video src={file.preview} className="w-full h-full object-cover" preload="metadata" />
+                  )}
+                  
+                  {/* Overlay with status */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors">
+                    {/* Status indicators */}
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      {file.uploading && (
+                        <div className="h-6 w-6 rounded-full bg-primary/90 flex items-center justify-center">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+                        </div>
+                      )}
+                      {file.uploaded && (
+                        <div className="h-6 w-6 rounded-full bg-green-500 flex items-center justify-center">
+                          <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Remove button */}
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="absolute bottom-2 right-2 h-6 w-6 rounded-full bg-destructive/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  
+                  {/* Error overlay */}
+                  {file.error && (
+                    <div className="absolute inset-0 bg-destructive/80 flex items-center justify-center">
+                      <p className="text-xs text-white text-center px-2">{file.error}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {/* Add more button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground"
+              >
+                <Upload className="h-6 w-6" />
+                <span className="text-xs">Add more</span>
+              </button>
+            </div>
+          )}
+          
+          {/* Upload button (when no media) */}
+          {mediaFiles.length === 0 && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full h-24 rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-2 text-muted-foreground"
+            >
+              <div className="flex gap-3">
+                <ImageIcon className="h-6 w-6" />
+                <Video className="h-6 w-6" />
+              </div>
+              <span className="text-sm">Click to upload images or videos</span>
+              <span className="text-xs text-muted-foreground">JPEG, PNG, WebP, MP4 up to 100MB</span>
+            </button>
+          )}
         </div>
 
-        {/* Media Preview Grid */}
-        {mediaFiles.length > 0 && (
-          <div className="grid grid-cols-2 gap-2">
-            {mediaFiles.map((file, index) => (
-              <div key={index} className="relative group">
-                {file.type === 'image' ? (
-                  <img src={file.preview} alt="Preview" className="w-full h-24 object-cover rounded border" />
-                ) : (
-                  <video src={file.preview} className="w-full h-24 object-cover rounded border" preload="metadata" />
-                )}
-                <div className="absolute top-1 right-1 flex gap-1">
-                  {file.uploading && <Loader2 className="h-4 w-4 animate-spin bg-black/50 text-white rounded p-0.5" />}
-                  {file.uploaded && <div className="h-4 w-4 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">✓</div>}
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeFile(index)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-                {file.error && <p className="text-xs text-destructive mt-1">{file.error}</p>}
-              </div>
-            ))}
+        {/* Error Message */}
+        {error && (
+          <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-md">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
-        {error && <div className="flex items-center gap-2 text-destructive text-xs"><AlertCircle className="h-3.5 w-3.5" />{error}</div>}
-        <div className="flex gap-3">
-          <Button type="submit" disabled={loading} className="flex-1" size="sm">
-            {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating...</> : "Post"}
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-2">
+          <Button 
+            type="submit" 
+            disabled={loading || !canSubmit} 
+            className="flex-1 h-11"
+            size="default"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Posting...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Post
+              </>
+            )}
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => navigate(-1)}>Cancel</Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="default"
+            className="h-11 px-6"
+            onClick={() => navigate(-1)}
+          >
+            Cancel
+          </Button>
         </div>
       </form>
     </div>

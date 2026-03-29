@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Bookmark } from "lucide-react";
+import { User, Settings, LogOut, Bookmark, Users } from "lucide-react";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -55,6 +55,11 @@ const UserDropdown = ({ username, avatarUrl }: UserDropdownProps) => {
         <DropdownMenuItem asChild>
           <Link to="/saved" className="flex items-center cursor-pointer">
             <Bookmark className="mr-2 h-4 w-4" /> Saved Posts
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/create-community" className="flex items-center cursor-pointer">
+            <Users className="mr-2 h-4 w-4" /> Create Community
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
