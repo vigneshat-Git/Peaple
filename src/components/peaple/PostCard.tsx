@@ -34,8 +34,8 @@ const PostCard = ({ post, onVoteChange }: {
   const voteCount = post.upvotes ?? post.votes ?? 0;
 
   return (
-    <div className="bg-card rounded-md border hover:border-muted-foreground/30 transition-colors duration-150">
-      <div className="p-4">
+    <div className="border-b border-border sm:border-b-0">
+      <div className="py-4 sm:p-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
