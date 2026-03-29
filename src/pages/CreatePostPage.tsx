@@ -204,14 +204,29 @@ const CreatePostPage = () => {
       console.log('Upload complete. Uploaded media:', uploadedMedia);
       console.log('Media count:', uploadedMedia.length);
 
-      const postData = {
-        title: title.trim() || undefined,
-        content: content.trim() || undefined,
+      // Build postData conditionally - exclude empty fields completely
+      const postData: any = {
         community_id: selectedCommunity.id,
-        media: uploadedMedia.length > 0 ? uploadedMedia : undefined,
       };
+      
+      // Only add title if it has content
+      const trimmedTitle = title.trim();
+      if (trimmedTitle) {
+        postData.title = trimmedTitle;
+      }
+      
+      // Only add content if it has content
+      const trimmedContent = content.trim();
+      if (trimmedContent) {
+        postData.content = trimmedContent;
+      }
+      
+      // Only add media if there are uploaded files
+      if (uploadedMedia.length > 0) {
+        postData.media = uploadedMedia;
+      }
 
-      console.log('Creating post with data:', postData);
+      console.log('Creating post with data:', JSON.stringify(postData, null, 2));
 
       console.log('Submitting post with:', { 
         hasTitle: !!title.trim(), 
