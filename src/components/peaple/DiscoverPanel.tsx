@@ -58,7 +58,7 @@ const DiscoverPanel = () => {
 
   if (loading) {
     return (
-      <aside className="hidden xl:block sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto py-4 space-y-4">
+      <aside className="hidden xl:block sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto py-4 space-y-4 scrollbar-thin">
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
@@ -67,7 +67,7 @@ const DiscoverPanel = () => {
   }
 
   return (
-    <aside className="hidden xl:block sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto py-4 space-y-4">
+    <aside className="hidden xl:block sticky top-[3.5rem] h-[calc(100vh-3.5rem)] overflow-y-auto py-4 space-y-4 scrollbar-thin">
       {/* Trending */}
       <div className="bg-card rounded-md border p-4">
         <div className="flex items-center gap-2 mb-3">
