@@ -129,8 +129,8 @@ class ApiService {
   }
 
   async createPost(data: {
-    title: string;
-    content: string;
+    title?: string;
+    content?: string;
     community_id: string;
     media?: Array<{ url: string; type: string; fileName?: string }>;
   }) {
