@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, PanInfo, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { 
   Volume2, VolumeX, X, MoreVertical, Share2, Bookmark, Flag, Ban, EyeOff, UserPlus,
-  MessageCircle, Heart, Play, Pause
+  MessageCircle, ArrowBigUp, ArrowBigDown, Play, Pause
 } from 'lucide-react';
 import { VideoData, VideoPlayerState } from '../types';
 import { CommentsPanel } from './CommentsPanel';
@@ -238,22 +238,20 @@ export const MobileFullscreenView = ({
               exit={{ opacity: 0, x: 20 }}
               className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-30"
             >
-              {/* Like */}
+              {/* Upvote */}
               <button onClick={(e) => { e.stopPropagation(); onLike(); }} className="flex flex-col items-center gap-1">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isLiked ? 'bg-primary' : 'bg-black/50'}`}>
-                  <Heart className={`w-6 h-6 ${isLiked ? 'fill-white text-white' : 'text-white'}`} />
+                  <ArrowBigUp className={`w-8 h-8 ${isLiked ? 'fill-white text-white' : 'text-white'}`} />
                 </div>
                 <span className="text-white text-xs font-medium">
                   {video.likes > 1000 ? `${(video.likes / 1000).toFixed(1)}K` : video.likes}
                 </span>
               </button>
 
-              {/* Dislike */}
+              {/* Downvote */}
               <button onClick={(e) => { e.stopPropagation(); onDislike(); }} className="flex flex-col items-center gap-1">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDisliked ? 'bg-destructive' : 'bg-black/50'}`}>
-                  <svg className={`w-6 h-6 ${isDisliked ? 'fill-white text-white' : 'text-white'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09V21.35z" transform="rotate(180 12 12)"/>
-                  </svg>
+                  <ArrowBigDown className={`w-8 h-8 ${isDisliked ? 'fill-white text-white' : 'text-white'}`} />
                 </div>
                 <span className="text-white text-xs font-medium">
                   {video.dislikes > 1000 ? `${(video.dislikes / 1000).toFixed(1)}K` : video.dislikes}
