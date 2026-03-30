@@ -49,7 +49,7 @@ export const useVideoPlayer = ({
     const video = videoRef.current;
     if (!video) return;
 
-    console.log('[VideoPlayer] Loading video:', src);
+    
     
     const onError = (e: Event) => {
       console.error('[VideoPlayer] Video error:', e, video.error);
@@ -57,8 +57,8 @@ export const useVideoPlayer = ({
       setState(prev => ({ ...prev, isLoading: false, isBuffering: false, error: errorMsg }));
     };
 
-    const onLoadStart = () => console.log('[VideoPlayer] Load started');
-    const onLoadedData = () => console.log('[VideoPlayer] Data loaded');
+    const onLoadStart = () ;
+    const onLoadedData = () ;
 
     video.addEventListener('error', onError);
     video.addEventListener('loadstart', onLoadStart);
@@ -81,7 +81,7 @@ export const useVideoPlayer = ({
       });
       hlsRef.current = hls;
     } else {
-      console.log('[VideoPlayer] Using native video:', src);
+      
       video.src = hlsSrc || src;
     }
 
