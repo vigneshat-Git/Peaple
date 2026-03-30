@@ -41,17 +41,17 @@ export const useVideoPlayer = ({
     error: null,
   });
 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   // Track video element changes
   useEffect(() => {
     setVideoElement(videoRef.current);
   }, [videoRef.current]);
-
-  // Main video source setup effect
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    console.log('[VideoPlayer] Setting up video source:', src);
+    
     
     const onError = (e: Event) => {
       console.error('[VideoPlayer] Video error:', e, video.error);
@@ -59,29 +59,12 @@ export const useVideoPlayer = ({
       setState(prev => ({ ...prev, isLoading: false, isBuffering: false, error: errorMsg }));
     };
 
-    const onLoadStart = () => console.log('[VideoPlayer] Load started');
-    const onLoadedData = () => {
-      console.log('[VideoPlayer] Data loaded');
-      setState(prev => ({ ...prev, isLoading: false }));
-    };
-    const onLoadedMetadata = () => {
-      console.log('[VideoPlayer] Metadata loaded');
-      setState(prev => ({ ...prev, duration: video.duration, isLoading: false }));
-    };
+    const onLoadStart = () => console.log('');
+    const onLoadedData = () => console.log('');
 
     video.addEventListener('error', onError);
     video.addEventListener('loadstart', onLoadStart);
     video.addEventListener('loadeddata', onLoadedData);
-    video.addEventListener('loadedmetadata', onLoadedMetadata);
-
-    // Reset state when video changes
-    setState(prev => ({ 
-      ...prev, 
-      isLoading: true, 
-      error: null,
-      currentTime: 0,
-      duration: 0 
-    }));
 
     if (hlsSrc && Hls.isSupported()) {
       console.log('[VideoPlayer] Using HLS:', hlsSrc);
@@ -92,39 +75,25 @@ export const useVideoPlayer = ({
       hls.loadSource(hlsSrc);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('[VideoPlayer] HLS manifest parsed');
         setState(prev => ({ ...prev, isLoading: false }));
-        if (autoPlay) {
-          video.play().catch((err) => {
-            console.log('[VideoPlayer] Autoplay blocked:', err);
-          });
-        }
+        if (autoPlay) video.play().catch(() => {});
       });
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('[VideoPlayer] HLS error:', event, data);
       });
       hlsRef.current = hls;
     } else {
-      console.log('[VideoPlayer] Using native video:', src);
+      
       video.src = hlsSrc || src;
-      video.load();
-      if (autoPlay) {
-        video.play().catch((err) => {
-          console.log('[VideoPlayer] Autoplay blocked:', err);
-        });
-      }
     }
 
     return () => {
-      console.log('[VideoPlayer] Cleaning up video');
       hlsRef.current?.destroy();
-      hlsRef.current = null;
       video.removeEventListener('error', onError);
       video.removeEventListener('loadstart', onLoadStart);
       video.removeEventListener('loadeddata', onLoadedData);
-      video.removeEventListener('loadedmetadata', onLoadedMetadata);
     };
-  }, [hlsSrc, src, autoPlay]);
+  }, [hlsSrc, src, autoPlay, videoElement]);
 
   // Smooth timeline using requestAnimationFrame
   useEffect(() => {
@@ -265,6 +234,55 @@ export const useVideoPlayer = ({
     setState(prev => ({ ...prev, showSubtitles: !prev.showSubtitles }));
   }, []);
 
+  // Handle back button when in fullscreen
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (document.fullscreenElement && e.state?.fullscreen) {
+        e.preventDefault();
+        document.exitFullscreen().catch(() => {});
+        setIsFullscreen(false);
+        history.pushState(null, '', location.href);
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(isCurrentlyFullscreen);
+      if (!isCurrentlyFullscreen && history.state?.fullscreen) {
+        history.back();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        // Enter fullscreen
+        await video.requestFullscreen();
+        setIsFullscreen(true);
+        // Push state to handle back button
+        history.pushState({ fullscreen: true, videoId }, '');
+      } else {
+        // Exit fullscreen
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (err) {
+      console.error('[VideoPlayer] Fullscreen error:', err);
+    }
+  }, [videoId]);
+
   const formatTime = useCallback((secs: number) => {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
@@ -274,8 +292,10 @@ export const useVideoPlayer = ({
   return {
     videoRef,
     state,
+    isFullscreen,
     togglePlay,
     toggleMute,
+    toggleFullscreen,
     setVolume,
     seek,
     setQuality,
