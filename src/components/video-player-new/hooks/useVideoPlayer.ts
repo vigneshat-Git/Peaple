@@ -57,8 +57,8 @@ export const useVideoPlayer = ({
       setState(prev => ({ ...prev, isLoading: false, isBuffering: false, error: errorMsg }));
     };
 
-    //const onLoadStart = () ;
-    //const onLoadedData = () ;
+    const onLoadStart = () => console.log('');
+    const onLoadedData = () => console.log('');
 
     video.addEventListener('error', onError);
     video.addEventListener('loadstart', onLoadStart);
