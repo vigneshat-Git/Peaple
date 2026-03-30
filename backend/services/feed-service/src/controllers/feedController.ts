@@ -167,8 +167,6 @@ const buildCountQuery = (params: FeedQueryParams) => {
  */
 export const getFeed = async (req: Request, res: Response) => {
   try {
-    console.log('[Feed Controller] getFeed endpoint hit:', req.originalUrl, req.query);
-    
     const userId = req.query.userId as string | undefined;
     const communityId = req.query.communityId as string | undefined;
     const filter = (req.query.filter as FilterType) || 'hot';
@@ -176,8 +174,6 @@ export const getFeed = async (req: Request, res: Response) => {
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
 
     const { query, queryParams } = buildFeedQuery({ userId, communityId, page, limit, filter });
-    console.log('[Feed Controller] Executing query with params:', { userId, communityId, filter, page, limit });
-    
     const result = await pool.query(query, queryParams);
 
     const { query: countQuery, queryParams: countParams } = buildCountQuery({ userId, communityId, page, limit, filter });
@@ -199,11 +195,10 @@ export const getFeed = async (req: Request, res: Response) => {
       trendingCategory: post.trending_category
     }));
 
-    console.log(`[Feed Controller] Returning ${posts.length} posts out of ${total} total`);
     res.json({ posts, pagination: { page, limit, total, hasMore: page * limit < total }, filter, personalized: !!userId });
   } catch (err) {
-    console.error('[Feed Controller] Feed error:', err);
-    res.status(500).json({ error: 'Failed to fetch feed', details: (err as Error).message });
+    console.error('Feed error:', err);
+    res.status(500).json({ error: 'Failed to fetch feed' });
   }
 };
 
@@ -212,7 +207,6 @@ export const getFeed = async (req: Request, res: Response) => {
  * Alias for hot filter
  */
 export const getTrending = async (req: Request, res: Response) => {
-  console.log('[Feed Controller] getTrending endpoint hit - delegating to getFeed');
   req.query.filter = 'hot';
   return getFeed(req, res);
 };
@@ -224,8 +218,6 @@ export const getTrending = async (req: Request, res: Response) => {
 export const getCommunityFeed = async (req: Request, res: Response) => {
   try {
     const { communityId } = req.params;
-    console.log('[Feed Controller] getCommunityFeed endpoint hit:', { communityId, query: req.query });
-    
     const userId = req.query.userId as string | undefined;
     const filter = (req.query.filter as FilterType) || 'hot';
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
@@ -249,7 +241,7 @@ export const getCommunityFeed = async (req: Request, res: Response) => {
 
     res.json({ posts, pagination: { page, limit, total, hasMore: page * limit < total }, communityId, filter, personalized: !!userId });
   } catch (err) {
-    console.error('[Feed Controller] Community feed error:', err);
-    res.status(500).json({ error: 'Failed to fetch community feed', details: (err as Error).message });
+    console.error('Community feed error:', err);
+    res.status(500).json({ error: 'Failed to fetch community feed' });
   }
 };

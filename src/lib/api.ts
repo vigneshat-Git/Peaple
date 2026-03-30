@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://peaple-production.up.railway.app";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://peaple-production.up.railway.app/api";
 
 class ApiError extends Error {
   constructor(
@@ -115,61 +115,6 @@ class ApiService {
     return this.request(`/communities/${communityId}/members?page=${page}&limit=${limit}`);
   }
 
-  // Feed - Advanced ranking with personalization
-  async getFeed(options: {
-    page?: number;
-    limit?: number;
-    filter?: 'hot' | 'new' | 'top';
-    userId?: string;
-    communityId?: string;
-  } = {}) {
-    const { page = 1, limit = 20, filter = 'hot', userId, communityId } = options;
-    const params = new URLSearchParams({
-      page: String(page),
-      limit: String(limit),
-      filter,
-    });
-    if (userId) params.append('userId', userId);
-    if (communityId) params.append('communityId', communityId);
-    
-    return this.request(`/api/posts/feed?${params.toString()}`);
-  }
-
-  // Trending feed (alias for hot)
-  async getTrendingPosts(options: { page?: number; limit?: number; userId?: string } = {}) {
-    const { page = 1, limit = 20, userId } = options;
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (userId) params.append('userId', userId);
-    
-    return this.request(`/api/posts/trending?${params.toString()}`);
-  }
-
-  // Community feed with ranking
-  async getCommunityPosts(communityId: string, options: {
-    page?: number;
-    limit?: number;
-    filter?: 'hot' | 'new' | 'top';
-    userId?: string;
-  } = {}) {
-    const { page = 1, limit = 20, filter = 'hot', userId } = options;
-    const params = new URLSearchParams({
-      page: String(page),
-      limit: String(limit),
-      filter,
-    });
-    if (userId) params.append('userId', userId);
-    
-    return this.request(`/api/posts/community/${communityId}?${params.toString()}`);
-  }
-
-  // Personalized feed (user's joined communities only)
-  async getPersonalizedFeed(userId: string, options: { page?: number; limit?: number; filter?: 'hot' | 'new' | 'top' } = {}) {
-    const { page = 1, limit = 20, filter = 'hot' } = options;
-    return this.request(`/api/posts/personalized?page=${page}&limit=${limit}&filter=${filter}`, {
-      headers: { 'X-User-Id': userId }
-    });
-  }
-
   // Posts
   async getPosts(page = 1, limit = 20, sort = 'new') {
     return this.request(`/posts?page=${page}&limit=${limit}&sort=${sort}`);
@@ -177,6 +122,10 @@ class ApiService {
 
   async getPost(id: string) {
     return this.request(`/posts/${id}`);
+  }
+
+  async getCommunityPosts(communityId: string, page = 1, limit = 20, sort = 'new') {
+    return this.request(`/posts/community/${communityId}?page=${page}&limit=${limit}&sort=${sort}`);
   }
 
   async createPost(data: {
@@ -198,7 +147,7 @@ class ApiService {
     });
     
     // Handle both wrapped (success/data) and unwrapped responses
-    const resultData = (response as { data?: any }).data || response;
+    const resultData = response.data || response;
     
     console.log('Upload URL API response:', response);
     console.log('Extracted data:', resultData);
@@ -289,6 +238,15 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  }
+
+  // Feed
+  async getFeed(page = 1, limit = 20, sort = 'hot') {
+    return this.request(`/posts?page=${page}&limit=${limit}&sort=${sort}`);
+  }
+
+  async getTrendingPosts(page = 1, limit = 20) {
+    return this.request(`/posts/trending?page=${page}&limit=${limit}`);
   }
 
   // Generic POST method for voting and other requests
