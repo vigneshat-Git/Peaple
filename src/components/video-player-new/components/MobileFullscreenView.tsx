@@ -71,6 +71,30 @@ export const MobileFullscreenView = ({
   const x = useMotionValue(0);
   const opacity = useTransform(y, [-200, 0, 200], [0.7, 1, 0.7]);
 
+  // Handle back button - push state to history and listen for popstate
+  useEffect(() => {
+    // Push a new state to history so back button doesn't navigate away
+    window.history.pushState({ fullscreenVideo: true }, '');
+
+    const handlePopState = (e: PopStateEvent) => {
+      // If there's no fullscreenVideo state, it means user pressed back
+      if (!e.state?.fullscreenVideo) {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // Only go back if we haven't already closed (prevents double back)
+      if (window.history.state?.fullscreenVideo) {
+        window.history.back();
+      }
+    };
+  }, [onClose]);
+
   // Show controls temporarily
   const showControlsTemporarily = () => {
     setShowControls(true);
