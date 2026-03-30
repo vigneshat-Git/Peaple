@@ -45,11 +45,13 @@ export const useVideoPlayer = ({
   useEffect(() => {
     setVideoElement(videoRef.current);
   }, [videoRef.current]);
+
+  // Main video source setup effect
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    
+    console.log('[VideoPlayer] Setting up video source:', src);
     
     const onError = (e: Event) => {
       console.error('[VideoPlayer] Video error:', e, video.error);
@@ -57,12 +59,29 @@ export const useVideoPlayer = ({
       setState(prev => ({ ...prev, isLoading: false, isBuffering: false, error: errorMsg }));
     };
 
-    const onLoadStart = () => console.log('');
-    const onLoadedData = () => console.log('');
+    const onLoadStart = () => console.log('[VideoPlayer] Load started');
+    const onLoadedData = () => {
+      console.log('[VideoPlayer] Data loaded');
+      setState(prev => ({ ...prev, isLoading: false }));
+    };
+    const onLoadedMetadata = () => {
+      console.log('[VideoPlayer] Metadata loaded');
+      setState(prev => ({ ...prev, duration: video.duration, isLoading: false }));
+    };
 
     video.addEventListener('error', onError);
     video.addEventListener('loadstart', onLoadStart);
     video.addEventListener('loadeddata', onLoadedData);
+    video.addEventListener('loadedmetadata', onLoadedMetadata);
+
+    // Reset state when video changes
+    setState(prev => ({ 
+      ...prev, 
+      isLoading: true, 
+      error: null,
+      currentTime: 0,
+      duration: 0 
+    }));
 
     if (hlsSrc && Hls.isSupported()) {
       console.log('[VideoPlayer] Using HLS:', hlsSrc);
@@ -73,25 +92,39 @@ export const useVideoPlayer = ({
       hls.loadSource(hlsSrc);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log('[VideoPlayer] HLS manifest parsed');
         setState(prev => ({ ...prev, isLoading: false }));
-        if (autoPlay) video.play().catch(() => {});
+        if (autoPlay) {
+          video.play().catch((err) => {
+            console.log('[VideoPlayer] Autoplay blocked:', err);
+          });
+        }
       });
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('[VideoPlayer] HLS error:', event, data);
       });
       hlsRef.current = hls;
     } else {
-      
+      console.log('[VideoPlayer] Using native video:', src);
       video.src = hlsSrc || src;
+      video.load();
+      if (autoPlay) {
+        video.play().catch((err) => {
+          console.log('[VideoPlayer] Autoplay blocked:', err);
+        });
+      }
     }
 
     return () => {
+      console.log('[VideoPlayer] Cleaning up video');
       hlsRef.current?.destroy();
+      hlsRef.current = null;
       video.removeEventListener('error', onError);
       video.removeEventListener('loadstart', onLoadStart);
       video.removeEventListener('loadeddata', onLoadedData);
+      video.removeEventListener('loadedmetadata', onLoadedMetadata);
     };
-  }, [hlsSrc, src, autoPlay, videoElement]);
+  }, [hlsSrc, src, autoPlay]);
 
   // Smooth timeline using requestAnimationFrame
   useEffect(() => {

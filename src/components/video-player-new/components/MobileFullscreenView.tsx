@@ -95,7 +95,20 @@ export const MobileFullscreenView = ({
     };
   }, [onClose]);
 
-  // Show controls temporarily
+  // When entering fullscreen, ensure video continues playing
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    
+    // If video has no src but we have a src, set it up
+    if (!videoEl.src && video.src) {
+      console.log('[VideoPlayer] Setting up src in fullscreen');
+      videoEl.src = video.src;
+      videoEl.load();
+      videoEl.play().catch(() => {});
+    }
+  }, [video.src, videoRef]);
+
   const showControlsTemporarily = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
@@ -162,8 +175,10 @@ export const MobileFullscreenView = ({
           ref={videoRef}
           className="w-full h-full object-contain"
           playsInline
+          autoPlay
           loop
           muted={state.isMuted}
+          controls={false}
         />
 
         {/* Tap Area */}
