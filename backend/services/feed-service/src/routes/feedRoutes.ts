@@ -7,8 +7,9 @@ import {
 
 const router = Router();
 
-router.get('/', getFeed);
-router.get('/trending', getTrending);
-router.get('/community/:id', getCommunityFeed);
+// Main feed endpoints
+router.get('/', getFeed);                    // GET /api/posts/feed
+router.get('/trending', getTrending);        // GET /api/posts/trending
+router.get('/community/:communityId', getCommunityFeed);  // GET /api/posts/community/:communityId
 
 export default router;
