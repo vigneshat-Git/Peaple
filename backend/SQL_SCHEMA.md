@@ -40,11 +40,21 @@ CREATE TABLE posts (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- media
+CREATE TABLE media (
+  id TEXT PRIMARY KEY,
+  post_id TEXT REFERENCES posts(id),
+  url TEXT NOT NULL,
+  type TEXT NOT NULL, -- 'image' or 'video'
+  file_name TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- comments
 CREATE TABLE comments (
   id TEXT PRIMARY KEY,
   post_id TEXT REFERENCES posts(id),
-  author_id TEXT REFERENCES users(id),
+  author_id TEXT REFERENCES comments(id),
   parent_comment_id TEXT REFERENCES comments(id),
   content TEXT,
   created_at TIMESTAMP DEFAULT NOW()
@@ -56,5 +66,14 @@ CREATE TABLE votes (
   user_id TEXT REFERENCES users(id),
   post_id TEXT REFERENCES posts(id),
   vote_type TEXT CHECK (vote_type IN ('upvote','downvote'))
+);
+
+-- saved_posts
+CREATE TABLE saved_posts (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES users(id),
+  post_id TEXT REFERENCES posts(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, post_id)
 );
 ```

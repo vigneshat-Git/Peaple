@@ -130,8 +130,9 @@ export interface CreateCommentRequest {
   parent_comment_id?: string;
 }
 
-export interface ErrorResponse {
-  error: string;
-  message: string;
-  statusCode: number;
+export interface SavedPost {
+  id: string;
+  user_id: string;
+  post_id: string;
+  created_at: Date;
 }

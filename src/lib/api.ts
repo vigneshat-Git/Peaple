@@ -184,6 +184,21 @@ class ApiService {
     });
   }
 
+  // Save/Unsave posts
+  async toggleSavePost(postId: string) {
+    return this.request(`/posts/${postId}/save`, {
+      method: 'POST',
+    });
+  }
+
+  async isPostSaved(postId: string) {
+    return this.request(`/posts/${postId}/is-saved`);
+  }
+
+  async getSavedPosts() {
+    return this.request('/auth/saved-posts');
+  }
+
   // Votes
   async voteOnPost(postId: string, voteType: 'upvote' | 'downvote') {
     return this.request(`/posts/${postId}/vote`, {

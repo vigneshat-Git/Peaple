@@ -4,7 +4,7 @@ import { generateSignedUploadUrl } from '../../../shared/utils/r2';
 
 // TODO: Upload to Cloudflare R2; we'll require credentials via env
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/heic', 'image/heif', 'video/mp4'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'video/mp4'];
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 
 export const generateUploadUrl = async (req: Request, res: Response) => {
@@ -130,3 +130,70 @@ export const deletePost = async (req: Request, res: Response) => {
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
 }
+
+export const toggleSavePost = async (req: Request, res: Response) => {
+  const { postId } = req.params;
+  const user = (req as any).user;
+
+  if (!user || !user.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  try {
+    // Check if already saved
+    const existing = await pool.query(
+      'SELECT id FROM saved_posts WHERE user_id = $1 AND post_id = $2',
+      [user.userId, postId]
+    );
+
+    let saved = false;
+
+    if (existing.rows.length > 0) {
+      // Remove save
+      await pool.query(
+        'DELETE FROM saved_posts WHERE user_id = $1 AND post_id = $2',
+        [user.userId, postId]
+      );
+      saved = false;
+    } else {
+      // Add save
+      const id = generateId();
+      await pool.query(
+        'INSERT INTO saved_posts (id, user_id, post_id) VALUES ($1, $2, $3)',
+        [id, user.userId, postId]
+      );
+      saved = true;
+    }
+
+    res.json({
+      success: true,
+      saved
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const isPostSaved = async (req: Request, res: Response) => {
+  const { postId } = req.params;
+  const user = (req as any).user;
+
+  if (!user || !user.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT id FROM saved_posts WHERE user_id = $1 AND post_id = $2',
+      [user.userId, postId]
+    );
+
+    res.json({
+      saved: result.rows.length > 0
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

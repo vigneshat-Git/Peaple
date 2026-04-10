@@ -152,6 +152,48 @@ export const logout = (req: Request, res: Response) => {
   res.json({ message: 'Logged out' });
 };
 
+export const getSavedPosts = async (req: Request, res: Response) => {
+  const user = (req as any).user;
+
+  if (!user || !user.userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  try {
+    // Get saved post IDs
+    const savedPostsResult = await pool.query(
+      'SELECT post_id FROM saved_posts WHERE user_id = $1 ORDER BY created_at DESC',
+      [user.userId]
+    );
+
+    if (savedPostsResult.rows.length === 0) {
+      return res.json([]);
+    }
+
+    const postIds = savedPostsResult.rows.map(row => row.post_id);
+
+    // Get posts with media
+    const postsResult = await pool.query(`
+      SELECT p.*,
+             json_agg(m.*) FILTER (WHERE m.id IS NOT NULL) as media,
+             json_build_object('id', u.id, 'username', u.username) as author,
+             json_build_object('id', c.id, 'name', c.name) as community
+      FROM posts p
+      LEFT JOIN media m ON p.id = m.post_id
+      LEFT JOIN users u ON p.author_id = u.id
+      LEFT JOIN communities c ON p.community_id = c.id
+      WHERE p.id = ANY($1)
+      GROUP BY p.id, u.id, u.username, c.id, c.name
+      ORDER BY array_position($1, p.id)
+    `, [postIds]);
+
+    res.json(postsResult.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // helper
 function generateId() {
   return Math.random().toString(36).substring(2, 10);

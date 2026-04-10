@@ -1,5 +1,8 @@
 import { MessageSquare, Bookmark, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiService } from "@/lib/api";
 import VoteButtons from "./VoteButtons";
 import PostCardMenu from "./PostCardMenu";
 import { VideoPlayerNew } from "@/components/video-player-new";
@@ -23,6 +26,9 @@ const PostCard = ({ post, onVoteChange }: {
   post: PostData; 
   onVoteChange?: (newVotes: number, userVote: "up" | "down" | null) => void;
 }) => {
+  const [isSaved, setIsSaved] = useState(false);
+  const queryClient = useQueryClient();
+
   const communityName = typeof post.community === 'string' 
     ? post.community 
     : post.community?.name || 'unknown';
@@ -32,6 +38,39 @@ const PostCard = ({ post, onVoteChange }: {
     : post.author?.username || 'unknown';
 
   const voteCount = post.upvotes ?? post.votes ?? 0;
+
+  // Check if post is saved on mount
+  const { data: savedStatus } = useQuery({
+    queryKey: ['post-saved', post.id],
+    queryFn: () => apiService.isPostSaved(post.id),
+    enabled: !!post.id,
+  });
+
+  useEffect(() => {
+    if (savedStatus) {
+      setIsSaved(savedStatus.saved);
+    }
+  }, [savedStatus]);
+
+  // Toggle save mutation
+  const saveMutation = useMutation({
+    mutationFn: () => apiService.toggleSavePost(post.id),
+    onSuccess: (response) => {
+      setIsSaved(response.saved);
+      // Invalidate saved posts query to refresh the saved posts page
+      queryClient.invalidateQueries({ queryKey: ['saved-posts'] });
+    },
+    onError: () => {
+      // Revert optimistic update on error
+      setIsSaved(!isSaved);
+    },
+  });
+
+  const handleSaveClick = () => {
+    // Optimistic update
+    setIsSaved(!isSaved);
+    saveMutation.mutate();
+  };
 
   return (
     <div className="border-b border-border sm:border-b-0">
@@ -161,9 +200,13 @@ const PostCard = ({ post, onVoteChange }: {
             <Share2 className="h-4 w-4" />
             Share
           </button>
-          <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary px-2 py-1 rounded-sm transition-colors duration-150">
-            <Bookmark className="h-4 w-4" />
-            Save
+          <button 
+            onClick={handleSaveClick}
+            disabled={saveMutation.isPending}
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary px-2 py-1 rounded-sm transition-colors duration-150"
+          >
+            <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
+            {saveMutation.isPending ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>
