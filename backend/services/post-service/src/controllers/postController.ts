@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import pool from '../../../../shared/database/db';
-import { generateSignedUploadUrl } from '../../../../shared/utils/r2';
+import pool from '../../../shared/database/db';
+import { generateSignedUploadUrl } from '../../../shared/utils/r2';
 
 // TODO: Upload to Cloudflare R2; we'll require credentials via env
 
@@ -97,8 +97,7 @@ export const listPosts = async (req: Request, res: Response) => {
 };
 
 export const getPost = async (req: Request, res: Response) => {
-  const { postId } = req.params;
-  const id = postId; // Keep for backward compatibility with queries
+  const { id } = req.params;
   try {
     const postResult = await pool.query('SELECT * FROM posts WHERE id=$1', [id]);
     if (postResult.rows.length === 0) return res.status(404).json({ message: 'Not found' });
@@ -116,8 +115,7 @@ export const getPost = async (req: Request, res: Response) => {
 };
 
 export const deletePost = async (req: Request, res: Response) => {
-  const { postId } = req.params;
-  const id = postId;
+  const { id } = req.params;
   const user = (req as any).user;
   try {
     const result = await pool.query('DELETE FROM posts WHERE id=$1 AND author_id=$2 RETURNING *', [id, user.userId]);
@@ -131,22 +129,19 @@ export const deletePost = async (req: Request, res: Response) => {
 
 /**
  * Toggle save/unsave a post
- * POST /api/posts/:id/save
+ * POST /api/posts/:postId/save
  */
-export const toggleSave = async (req: Request, res: Response) => {
+export const toggleSavePost = async (req: Request, res: Response) => {
   const { postId } = req.params;
-  const id = postId;
   const user = (req as any).user;
-
-  console.log('[DEBUG] toggleSave called with postId:', postId, 'user:', user?.userId || user?.id);
-
-  if (!user) {
+  
+  if (!user?.userId) {
     return res.status(401).json({ message: 'Authentication required' });
   }
 
   try {
     // Check if post exists
-    const postResult = await pool.query('SELECT id FROM posts WHERE id=$1', [id]);
+    const postResult = await pool.query('SELECT id FROM posts WHERE id=$1', [postId]);
     if (postResult.rows.length === 0) {
       return res.status(404).json({ message: 'Post not found' });
     }
@@ -154,31 +149,63 @@ export const toggleSave = async (req: Request, res: Response) => {
     // Check if already saved
     const savedResult = await pool.query(
       'SELECT id FROM saved_posts WHERE user_id=$1 AND post_id=$2',
-      [user.userId, id]
+      [user.userId, postId]
     );
 
     const isSaved = savedResult.rows.length > 0;
 
     if (isSaved) {
-      // Unsave - remove from saved_posts
+      // Unsave: Remove from saved_posts
       await pool.query(
         'DELETE FROM saved_posts WHERE user_id=$1 AND post_id=$2',
-        [user.userId, id]
+        [user.userId, postId]
       );
-      console.log('[DEBUG] Post unsaved:', id);
-      res.json({ saved: false, message: 'Post unsaved' });
+      // Decrement save count
+      await pool.query(
+        'UPDATE posts SET save_count = GREATEST(0, save_count - 1) WHERE id=$1',
+        [postId]
+      );
     } else {
-      // Save - add to saved_posts
+      // Save: Add to saved_posts
       const saveId = generateId();
       await pool.query(
-        'INSERT INTO saved_posts (id, user_id, post_id, created_at) VALUES ($1, $2, $3, NOW())',
-        [saveId, user.userId, id]
+        'INSERT INTO saved_posts (id, user_id, post_id) VALUES ($1, $2, $3)',
+        [saveId, user.userId, postId]
       );
-      console.log('[DEBUG] Post saved:', id);
-      res.json({ saved: true, message: 'Post saved' });
+      // Increment save count
+      await pool.query(
+        'UPDATE posts SET save_count = save_count + 1 WHERE id=$1',
+        [postId]
+      );
     }
+
+    res.json({ saved: !isSaved });
   } catch (err) {
-    console.error('[DEBUG] Toggle save error:', err);
+    console.error('Toggle save error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * Check if user has saved a post
+ * GET /api/posts/:postId/saved
+ */
+export const checkSavedPost = async (req: Request, res: Response) => {
+  const { postId } = req.params;
+  const user = (req as any).user;
+  
+  if (!user?.userId) {
+    return res.json({ saved: false });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT id FROM saved_posts WHERE user_id=$1 AND post_id=$2',
+      [user.userId, postId]
+    );
+    res.json({ saved: result.rows.length > 0 });
+  } catch (err) {
+    console.error('Check saved error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -189,8 +216,8 @@ export const toggleSave = async (req: Request, res: Response) => {
  */
 export const getSavedPosts = async (req: Request, res: Response) => {
   const user = (req as any).user;
-
-  if (!user) {
+  
+  if (!user?.userId) {
     return res.status(401).json({ message: 'Authentication required' });
   }
 
@@ -210,11 +237,13 @@ export const getSavedPosts = async (req: Request, res: Response) => {
         p.upvotes,
         p.downvotes,
         p.comment_count,
-        p.created_at as post_created_at,
-        sp.created_at as saved_at,
+        p.save_count,
+        p.created_at,
+        p.updated_at,
         c.name as community_name,
         u.username as author_username,
         u.profile_image as author_avatar,
+        sp.created_at as saved_at,
         COALESCE(
           json_agg(
             json_build_object(
@@ -232,7 +261,7 @@ export const getSavedPosts = async (req: Request, res: Response) => {
       LEFT JOIN users u ON p.author_id = u.id
       LEFT JOIN media m ON p.id = m.post_id
       WHERE sp.user_id = $1
-      GROUP BY p.id, sp.created_at, c.name, u.username, u.profile_image
+      GROUP BY p.id, c.name, u.username, u.profile_image, sp.created_at
       ORDER BY sp.created_at DESC
       LIMIT $2 OFFSET $3`,
       [user.userId, limit, offset]
@@ -261,8 +290,9 @@ export const getSavedPosts = async (req: Request, res: Response) => {
       upvotes: post.upvotes,
       downvotes: post.downvotes,
       commentCount: post.comment_count,
+      saveCount: post.save_count,
       media: post.media,
-      createdAt: post.post_created_at,
+      createdAt: post.created_at,
       savedAt: post.saved_at,
       isSaved: true
     }));
@@ -278,34 +308,6 @@ export const getSavedPosts = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error('Get saved posts error:', err);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-/**
- * Check if a post is saved by the user
- * GET /api/posts/:id/is-saved
- */
-export const checkIsSaved = async (req: Request, res: Response) => {
-  const { postId } = req.params;
-  const id = postId;
-  const user = (req as any).user;
-
-  console.log('[DEBUG] checkIsSaved called with postId:', postId, 'user:', user?.userId || user?.id);
-
-  if (!user) {
-    return res.json({ saved: false });
-  }
-
-  try {
-    const result = await pool.query(
-      'SELECT id FROM saved_posts WHERE user_id=$1 AND post_id=$2',
-      [user.userId, id]
-    );
-    console.log('[DEBUG] checkIsSaved result:', result.rows.length > 0);
-    res.json({ saved: result.rows.length > 0 });
-  } catch (err) {
-    console.error('[DEBUG] Check saved error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };

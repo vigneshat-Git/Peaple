@@ -1,12 +1,12 @@
+import { useState, useEffect } from "react";
 import { MessageSquare, Bookmark, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
 import VoteButtons from "./VoteButtons";
 import PostCardMenu from "./PostCardMenu";
 import { VideoPlayerNew } from "@/components/video-player-new";
 import { apiService } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 export interface PostData {
   id: string;
@@ -28,6 +28,10 @@ const PostCard = ({ post, onVoteChange }: {
   post: PostData; 
   onVoteChange?: (newVotes: number, userVote: "up" | "down" | null) => void;
 }) => {
+  const { isAuthenticated } = useAuth();
+  const [isSaved, setIsSaved] = useState(post.isSaved || false);
+  const [isSaving, setIsSaving] = useState(false);
+  
   const communityName = typeof post.community === 'string' 
     ? post.community 
     : post.community?.name || 'unknown';
@@ -37,44 +41,48 @@ const PostCard = ({ post, onVoteChange }: {
     : post.author?.username || 'unknown';
 
   const voteCount = post.upvotes ?? post.votes ?? 0;
-  
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isSaved, setIsSaved] = useState(post.isSaved || false);
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Check saved status on mount
+  // Check if post is saved on mount
   useEffect(() => {
-    if (user && post.id) {
-      apiService.checkIsSaved(post.id)
-        .then(result => setIsSaved(result.saved))
+    if (isAuthenticated && !post.isSaved) {
+      apiService.checkSavedPost(post.id)
+        .then(data => setIsSaved(data.saved))
         .catch(() => {}); // Ignore errors
     }
-  }, [user, post.id]);
+  }, [post.id, isAuthenticated, post.isSaved]);
 
   const handleSave = async () => {
-    if (!user) {
+    if (!isAuthenticated) {
       toast({
         title: "Sign in required",
         description: "Please sign in to save posts",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
+    if (isSaving) return;
+
     setIsSaving(true);
+    const previousState = isSaved;
+    
+    // Optimistic update
+    setIsSaved(!isSaved);
+
     try {
-      const result = await apiService.toggleSavePost(post.id);
-      setIsSaved(result.saved);
+      const data = await apiService.toggleSavePost(post.id);
+      setIsSaved(data.saved);
       toast({
-        title: result.saved ? "Post saved" : "Post unsaved",
-        description: result.saved ? "Added to your saved posts" : "Removed from saved posts",
+        title: data.saved ? "Post saved" : "Post unsaved",
+        description: data.saved ? "Added to your saved posts" : "Removed from your saved posts",
       });
-    } catch (err) {
+    } catch (error) {
+      // Revert on error
+      setIsSaved(previousState);
       toast({
         title: "Error",
         description: "Failed to save post. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsSaving(false);
@@ -214,11 +222,11 @@ const PostCard = ({ post, onVoteChange }: {
             disabled={isSaving}
             className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-sm transition-colors duration-150 ${
               isSaved 
-                ? "text-primary hover:bg-secondary" 
+                ? "text-primary bg-primary/10 hover:bg-primary/20" 
                 : "text-muted-foreground hover:bg-secondary"
             } ${isSaving ? "opacity-50" : ""}`}
           >
-            <Bookmark className={`h-4 w-4 ${isSaved ? "fill-primary" : ""}`} />
+            <Bookmark className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`} />
             {isSaved ? "Saved" : "Save"}
           </button>
         </div>

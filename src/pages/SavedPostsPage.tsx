@@ -1,129 +1,151 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Bookmark, Loader2 } from "lucide-react";
+import PostCard, { PostData } from "@/components/peaple/PostCard";
 import { apiService } from "@/lib/api";
-import PostCard from "@/components/peaple/PostCard";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Bookmark } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 
-interface Post {
-  id: string;
-  title: string;
-  content: string;
-  author: { id: string; username: string; avatar: string };
-  community: { id: string; name: string };
-  upvotes: number;
-  downvotes: number;
-  commentCount: number;
-  media: Array<{ id: string; url: string; type: string; file_name?: string }>;
-  createdAt: string;
-  isSaved: boolean;
+interface SavedPost extends PostData {
+  savedAt: string;
 }
 
 const SavedPostsPage = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState<SavedPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const { toast } = useToast();
+  const [page, setPage] = useState(1);
 
-  const fetchSavedPosts = async (pageNum: number = 1) => {
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+
+    fetchSavedPosts();
+  }, [isAuthenticated, navigate]);
+
+  const fetchSavedPosts = async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await apiService.getSavedPosts(pageNum, 20);
+      const data = await apiService.getSavedPosts(pageNum, 20);
       
+      // Transform posts to include timeAgo
+      const transformedPosts = data.posts.map(post => ({
+        ...post,
+        author: post.author.username,
+        community: post.community.name,
+        comments: post.commentCount,
+        votes: post.upvotes,
+        timeAgo: formatTimeAgo(new Date(post.savedAt)),
+        isSaved: true,
+      }));
+
       if (pageNum === 1) {
-        setPosts(response.posts);
+        setPosts(transformedPosts);
       } else {
-        setPosts(prev => [...prev, ...response.posts]);
+        setPosts(prev => [...prev, ...transformedPosts]);
       }
       
-      setHasMore(response.pagination?.hasMore || false);
-    } catch (err) {
-      console.error('Failed to fetch saved posts:', err);
+      setHasMore(data.pagination.hasMore);
+      setPage(pageNum);
+    } catch (error) {
+      console.error("Failed to fetch saved posts:", error);
       toast({
         title: "Error",
         description: "Failed to load saved posts. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchSavedPosts(1);
-  }, []);
+  const formatTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-  const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchSavedPosts(nextPage);
+    if (diffInSeconds < 60) return "just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    return date.toLocaleDateString();
   };
 
-  if (loading && posts.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      fetchSavedPosts(page + 1);
+    }
+  };
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center gap-2 py-4 border-b border-border">
-        <Bookmark className="h-5 w-5 text-primary" />
-        <h1 className="text-xl font-semibold">Saved Posts</h1>
-      </div>
-
-      {/* Empty State */}
-      {posts.length === 0 && !loading && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Bookmark className="h-16 w-16 text-muted-foreground/50 mb-4" />
-          <h2 className="text-lg font-semibold text-foreground mb-2">No saved posts yet</h2>
-          <p className="text-muted-foreground max-w-sm">
-            Posts you save will appear here. Click the bookmark icon on any post to save it for later.
-          </p>
+    <div className="min-h-screen bg-background">
+      <div className="container max-w-5xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <Bookmark className="h-6 w-6 text-primary" />
+          <h1 className="text-xl font-bold text-foreground">Saved Posts</h1>
+          <span className="text-sm text-muted-foreground">
+            {posts.length > 0 && `(${posts.length})`}
+          </span>
         </div>
-      )}
 
-      {/* Posts List */}
-      <div className="space-y-0 sm:space-y-4">
-        {posts.map(post => (
-          <PostCard
-            key={post.id}
-            post={{
-              id: post.id,
-              title: post.title,
-              content: post.content,
-              author: post.author,
-              community: post.community,
-              upvotes: post.upvotes,
-              downvotes: post.downvotes,
-              comments: post.commentCount,
-              media: post.media,
-              timeAgo: new Date(post.createdAt).toLocaleDateString(),
-              isSaved: true
-            }}
-          />
-        ))}
+        {/* Posts */}
+        {loading && posts.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-12">
+            <Bookmark className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-lg font-semibold text-foreground mb-2">
+              No saved posts yet
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              Posts you save will appear here for easy access
+            </p>
+            <Button onClick={() => navigate("/")}>
+              Browse Feed
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+              />
+            ))}
+
+            {/* Load More */}
+            {hasMore && (
+              <div className="flex justify-center py-4">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Load More"
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Load More */}
-      {hasMore && (
-        <div className="flex justify-center py-4">
-          <Button
-            variant="outline"
-            onClick={loadMore}
-            disabled={loading}
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : null}
-            Load More
-          </Button>
-        </div>
-      )}
     </div>
   );
 };

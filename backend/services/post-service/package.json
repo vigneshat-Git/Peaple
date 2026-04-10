@@ -3,22 +3,17 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node dist/services/post-service/server.js",
-    "dev": "ts-node server.ts",
+    "start": "ts-node server.ts",
     "build": "tsc"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.490.0",
     "@aws-sdk/s3-request-presigner": "^3.490.0",
     "body-parser": "^1.20.2",
-    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.1"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/jsonwebtoken": "^9.0.5",
     "ts-node": "^10.9.2",
     "typescript": "^4.9.5"
   }

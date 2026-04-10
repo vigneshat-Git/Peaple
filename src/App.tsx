@@ -9,7 +9,6 @@ import { VideoProvider } from "@/contexts/VideoContext";
 import AppLayout from "@/components/peaple/AppLayout";
 import ProtectedRoute from "@/components/peaple/ProtectedRoute";
 import HomePage from "@/pages/HomePage";
-import SavedPostsPage from "@/pages/SavedPostsPage";
 import CommunityPage from "@/pages/CommunityPage";
 import PostPage from "@/pages/PostPage";
 import CreatePostPage from "@/pages/CreatePostPage";
@@ -19,7 +18,8 @@ import SettingsPage from "@/pages/SettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import GoogleCallback from "@/pages/GoogleCallback";
-import VideoDemoPage from "@/pages/VideoDemoPage";
+import VideoDemoPage from '@/pages/VideoDemoPage';
+import SavedPostsPage from '@/pages/SavedPostsPage';
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,13 +44,13 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/popular" element={<HomePage />} />
-              <Route
-                path="/saved"
+              <Route 
+                path="/saved" 
                 element={
                   <ProtectedRoute>
                     <SavedPostsPage />
                   </ProtectedRoute>
-                }
+                } 
               />
               <Route path="/c/:communityName" element={<CommunityPage />} />
               <Route path="/post/:id" element={<PostPage />} />
