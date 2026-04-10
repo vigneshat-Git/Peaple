@@ -13,6 +13,8 @@ import { authenticate } from '../../../../shared/middleware/auth';
 
 const router = Router();
 
+console.log('POST ROUTES LOADED');
+
 // Debug route
 router.get('/test', (req, res) => res.json({ message: 'ok', timestamp: new Date().toISOString() }));
 
