@@ -53,21 +53,21 @@ export const createPost = async (req: Request, res: Response) => {
   }
 
   try {
-    const id = generateId();
     const result = await pool.query(
-      `INSERT INTO posts (id, title, content, author_id, community_id, score, created_at)
-       VALUES ($1,$2,$3,$4,$5,0,NOW()) RETURNING *`,
-      [id, title, content || '', user.userId, communityId]
+      `INSERT INTO posts (title, content, author_id, community_id, score, created_at)
+       VALUES ($1,$2,$3,$4,0,NOW()) RETURNING *`,
+      [title, content || '', user.userId, communityId]
     );
 
     const post = result.rows[0];
+    const postId = post.id;
 
     if (media && Array.isArray(media)) {
       for (const item of media) {
         await pool.query(
           `INSERT INTO media (post_id, url, type, file_name)
            VALUES ($1, $2, $3, $4)`,
-          [id, item.url, item.type, item.fileName || null]
+          [postId, item.url, item.type, item.fileName || null]
         );
       }
     }
@@ -157,10 +157,9 @@ export const toggleSavePost = async (req: Request, res: Response) => {
       saved = false;
     } else {
       // Add save
-      const id = generateId();
       await pool.query(
-        'INSERT INTO saved_posts (id, user_id, post_id) VALUES ($1, $2, $3)',
-        [id, user.userId, postId]
+        'INSERT INTO saved_posts (user_id, post_id) VALUES ($1, $2)',
+        [user.userId, postId]
       );
       saved = true;
     }

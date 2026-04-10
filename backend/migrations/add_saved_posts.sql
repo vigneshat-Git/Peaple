@@ -2,9 +2,9 @@
 -- Run this in your PostgreSQL database
 
 CREATE TABLE IF NOT EXISTS saved_posts (
-  id TEXT PRIMARY KEY,
-  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
-  post_id TEXT REFERENCES posts(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(user_id, post_id)
 );

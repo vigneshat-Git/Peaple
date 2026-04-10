@@ -35,10 +35,9 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const id = generateId();
     const result = await pool.query(
-      'INSERT INTO users (id, username, email, password_hash) VALUES ($1,$2,$3,$4) RETURNING id, username, email',
-      [id, username, email, hashed]
+      'INSERT INTO users (username, email, password_hash) VALUES ($1,$2,$3) RETURNING id, username, email',
+      [username, email, hashed]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -109,11 +108,10 @@ export const googleAuth = async (req: Request, res: Response) => {
       }
     } else {
       // Create new user
-      const id = generateId();
-      const username = email?.split('@')[0] || `user_${id}`;
+      const username = email?.split('@')[0] || `user_${Date.now()}`;
       const result = await pool.query(
-        'INSERT INTO users (id, username, email, google_id, avatar_url) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, avatar_url',
-        [id, username, email, googleId, picture]
+        'INSERT INTO users (username, email, google_id, avatar_url) VALUES ($1, $2, $3, $4) RETURNING id, username, email, avatar_url',
+        [username, email, googleId, picture]
       );
       user = result.rows[0];
     }

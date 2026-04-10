@@ -76,6 +76,15 @@ CREATE TABLE IF NOT EXISTS votes (
   UNIQUE(user_id, post_id, comment_id)
 );
 
+-- Saved posts table
+CREATE TABLE IF NOT EXISTS saved_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, post_id)
+);
+
 -- Community members table
 CREATE TABLE IF NOT EXISTS community_members (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -101,6 +110,10 @@ CREATE INDEX IF NOT EXISTS idx_comments_created_at ON comments(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_votes_user_id ON votes(user_id);
 CREATE INDEX IF NOT EXISTS idx_votes_post_id ON votes(post_id);
 CREATE INDEX IF NOT EXISTS idx_votes_comment_id ON votes(comment_id);
+
+CREATE INDEX IF NOT EXISTS idx_saved_posts_user_id ON saved_posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_posts_post_id ON saved_posts(post_id);
+CREATE INDEX IF NOT EXISTS idx_saved_posts_created_at ON saved_posts(created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_community_members_user_id ON community_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_community_members_community_id ON community_members(community_id);
