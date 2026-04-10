@@ -7,7 +7,7 @@ import {
   logout,
   getSavedPosts,
 } from '../controllers/authController';
-import { authenticate } from '../../../shared/middleware/auth';
+import { authenticate } from '../shared/middleware/auth';
 
 const router = Router();
 

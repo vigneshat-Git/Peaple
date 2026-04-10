@@ -8,7 +8,7 @@ import {
   toggleSavePost,
   isPostSaved,
 } from '../controllers/postController';
-import { authenticate } from '../../../shared/middleware/auth';
+import { authenticate } from '../shared/middleware/auth';
 
 const router = Router();
 

@@ -12,7 +12,7 @@ const pool = new Pool({
 
 // Direct token function
 const signToken = (payload: object, expiresIn = '7d') => {
-  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: expiresIn });
+  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn } as any);
 };
 
 // TODO: Add proper type definitions for User and payload
