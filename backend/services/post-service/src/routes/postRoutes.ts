@@ -18,11 +18,12 @@ router.post('/upload-url', authenticate, generateUploadUrl);
 router.post('/', authenticate, createPost);
 router.get('/', listPosts);
 
-// Save/Unsave routes
-router.post('/:postId/save', authenticate, toggleSavePost);
-router.get('/:postId/saved', authenticate, checkSavedPost);
+// Save/Unsave routes - MUST be before /:id to avoid being caught by it
 router.get('/saved-posts/all', authenticate, getSavedPosts);
+router.get('/:postId/saved', authenticate, checkSavedPost);
+router.post('/:postId/save', authenticate, toggleSavePost);
 
+// Generic routes - keep at end
 router.get('/:id', getPost);
 router.delete('/:id', authenticate, deletePost);
 
