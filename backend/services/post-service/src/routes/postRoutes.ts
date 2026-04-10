@@ -13,14 +13,28 @@ import { authenticate } from '../../../shared/middleware/auth';
 
 const router = Router();
 
-router.get('/test', (req, res) => res.send('Posts route working'));
+// Debug route
+router.get('/test', (req, res) => res.json({ message: 'ok', timestamp: new Date().toISOString() }));
+
+// Static routes first
 router.post('/upload-url', authenticate, generateUploadUrl);
-router.post('/', authenticate, createPost);
-router.get('/', listPosts);
 router.get('/saved', authenticate, getSavedPosts);        // GET /api/posts/saved
-router.get('/:id', getPost);
-router.get('/:id/is-saved', authenticate, checkIsSaved);   // GET /api/posts/:id/is-saved
-router.post('/:id/save', authenticate, toggleSave);        // POST /api/posts/:id/save
-router.delete('/:id', authenticate, deletePost);
+router.get('/', listPosts);
+router.post('/', authenticate, createPost);
+
+// Specific parameterized routes (MUST come before generic :postId routes)
+router.get('/:postId/is-saved', authenticate, (req, res, next) => {
+  console.log('[DEBUG] SAVE ROUTE HIT - GET /:postId/is-saved:', req.params.postId);
+  next();
+}, checkIsSaved);   // GET /api/posts/:postId/is-saved
+
+router.post('/:postId/save', authenticate, (req, res, next) => {
+  console.log('[DEBUG] SAVE ROUTE HIT - POST /:postId/save:', req.params.postId);
+  next();
+}, toggleSave);        // POST /api/posts/:postId/save
+
+// Generic parameterized routes (these should be LAST)
+router.get('/:postId', getPost);
+router.delete('/:postId', authenticate, deletePost);
 
 export default router;

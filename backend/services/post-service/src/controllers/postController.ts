@@ -97,7 +97,8 @@ export const listPosts = async (req: Request, res: Response) => {
 };
 
 export const getPost = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { postId } = req.params;
+  const id = postId; // Keep for backward compatibility with queries
   try {
     const postResult = await pool.query('SELECT * FROM posts WHERE id=$1', [id]);
     if (postResult.rows.length === 0) return res.status(404).json({ message: 'Not found' });
@@ -115,7 +116,8 @@ export const getPost = async (req: Request, res: Response) => {
 };
 
 export const deletePost = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { postId } = req.params;
+  const id = postId;
   const user = (req as any).user;
   try {
     const result = await pool.query('DELETE FROM posts WHERE id=$1 AND author_id=$2 RETURNING *', [id, user.userId]);
@@ -132,8 +134,11 @@ export const deletePost = async (req: Request, res: Response) => {
  * POST /api/posts/:id/save
  */
 export const toggleSave = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { postId } = req.params;
+  const id = postId;
   const user = (req as any).user;
+
+  console.log('[DEBUG] toggleSave called with postId:', postId, 'user:', user?.userId || user?.id);
 
   if (!user) {
     return res.status(401).json({ message: 'Authentication required' });
@@ -160,6 +165,7 @@ export const toggleSave = async (req: Request, res: Response) => {
         'DELETE FROM saved_posts WHERE user_id=$1 AND post_id=$2',
         [user.userId, id]
       );
+      console.log('[DEBUG] Post unsaved:', id);
       res.json({ saved: false, message: 'Post unsaved' });
     } else {
       // Save - add to saved_posts
@@ -168,10 +174,11 @@ export const toggleSave = async (req: Request, res: Response) => {
         'INSERT INTO saved_posts (id, user_id, post_id, created_at) VALUES ($1, $2, $3, NOW())',
         [saveId, user.userId, id]
       );
+      console.log('[DEBUG] Post saved:', id);
       res.json({ saved: true, message: 'Post saved' });
     }
   } catch (err) {
-    console.error('Toggle save error:', err);
+    console.error('[DEBUG] Toggle save error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -280,8 +287,11 @@ export const getSavedPosts = async (req: Request, res: Response) => {
  * GET /api/posts/:id/is-saved
  */
 export const checkIsSaved = async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { postId } = req.params;
+  const id = postId;
   const user = (req as any).user;
+
+  console.log('[DEBUG] checkIsSaved called with postId:', postId, 'user:', user?.userId || user?.id);
 
   if (!user) {
     return res.json({ saved: false });
@@ -292,9 +302,10 @@ export const checkIsSaved = async (req: Request, res: Response) => {
       'SELECT id FROM saved_posts WHERE user_id=$1 AND post_id=$2',
       [user.userId, id]
     );
+    console.log('[DEBUG] checkIsSaved result:', result.rows.length > 0);
     res.json({ saved: result.rows.length > 0 });
   } catch (err) {
-    console.error('Check saved error:', err);
+    console.error('[DEBUG] Check saved error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
