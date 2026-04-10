@@ -24,12 +24,12 @@ router.post('/', authenticate, createPost);
 
 // Specific parameterized routes (MUST come before generic :postId routes)
 router.get('/:postId/is-saved', authenticate, (req, res, next) => {
-  console.log('[DEBUG] SAVE ROUTE HIT - GET /:postId/is-saved:', req.params.postId);
+  console.log('IS SAVED ROUTE HIT');
   next();
 }, checkIsSaved);   // GET /api/posts/:postId/is-saved
 
 router.post('/:postId/save', authenticate, (req, res, next) => {
-  console.log('[DEBUG] SAVE ROUTE HIT - POST /:postId/save:', req.params.postId);
+  console.log('SAVE ROUTE HIT');
   next();
 }, toggleSave);        // POST /api/posts/:postId/save
 
