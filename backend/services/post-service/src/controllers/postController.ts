@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import pool from '../../../shared/database/db';
-import { generateSignedUploadUrl } from '../../../shared/utils/r2';
+import pool from '../../../../shared/database/db';
+import { generateSignedUploadUrl } from '../../../../shared/utils/r2';
 
 // TODO: Upload to Cloudflare R2; we'll require credentials via env
 
