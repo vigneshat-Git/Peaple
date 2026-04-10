@@ -181,7 +181,9 @@ class ApiService {
   }
 
   async checkIsSaved(postId: string): Promise<{ saved: boolean }> {
-    return this.request(`/posts/${postId}/is-saved`);
+    // Add cache-busting timestamp to prevent 304 cached responses
+    const timestamp = Date.now();
+    return this.request(`/posts/${postId}/is-saved?_t=${timestamp}`);
   }
 
   async getSavedPosts(page = 1, limit = 20) {
