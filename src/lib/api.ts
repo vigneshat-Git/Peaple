@@ -240,38 +240,6 @@ class ApiService {
     });
   }
 
-  // Saved Posts
-  async toggleSavePost(postId: string) {
-    return this.request<{ saved: boolean }>(`/posts/${postId}/save`, {
-      method: 'POST',
-    });
-  }
-
-  async checkSavedPost(postId: string) {
-    return this.request<{ saved: boolean }>(`/posts/${postId}/saved`);
-  }
-
-  async getSavedPosts(page = 1, limit = 20) {
-    return this.request<{
-      posts: Array<{
-        id: string;
-        title: string;
-        content: string;
-        author: { id: string; username: string; avatar: string };
-        community: { id: string; name: string };
-        upvotes: number;
-        downvotes: number;
-        commentCount: number;
-        saveCount: number;
-        media: Array<{ id: string; url: string; type: string; file_name: string }>;
-        createdAt: string;
-        savedAt: string;
-        isSaved: boolean;
-      }>;
-      pagination: { page: number; limit: number; total: number; hasMore: boolean };
-    }>(`/posts/saved-posts/all?page=${page}&limit=${limit}`);
-  }
-
   // Feed
   async getFeed(page = 1, limit = 20, sort = 'hot') {
     return this.request(`/posts?page=${page}&limit=${limit}&sort=${sort}`);

@@ -18,8 +18,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import GoogleCallback from "@/pages/GoogleCallback";
-import VideoDemoPage from '@/pages/VideoDemoPage';
-import SavedPostsPage from '@/pages/SavedPostsPage';
+import VideoDemoPage from "@/pages/VideoDemoPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,14 +43,7 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/popular" element={<HomePage />} />
-              <Route 
-                path="/saved" 
-                element={
-                  <ProtectedRoute>
-                    <SavedPostsPage />
-                  </ProtectedRoute>
-                } 
-              />
+              <Route path="/saved" element={<HomePage />} />
               <Route path="/c/:communityName" element={<CommunityPage />} />
               <Route path="/post/:id" element={<PostPage />} />
               <Route
