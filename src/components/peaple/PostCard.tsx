@@ -1,8 +1,12 @@
 import { MessageSquare, Bookmark, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import VoteButtons from "./VoteButtons";
 import PostCardMenu from "./PostCardMenu";
 import { VideoPlayerNew } from "@/components/video-player-new";
+import { apiService } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export interface PostData {
   id: string;
@@ -17,6 +21,7 @@ export interface PostData {
   tags?: string[];
   timeAgo: string;
   media?: Array<{ id: string; url: string; type: string; file_name?: string }>;
+  isSaved?: boolean;
 }
 
 const PostCard = ({ post, onVoteChange }: { 
@@ -32,6 +37,49 @@ const PostCard = ({ post, onVoteChange }: {
     : post.author?.username || 'unknown';
 
   const voteCount = post.upvotes ?? post.votes ?? 0;
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isSaved, setIsSaved] = useState(post.isSaved || false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Check saved status on mount
+  useEffect(() => {
+    if (user && post.id) {
+      apiService.checkIsSaved(post.id)
+        .then(result => setIsSaved(result.saved))
+        .catch(() => {}); // Ignore errors
+    }
+  }, [user, post.id]);
+
+  const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save posts",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const result = await apiService.toggleSavePost(post.id);
+      setIsSaved(result.saved);
+      toast({
+        title: result.saved ? "Post saved" : "Post unsaved",
+        description: result.saved ? "Added to your saved posts" : "Removed from saved posts",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to save post. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="border-b border-border sm:border-b-0">
@@ -161,9 +209,17 @@ const PostCard = ({ post, onVoteChange }: {
             <Share2 className="h-4 w-4" />
             Share
           </button>
-          <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:bg-secondary px-2 py-1 rounded-sm transition-colors duration-150">
-            <Bookmark className="h-4 w-4" />
-            Save
+          <button 
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-sm transition-colors duration-150 ${
+              isSaved 
+                ? "text-primary hover:bg-secondary" 
+                : "text-muted-foreground hover:bg-secondary"
+            } ${isSaving ? "opacity-50" : ""}`}
+          >
+            <Bookmark className={`h-4 w-4 ${isSaved ? "fill-primary" : ""}`} />
+            {isSaved ? "Saved" : "Save"}
           </button>
         </div>
       </div>

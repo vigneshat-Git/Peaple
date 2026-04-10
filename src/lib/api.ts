@@ -173,6 +173,21 @@ class ApiService {
     });
   }
 
+  // Saved Posts
+  async toggleSavePost(postId: string): Promise<{ saved: boolean; message?: string }> {
+    return this.request(`/posts/${postId}/save`, {
+      method: 'POST',
+    });
+  }
+
+  async checkIsSaved(postId: string): Promise<{ saved: boolean }> {
+    return this.request(`/posts/${postId}/is-saved`);
+  }
+
+  async getSavedPosts(page = 1, limit = 20) {
+    return this.request(`/posts/saved?page=${page}&limit=${limit}`);
+  }
+
   async updatePost(id: string, data: Partial<{
     title: string;
     content: string;

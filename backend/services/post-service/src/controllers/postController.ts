@@ -127,6 +127,178 @@ export const deletePost = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Toggle save/unsave a post
+ * POST /api/posts/:id/save
+ */
+export const toggleSave = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = (req as any).user;
+
+  if (!user) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  try {
+    // Check if post exists
+    const postResult = await pool.query('SELECT id FROM posts WHERE id=$1', [id]);
+    if (postResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if already saved
+    const savedResult = await pool.query(
+      'SELECT id FROM saved_posts WHERE user_id=$1 AND post_id=$2',
+      [user.userId, id]
+    );
+
+    const isSaved = savedResult.rows.length > 0;
+
+    if (isSaved) {
+      // Unsave - remove from saved_posts
+      await pool.query(
+        'DELETE FROM saved_posts WHERE user_id=$1 AND post_id=$2',
+        [user.userId, id]
+      );
+      res.json({ saved: false, message: 'Post unsaved' });
+    } else {
+      // Save - add to saved_posts
+      const saveId = generateId();
+      await pool.query(
+        'INSERT INTO saved_posts (id, user_id, post_id, created_at) VALUES ($1, $2, $3, NOW())',
+        [saveId, user.userId, id]
+      );
+      res.json({ saved: true, message: 'Post saved' });
+    }
+  } catch (err) {
+    console.error('Toggle save error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * Get user's saved posts
+ * GET /api/users/saved-posts
+ */
+export const getSavedPosts = async (req: Request, res: Response) => {
+  const user = (req as any).user;
+
+  if (!user) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+  const offset = (page - 1) * limit;
+
+  try {
+    // Get saved posts with full post data
+    const result = await pool.query(
+      `SELECT 
+        p.id,
+        p.title,
+        p.content,
+        p.author_id,
+        p.community_id,
+        p.upvotes,
+        p.downvotes,
+        p.comment_count,
+        p.created_at as post_created_at,
+        sp.created_at as saved_at,
+        c.name as community_name,
+        u.username as author_username,
+        u.profile_image as author_avatar,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', m.id,
+              'url', m.url,
+              'type', m.type,
+              'file_name', m.file_name
+            ) ORDER BY m.created_at
+          ) FILTER (WHERE m.id IS NOT NULL),
+          '[]'
+        ) as media
+      FROM saved_posts sp
+      JOIN posts p ON sp.post_id = p.id
+      LEFT JOIN communities c ON p.community_id = c.id
+      LEFT JOIN users u ON p.author_id = u.id
+      LEFT JOIN media m ON p.id = m.post_id
+      WHERE sp.user_id = $1
+      GROUP BY p.id, sp.created_at, c.name, u.username, u.profile_image
+      ORDER BY sp.created_at DESC
+      LIMIT $2 OFFSET $3`,
+      [user.userId, limit, offset]
+    );
+
+    // Get total count
+    const countResult = await pool.query(
+      'SELECT COUNT(*) as total FROM saved_posts WHERE user_id=$1',
+      [user.userId]
+    );
+    const total = parseInt(countResult.rows[0].total);
+
+    const posts = result.rows.map(post => ({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      author: {
+        id: post.author_id,
+        username: post.author_username,
+        avatar: post.author_avatar
+      },
+      community: {
+        id: post.community_id,
+        name: post.community_name
+      },
+      upvotes: post.upvotes,
+      downvotes: post.downvotes,
+      commentCount: post.comment_count,
+      media: post.media,
+      createdAt: post.post_created_at,
+      savedAt: post.saved_at,
+      isSaved: true
+    }));
+
+    res.json({
+      posts,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: page * limit < total
+      }
+    });
+  } catch (err) {
+    console.error('Get saved posts error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * Check if a post is saved by the user
+ * GET /api/posts/:id/is-saved
+ */
+export const checkIsSaved = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = (req as any).user;
+
+  if (!user) {
+    return res.json({ saved: false });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT id FROM saved_posts WHERE user_id=$1 AND post_id=$2',
+      [user.userId, id]
+    );
+    res.json({ saved: result.rows.length > 0 });
+  } catch (err) {
+    console.error('Check saved error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 function generateId() {
   return Math.random().toString(36).substring(2, 10);
 }

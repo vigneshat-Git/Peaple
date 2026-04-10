@@ -9,6 +9,7 @@ import { VideoProvider } from "@/contexts/VideoContext";
 import AppLayout from "@/components/peaple/AppLayout";
 import ProtectedRoute from "@/components/peaple/ProtectedRoute";
 import HomePage from "@/pages/HomePage";
+import SavedPostsPage from "@/pages/SavedPostsPage";
 import CommunityPage from "@/pages/CommunityPage";
 import PostPage from "@/pages/PostPage";
 import CreatePostPage from "@/pages/CreatePostPage";
@@ -43,7 +44,14 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/popular" element={<HomePage />} />
-              <Route path="/saved" element={<HomePage />} />
+              <Route
+                path="/saved"
+                element={
+                  <ProtectedRoute>
+                    <SavedPostsPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/c/:communityName" element={<CommunityPage />} />
               <Route path="/post/:id" element={<PostPage />} />
               <Route
