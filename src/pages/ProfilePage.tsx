@@ -1,11 +1,14 @@
 import { useParams, Link } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { Calendar, Star, MessageSquare, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Calendar, Star, MessageSquare, Loader2, Pencil, Camera, Check, X } from "lucide-react";
 import UserAvatar from "@/components/peaple/UserAvatar";
 import PostCard, { PostData } from "@/components/peaple/PostCard";
 import { apiService } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
 
 interface UserProfile {
   id: string;
@@ -45,6 +48,15 @@ const ProfilePage = () => {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingComments, setLoadingComments] = useState(true);
   const [loadingSaved, setLoadingSaved] = useState(true);
+
+  // Edit profile dialog state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editUsername, setEditUsername] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editProfileImage, setEditProfileImage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = currentUser?.username === username;
 
@@ -148,6 +160,121 @@ const ProfilePage = () => {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
+  // Edit profile functions
+  const openEditDialog = () => {
+    if (!userProfile) return;
+    setEditUsername(userProfile.username);
+    setEditBio(userProfile.bio || "");
+    setEditProfileImage(userProfile.profile_image || "");
+    setIsEditDialogOpen(true);
+  };
+
+  const closeEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setIsSaving(false);
+    setIsUploading(false);
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "Error",
+        description: "Image must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Only JPEG, PNG, and WebP images are allowed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const { uploadUrl, fileUrl } = await apiService.generateUploadUrl(file.type);
+      
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      setEditProfileImage(fileUrl);
+      toast({
+        title: "Success",
+        description: "Profile image uploaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!currentUser || !userProfile) return;
+
+    setIsSaving(true);
+    try {
+      const response = await apiService.updateUser({
+        username: editUsername.trim(),
+        bio: editBio.trim(),
+        profile_image: editProfileImage,
+      });
+
+      const updatedUser = (response as any).data || response;
+      
+      // Update local profile state
+      setUserProfile({
+        ...userProfile,
+        username: updatedUser.username || editUsername,
+        bio: updatedUser.bio || editBio,
+        profile_image: updatedUser.profile_image || editProfileImage,
+      });
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+      closeEditDialog();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const hasChanges = 
+    editUsername !== userProfile?.username || 
+    editBio !== (userProfile?.bio || "") || 
+    editProfileImage !== (userProfile?.profile_image || "");
+
   if (loadingProfile) {
     return (
       <div className="max-w-3xl flex items-center justify-center py-20">
@@ -175,7 +302,18 @@ const ProfilePage = () => {
             size="lg" 
           />
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">u/{userProfile.username}</h1>
+            <div className="flex items-start justify-between">
+              <h1 className="text-lg font-bold text-foreground">u/{userProfile.username}</h1>
+              {isOwnProfile && (
+                <button
+                  onClick={openEditDialog}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-md transition-colors"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit Profile
+                </button>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
               {userProfile.bio || "No bio yet"}
             </p>
@@ -296,6 +434,113 @@ const ProfilePage = () => {
           </>
         )}
       </div>
+
+      {/* Edit Profile Dialog */}
+      {isEditDialogOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border shadow-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-foreground">Edit Profile</h2>
+              <button
+                onClick={closeEditDialog}
+                className="p-1 hover:bg-secondary rounded-md transition-colors"
+              >
+                <X className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Profile Image */}
+              <div className="flex items-center gap-4">
+                <div 
+                  className="relative cursor-pointer group"
+                  onClick={handleImageClick}
+                >
+                  <UserAvatar 
+                    name={editUsername || userProfile.username} 
+                    image={editProfileImage} 
+                    size="lg" 
+                  />
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    {isUploading ? (
+                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                    ) : (
+                      <Camera className="h-5 w-5 text-white" />
+                    )}
+                  </div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg,image/webp"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Profile Picture</p>
+                  <p className="text-xs text-muted-foreground">
+                    Click to upload (max 5MB)
+                  </p>
+                </div>
+              </div>
+
+              {/* Username */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value)}
+                  placeholder="Enter username"
+                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              {/* Bio */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Bio
+                </label>
+                <textarea
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  placeholder="Tell us about yourself"
+                  rows={3}
+                  maxLength={160}
+                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                />
+                <p className="text-xs text-muted-foreground mt-1 text-right">
+                  {editBio.length}/160
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={closeEditDialog}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-md transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={!hasChanges || isSaving}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
