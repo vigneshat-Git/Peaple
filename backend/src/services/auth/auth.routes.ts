@@ -234,6 +234,24 @@ router.get('/google/callback', async (req: Request, res: Response) => {
   }
 });
 
+// Get user by username
+router.get('/username/:username', async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
+
+    const user = await authService.getUserByUsername(username);
+
+    if (!user) {
+      return sendError(res, 'User not found', 404);
+    }
+
+    sendSuccess(res, user);
+  } catch (error: any) {
+    console.error('Get user by username error:', error);
+    sendError(res, error.message || 'Failed to get user', 500);
+  }
+});
+
 // Get user by ID - must be after specific routes
 router.get('/:userId', async (req: Request, res: Response) => {
   try {

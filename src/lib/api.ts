@@ -280,8 +280,20 @@ class ApiService {
     return this.request(`/auth/${id}`);
   }
 
+  async getUserByUsername(username: string) {
+    return this.request(`/auth/username/${username}`);
+  }
+
   async getUserCommunities(page = 1, limit = 20) {
     return this.request(`/user/communities?page=${page}&limit=${limit}`);
+  }
+
+  async getUserPosts(userId: string, page = 1, limit = 20) {
+    return this.request(`/posts/author/${userId}?page=${page}&limit=${limit}`);
+  }
+
+  async getUserComments(userId: string, page = 1, limit = 20) {
+    return this.request(`/comments/user/${userId}/comments?page=${page}&limit=${limit}`);
   }
 
   // Search

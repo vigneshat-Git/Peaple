@@ -292,7 +292,7 @@ export class AuthService {
     }
   }
 
-  private async getUserByUsername(username: string): Promise<User | null> {
+  async getUserByUsername(username: string): Promise<User | null> {
     try {
       const result = await query(
         'SELECT * FROM users WHERE username = $1',
