@@ -1,7 +1,9 @@
-import { Home, TrendingUp, Users, PlusCircle, Bookmark, User, Settings } from "lucide-react";
+import { Home, TrendingUp, Users, PlusCircle, Bookmark, User, Settings, Loader2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import CommunityCard from "./CommunityCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { apiService } from "@/lib/api";
 
 const baseNavItems = [
   { label: "Home", icon: Home, path: "/" },
@@ -10,20 +12,34 @@ const baseNavItems = [
   { label: "Saved Posts", icon: Bookmark, path: "/saved" },
 ];
 
-const topCommunities = [
-  { id: "40f741f9-c92f-4e4c-b32b-bb6868414aff", name: "webdev", members: 42800 },
-  { id: "6e93fc5e-bdba-4d97-bca0-6306cfdea90a", name: "startups", members: 31200 },
-  { id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890", name: "design", members: 28400 },
-  { id: "b2c3d4e5-f6a7-8901-bcde-f23456789012", name: "trading", members: 19700 },
-];
+interface Community {
+  id: string;
+  name: string;
+  member_count: number;
+}
 
 const AppSidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const [topCommunities, setTopCommunities] = useState<Community[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const uniqueCommunities = Array.from(
-    new Map(topCommunities.map(c => [c.id, c])).values()
-  );
+  useEffect(() => {
+    const fetchTopCommunities = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getTopCommunities(5);
+        const data = (response as any).data || response || [];
+        setTopCommunities(data);
+      } catch (error) {
+        console.error("Failed to fetch top communities:", error);
+        setTopCommunities([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTopCommunities();
+  }, []);
 
   const navItems = [
     ...baseNavItems,
@@ -59,14 +75,22 @@ const AppSidebar = () => {
         <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
           Top Communities
         </h4>
-        {uniqueCommunities.map((community, index) => (
-          <CommunityCard 
-            key={`${community.id}-${index}`} 
-            id={community.id} 
-            name={community.name} 
-            members={community.members} 
-          />
-        ))}
+        {loading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        ) : topCommunities.length > 0 ? (
+          topCommunities.map((community, index) => (
+            <CommunityCard 
+              key={`${community.id}-${index}`} 
+              id={community.id} 
+              name={community.name} 
+              members={community.member_count} 
+            />
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground px-3 py-2">No communities yet</p>
+        )}
       </div>
     </aside>
   );
