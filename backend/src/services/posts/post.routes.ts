@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import { query } from '../../config/database.js';
 import { postService } from './post.service.js';
 import { commentService } from '../comments/comment.service.js';
 import { verifyToken, optionalAuth, AuthRequest } from '../../middleware/auth.js';
@@ -154,6 +155,55 @@ router.get('/trending', optionalAuth, async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Get trending posts error:', error);
     sendError(res, error.message || 'Failed to get trending posts', 500);
+  }
+});
+
+// Check if a post is saved by the current user
+router.get('/:postId/is-saved', verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return sendError(res, 'Unauthorized', 401);
+    }
+
+    const { postId } = req.params;
+    const result = await query(
+      'SELECT id FROM saved_posts WHERE user_id = $1 AND post_id = $2',
+      [req.user.userId, postId]
+    );
+
+    sendSuccess(res, { saved: result.rows.length > 0 });
+  } catch (error: any) {
+    console.error('Check saved post error:', error);
+    sendError(res, error.message || 'Failed to check saved status', 500);
+  }
+});
+
+// Toggle save / unsave for a post
+router.post('/:postId/save', verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return sendError(res, 'Unauthorized', 401);
+    }
+
+    const { postId } = req.params;
+    const existing = await query(
+      'SELECT id FROM saved_posts WHERE user_id = $1 AND post_id = $2',
+      [req.user.userId, postId]
+    );
+
+    let saved = false;
+    if (existing.rows.length > 0) {
+      await query('DELETE FROM saved_posts WHERE user_id = $1 AND post_id = $2', [req.user.userId, postId]);
+      saved = false;
+    } else {
+      await query('INSERT INTO saved_posts (user_id, post_id) VALUES ($1, $2)', [req.user.userId, postId]);
+      saved = true;
+    }
+
+    sendSuccess(res, { saved }, saved ? 'Post saved' : 'Post unsaved');
+  } catch (error: any) {
+    console.error('Toggle save post error:', error);
+    sendError(res, error.message || 'Failed to toggle save', 500);
   }
 });
 

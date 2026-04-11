@@ -4,6 +4,7 @@ import { verifyToken, generateAccessToken, generateRefreshToken, AuthRequest } f
 import { sendSuccess, sendError, AppError } from '../../utils/response.js';
 import { validate, validationSchemas } from '../../utils/validation.js';
 import { env } from '../../config/env.js';
+import { query } from '../../config/database.js';
 import { OAuth2Client } from 'google-auth-library';
 
 const router = Router();
@@ -102,6 +103,37 @@ router.get('/me', verifyToken, async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('Get current user error:', error);
     sendError(res, error.message || 'Failed to get user', 500);
+  }
+});
+
+// Get saved posts for current user
+router.get('/saved-posts', verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return sendError(res, 'Unauthorized', 401);
+    }
+
+    const result = await query(
+      `SELECT
+         p.*, 
+         json_agg(json_build_object('id', m.id, 'url', m.url, 'type', m.type, 'file_name', m.file_name)) FILTER (WHERE m.id IS NOT NULL) AS media,
+         json_build_object('id', u.id, 'username', u.username) AS author,
+         json_build_object('id', c.id, 'name', c.name) AS community
+       FROM saved_posts sp
+       JOIN posts p ON sp.post_id = p.id
+       LEFT JOIN media m ON p.id = m.post_id
+       LEFT JOIN users u ON p.author_id = u.id
+       LEFT JOIN communities c ON p.community_id = c.id
+       WHERE sp.user_id = $1
+       GROUP BY p.id, u.id, u.username, c.id, c.name, sp.created_at
+       ORDER BY sp.created_at DESC`,
+      [req.user.userId]
+    );
+
+    sendSuccess(res, result.rows, 'Saved posts retrieved');
+  } catch (error: any) {
+    console.error('Get saved posts error:', error);
+    sendError(res, error.message || 'Failed to get saved posts', 500);
   }
 });
 

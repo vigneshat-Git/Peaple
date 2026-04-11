@@ -186,17 +186,20 @@ class ApiService {
 
   // Save/Unsave posts
   async toggleSavePost(postId: string) {
-    return this.request(`/posts/${postId}/save`, {
+    const response = await this.request(`/posts/${postId}/save`, {
       method: 'POST',
     });
+    return (response as any).data || response;
   }
 
   async isPostSaved(postId: string) {
-    return this.request(`/posts/${postId}/is-saved`);
+    const response = await this.request(`/posts/${postId}/is-saved`);
+    return (response as any).data || response;
   }
 
   async getSavedPosts() {
-    return this.request('/auth/saved-posts');
+    const response = await this.request('/auth/saved-posts');
+    return (response as any).data || response;
   }
 
   // Votes
