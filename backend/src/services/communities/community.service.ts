@@ -62,16 +62,18 @@ export class CommunityService {
     }
   }
 
-  async getAllCommunities(page: number = 1, limit: number = 20) {
+  async getAllCommunities(page: number = 1, limit: number = 20, sortBy: 'new' | 'top' = 'new') {
     try {
       const { offset } = getPaginationParams(page, limit);
 
       const totalResult = await query('SELECT COUNT(*) FROM communities');
       const total = parseInt(totalResult.rows[0].count, 10);
 
+      const orderBy = sortBy === 'top' ? 'member_count DESC' : 'created_at DESC';
+
       const result = await query(
         `SELECT * FROM communities
-         ORDER BY created_at DESC
+         ORDER BY ${orderBy}
          LIMIT $1 OFFSET $2`,
         [limit, offset]
       );
@@ -82,6 +84,39 @@ export class CommunityService {
         page,
         limit,
       };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getTopCommunities(limit: number = 5) {
+    try {
+      const result = await query(
+        `SELECT * FROM communities
+         ORDER BY member_count DESC
+         LIMIT $1`,
+        [limit]
+      );
+
+      return result.rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getSuggestedCommunities(userId: string, limit: number = 5) {
+    try {
+      // Get communities the user is NOT a member of, ordered by member count
+      const result = await query(
+        `SELECT c.* FROM communities c
+         LEFT JOIN community_members cm ON c.id = cm.community_id AND cm.user_id = $1
+         WHERE cm.id IS NULL
+         ORDER BY c.member_count DESC
+         LIMIT $2`,
+        [userId, limit]
+      );
+
+      return result.rows;
     } catch (error) {
       throw error;
     }

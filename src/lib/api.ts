@@ -71,8 +71,16 @@ class ApiService {
   }
 
   // Communities
-  async getCommunities(page = 1, limit = 20) {
-    return this.request(`/communities?page=${page}&limit=${limit}`);
+  async getCommunities(page = 1, limit = 20, sort = 'new') {
+    return this.request(`/communities?page=${page}&limit=${limit}&sort=${sort}`);
+  }
+
+  async getTopCommunities(limit = 5) {
+    return this.request(`/communities/top?limit=${limit}`);
+  }
+
+  async getSuggestedCommunities(limit = 5) {
+    return this.request(`/communities/suggested?limit=${limit}`);
   }
 
   async getCommunity(id: string) {
@@ -97,17 +105,15 @@ class ApiService {
     });
   }
 
-  async joinCommunity(communityId: string) {
-    return this.request('/communities/join', {
+  async joinCommunity(communityName: string) {
+    return this.request(`/communities/${encodeURIComponent(communityName)}/join`, {
       method: 'POST',
-      body: JSON.stringify({ community_id: communityId }),
     });
   }
 
-  async leaveCommunity(communityId: string) {
-    return this.request('/communities/leave', {
+  async leaveCommunity(communityName: string) {
+    return this.request(`/communities/${encodeURIComponent(communityName)}/leave`, {
       method: 'POST',
-      body: JSON.stringify({ community_id: communityId }),
     });
   }
 

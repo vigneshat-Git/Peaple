@@ -38,13 +38,46 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const sort = (req.query.sort as string) || 'new';
 
-    const result = await communityService.getAllCommunities(page, limit);
+    const result = await communityService.getAllCommunities(page, limit, sort as 'new' | 'top');
 
     sendPaginationResponse(res, result.communities, result.total, page, limit);
   } catch (error: any) {
     console.error('Get communities error:', error);
     sendError(res, error.message || 'Failed to get communities', 500);
+  }
+});
+
+// Get top communities
+router.get('/top', async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 5;
+
+    const communities = await communityService.getTopCommunities(limit);
+
+    sendSuccess(res, communities, 'Top communities retrieved');
+  } catch (error: any) {
+    console.error('Get top communities error:', error);
+    sendError(res, error.message || 'Failed to get top communities', 500);
+  }
+});
+
+// Get suggested communities for user
+router.get('/suggested', verifyToken, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return sendError(res, 'Unauthorized', 401);
+    }
+
+    const limit = parseInt(req.query.limit as string) || 5;
+
+    const communities = await communityService.getSuggestedCommunities(req.user.userId, limit);
+
+    sendSuccess(res, communities, 'Suggested communities retrieved');
+  } catch (error: any) {
+    console.error('Get suggested communities error:', error);
+    sendError(res, error.message || 'Failed to get suggested communities', 500);
   }
 });
 

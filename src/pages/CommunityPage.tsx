@@ -62,8 +62,16 @@ const CommunityPage = () => {
     if (!community || !user) return;
     try {
       setJoining(true);
-      if (isJoined) { await apiService.leaveCommunity(community.id); setIsJoined(false); toast({ title: `Left c/${community.name}` }); }
-      else { await apiService.joinCommunity(community.id); setIsJoined(true); toast({ title: `Joined c/${community.name}` }); }
+      if (isJoined) { 
+        await apiService.leaveCommunity(community.name); 
+        setIsJoined(false); 
+        toast({ title: `Left c/${community.name}` }); 
+      }
+      else { 
+        await apiService.joinCommunity(community.name); 
+        setIsJoined(true); 
+        toast({ title: `Joined c/${community.name}` }); 
+      }
       setCommunity(prev => prev ? { ...prev, member_count: isJoined ? prev.member_count - 1 : prev.member_count + 1 } : null);
     } catch { toast({ title: "Error", description: "Failed to join/leave", variant: "destructive" }); }
     finally { setJoining(false); }
