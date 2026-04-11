@@ -331,6 +331,12 @@ export const MobileFullscreenView = ({
                 <span className="text-white text-xs font-medium tabular-nums w-16 text-right">
                   {formatTime(state.currentTime)}
                 </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                  className="p-2 text-white"
+                >
+                  {state.isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </button>
               </div>
             </motion.div>
           )}

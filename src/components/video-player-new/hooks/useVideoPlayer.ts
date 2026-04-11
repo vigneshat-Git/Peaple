@@ -273,6 +273,10 @@ export const useVideoPlayer = ({
         setIsFullscreen(true);
         // Push state to handle back button
         history.pushState({ fullscreen: true, videoId }, '');
+        // Auto-unmute when entering fullscreen
+        if (video.muted) {
+          globalToggleMute();
+        }
       } else {
         // Exit fullscreen
         await document.exitFullscreen();
@@ -281,7 +285,7 @@ export const useVideoPlayer = ({
     } catch (err) {
       console.error('[VideoPlayer] Fullscreen error:', err);
     }
-  }, [videoId]);
+  }, [videoId, globalToggleMute]);
 
   const formatTime = useCallback((secs: number) => {
     const m = Math.floor(secs / 60);
