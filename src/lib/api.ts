@@ -296,6 +296,13 @@ class ApiService {
     return this.request(`/comments/user/${userId}/comments?page=${page}&limit=${limit}`);
   }
 
+  async updateUser(data: { username?: string; bio?: string; profile_image?: string }) {
+    return this.request('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Search
   async searchPosts(keyword: string, page = 1, limit = 20) {
     return this.request(`/posts/search/keyword/${encodeURIComponent(keyword)}?page=${page}&limit=${limit}`);
