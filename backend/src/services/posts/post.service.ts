@@ -2,6 +2,7 @@ import { query, transaction } from '../../config/database.js';
 import { Post, CreatePostRequest } from '../../types/index.js';
 import { generateId, getPaginationParams, calculatePostScore } from '../../utils/helpers.js';
 import { invalidateCache } from '../../config/redis.js';
+import { deleteFromR2 } from '../../config/storage.js';
 
 export class PostService {
   async createPost(
@@ -289,14 +290,42 @@ export class PostService {
         throw new Error('Unauthorized');
       }
 
+      // Get all media URLs before deleting (for R2 cleanup)
+      const mediaResult = await query(
+        'SELECT url FROM media WHERE post_id = $1',
+        [postId]
+      );
+      const mediaUrls = mediaResult.rows.map((row: any) => row.url);
+
       await transaction(async (client) => {
+        // Delete media records
+        await client.query('DELETE FROM media WHERE post_id = $1', [postId]);
+
         // Delete associated votes and comments
         await client.query('DELETE FROM votes WHERE post_id = $1', [postId]);
         await client.query('DELETE FROM comments WHERE post_id = $1', [postId]);
 
+        // Delete saved posts references
+        await client.query('DELETE FROM saved_posts WHERE post_id = $1', [postId]);
+
         // Delete post
         await client.query('DELETE FROM posts WHERE id = $1', [postId]);
       });
+
+      // Delete files from Cloudflare R2 (outside transaction - non-critical)
+      const deleteErrors: string[] = [];
+      for (const url of mediaUrls) {
+        try {
+          await deleteFromR2(url);
+        } catch (err) {
+          console.error(`Failed to delete file from R2: ${url}`, err);
+          deleteErrors.push(url);
+        }
+      }
+
+      if (deleteErrors.length > 0) {
+        console.warn(`Some files could not be deleted from R2: ${deleteErrors.join(', ')}`);
+      }
 
       // Invalidate cache
       await invalidateCache(`post:${postId}:*`);
