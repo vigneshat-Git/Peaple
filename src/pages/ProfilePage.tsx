@@ -120,7 +120,7 @@ const ProfilePage = () => {
       try {
         const response = await apiService.getSavedPosts();
         const postsData = (response as any).data || response;
-        setPosts(Array.isArray(postsData) ? postsData : []);
+        setSavedPosts(Array.isArray(postsData) ? postsData : []);
       } catch (error: any) {
         console.error("Failed to load saved posts:", error);
         setSavedPosts([]);
@@ -171,7 +171,7 @@ const ProfilePage = () => {
         <div className="flex items-start gap-4">
           <UserAvatar 
             name={userProfile.username} 
-            src={userProfile.profile_image} 
+            image={userProfile.profile_image} 
             size="lg" 
           />
           <div className="flex-1">
