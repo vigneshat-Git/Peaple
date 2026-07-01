@@ -49,6 +49,12 @@ export class AuthService {
       }
 
       const user = result.rows[0];
+      
+      // Check if user has a password (Google OAuth users might not have one)
+      if (!user.password_hash) {
+        throw new Error('This account was created with Google. Please use Google login instead.');
+      }
+      
       const isValidPassword = await verifyPassword(password, user.password_hash);
 
       if (!isValidPassword) {
