@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { VideoProvider } from "@/contexts/VideoContext";
 import AppLayout from "@/components/peaple/AppLayout";
 import ProtectedRoute from "@/components/peaple/ProtectedRoute";
+import LandingPage from "@/pages/LandingPage";
 import HomePage from "@/pages/HomePage";
 import CommunityPage from "@/pages/CommunityPage";
 import PostPage from "@/pages/PostPage";
@@ -34,7 +35,8 @@ const App = () => (
           <AuthProvider>
             <VideoProvider>
           <Routes>
-            {/* Public auth routes */}
+            {/* Public routes */}
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/google/callback" element={<GoogleCallback />} />
@@ -42,7 +44,7 @@ const App = () => (
 
             {/* App routes with shared layout */}
             <Route element={<AppLayout />}>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/feed" element={<HomePage />} />
               <Route path="/popular" element={<HomePage />} />
               <Route path="/saved" element={<SavedPostsPage />} />
               <Route path="/c/:communityName" element={<CommunityPage />} />

@@ -1,4 +1,4 @@
-import { Search, Bell, PlusSquare, Compass, Flame } from "lucide-react";
+import { Search, Bell, PlusSquare, Flame } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ const Navbar = () => {
       <header className="sticky top-0 z-50 bg-card border-b h-14">
         <div className="flex items-center justify-between h-full px-4 lg:px-6 max-w-[1400px] mx-auto">
           <div className="flex items-center gap-4 flex-1">
-            <Link to="/" className="flex items-center gap-2 shrink-0">
+            <Link to={isAuthenticated ? "/feed" : "/"} className="flex items-center gap-2 shrink-0">
               {/* Mobile logo - shown on small screens */}
               <img 
                 src="/mobile-logo.svg" 
@@ -40,19 +40,11 @@ const Navbar = () => {
 
           <div className="flex items-center gap-1">
             <Link
-              to="/popular"
+              to={isAuthenticated ? "/popular" : "/"}
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors duration-150"
             >
               <Flame className="h-4 w-4" />
-              <span className="hidden lg:inline">Popular</span>
-            </Link>
-
-            <Link
-              to="/"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors duration-150"
-            >
-              <Compass className="h-4 w-4" />
-              <span className="hidden lg:inline">Explore</span>
+              <span className="hidden lg:inline">{isAuthenticated ? "Popular" : "Explore"}</span>
             </Link>
 
             {isAuthenticated ? (
